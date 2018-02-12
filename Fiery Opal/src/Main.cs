@@ -10,7 +10,7 @@ namespace FieryOpal
     {
 
         public const int Width = 80;
-        public const int Height = 25;
+        public const int Height = 40;
 
         static MainGameWindowManager mainGameWindowManager;
 

@@ -24,12 +24,18 @@ namespace FieryOpal.src.UI
 
         public bool RegisterWindow(OpalConsoleWindow w)
         {
-            return InternalMessagePipeline.Subscribe(w);
+            bool ret = InternalMessagePipeline.Subscribe(w);
+            if (!ret) return false;
+            InternalMessagePipeline.Unicast(null, w.Handle, new Func<OpalConsoleWindow, string>(ocw => { ocw.OnWindowManagerRegistration(this); return "OnWindowManagerRegistration"; }));
+            return true;
         }
 
         public bool UnregisterWindow(OpalConsoleWindow w)
         {
-            return InternalMessagePipeline.Unsubscribe(w);
+            bool ret = InternalMessagePipeline.Unsubscribe(w);
+            if (!ret) return false;
+            InternalMessagePipeline.Unicast(null, w.Handle, new Func<OpalConsoleWindow, string>(ocw => { ocw.OnWindowManagerUnregistration(this); return "OnWindowManagerUnregistration"; }));
+            return true;
         }
 
         public WindowManager(int w, int h)
@@ -52,15 +58,13 @@ namespace FieryOpal.src.UI
             InfoWindow = new OpalConsoleWindow(w / 4, h - h / 4, "Info");
             InfoWindow.Position = new Point(w - w / 4, 0);
 
-            LogWindow = new OpalConsoleWindow(w, h / 4, "Log");
+            LogWindow = new OpalLogWindow(w, h / 4);
             LogWindow.Position = new Point(0, h - h / 4);
 
             RegisterWindow(GameWindow);
             RegisterWindow(InfoWindow);
             RegisterWindow(LogWindow);
 
-
-            InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(ocw => { ocw.OnWindowManagerRegistration(this); return "OnWindowManagerRegistration"; }));
         }
     }
 }
