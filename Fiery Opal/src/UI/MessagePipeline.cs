@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SadConsole;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,10 +14,27 @@ namespace FieryOpal.src.UI
         void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<T, string> msg, bool is_broadcast);
     }
 
+    public class MessageSentEventArgs<T> : EventArgs
+    {
+        public Guid From;
+        public Guid To;
+        public Func<T, string> Message;
+
+        public MessageSentEventArgs(Guid from, Guid to, Func<T, string> message)
+        {
+            From = from;
+            To = to;
+            Message = message;
+        }
+    }
+
+    public delegate void MessageSentDelegate<T>(MessageSentEventArgs<T> _args);
+
     public class MessagePipeline<T> : IDisposable where T : IPipelineSubscriber<T>
     {
         protected Dictionary<Guid, IPipelineSubscriber<T>> Subscribers { get; }
         protected static readonly Dictionary<Guid, MessagePipeline<T>> Pipelines = new Dictionary<Guid, MessagePipeline<T>>();
+        public event MessageSentDelegate<T> OnMessageSent; 
 
         public Guid Handle { get; }
 
@@ -70,20 +88,33 @@ namespace FieryOpal.src.UI
         {
             foreach(IPipelineSubscriber<T> sub in Subscribers.Values)
             {
-                sub.ReceiveMessage(Handle, sender == null ? Guid.Empty : sender.Handle, action, true);
+                Guid from = sender == null ? Guid.Empty : sender.Handle;
+                sub.ReceiveMessage(Handle, from, action, true);
+                OnMessageSent?.Invoke(new MessageSentEventArgs<T>(from, sub.Handle, action));
             }
         }
 
-        public bool Unicast(T sender, Guid receiver_handle, Func<T, string> msg)
+        public bool Unicast(T sender, Guid receiver_handle, Func<T, string> action)
         {
             if (!Subscribers.ContainsKey(receiver_handle)) return false;
-            Subscribers[receiver_handle].ReceiveMessage(Handle, sender == null ? Guid.Empty : sender.Handle, msg, false);
+
+            Guid from = sender == null ? Guid.Empty : sender.Handle;
+            Subscribers[receiver_handle].ReceiveMessage(Handle, from, action, false);
+            OnMessageSent?.Invoke(new MessageSentEventArgs<T>(from, receiver_handle, action));
             return true;
         }
 
         public void Dispose()
         {
             Pipelines.Remove(Handle);
+        }
+    }
+
+    public static class MessagePipelineExtensions
+    {
+        public static void BroadcastLogMessage(this MessagePipeline<OpalConsoleWindow> self, OpalConsoleWindow sender, ColoredString msg, bool debug)
+        {
+            self.Broadcast(null, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(msg, debug); }; return "BroadcastLogMessage"; }));
         }
     }
 }

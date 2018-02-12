@@ -10,7 +10,7 @@ namespace FieryOpal.src.UI
 {
     public class WindowManager
     {
-        protected MessagePipeline<OpalConsoleWindow> InternalMessagePipeline;
+        public MessagePipeline<OpalConsoleWindow> InternalMessagePipeline { get; protected set; }
 
         public int Width { get; }
         public int Height { get; }
@@ -53,7 +53,7 @@ namespace FieryOpal.src.UI
 
         public MainGameWindowManager(int w, int h) : base(w, h)
         {
-            GameWindow = new OpalConsoleWindow(w - w / 4, h - h / 4, "Fiery Opal");
+            GameWindow = new OpalGameWindow(w - w / 4, h - h / 4, new OpalGame());
 
             InfoWindow = new OpalConsoleWindow(w / 4, h - h / 4, "Info");
             InfoWindow.Position = new Point(w - w / 4, 0);
@@ -61,10 +61,9 @@ namespace FieryOpal.src.UI
             LogWindow = new OpalLogWindow(w, h / 4);
             LogWindow.Position = new Point(0, h - h / 4);
 
-            RegisterWindow(GameWindow);
             RegisterWindow(InfoWindow);
             RegisterWindow(LogWindow);
-
+            RegisterWindow(GameWindow);
         }
     }
 }

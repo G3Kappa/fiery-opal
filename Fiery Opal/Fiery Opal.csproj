@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="src\Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\OpalGame.cs" />
     <Compile Include="src\UI\MessagePipeline.cs" />
     <Compile Include="src\UI\OpalConsoleWindow.cs" />
     <Compile Include="src\UI\WindowManager.cs" />

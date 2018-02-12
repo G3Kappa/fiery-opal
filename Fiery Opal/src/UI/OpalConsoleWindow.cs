@@ -113,7 +113,6 @@ namespace FieryOpal.src.UI
                 if (msg.Item2 && !DebugMode)
                 {
                     debug_lines_ignored++;
-                    //lines_available++;
                     continue;
                 }
 
@@ -123,20 +122,63 @@ namespace FieryOpal.src.UI
                 int new_lines = msg.Item1.String.Length / Width;
                 if (new_lines > 0)
                 {
-                    new_line_offset += new_lines;
+                    new_line_offset += new_lines + 1;
                     lines_available -= new_lines;
+                    i--;
                 }
             }
 
             base.Draw(delta);
         }
+    }
 
-        public override void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalConsoleWindow, string> action, bool is_broadcast)
+    public class OpalGameWindow : OpalConsoleWindow
+    {
+        public MessagePipeline<OpalGame> InternalMessagePipeline { get; protected set; }
+        protected List<WindowManager> ConnectedWindowManagers = new List<WindowManager>();
+        public OpalGame Game { get; protected set; }
+
+        public OpalGameWindow(int w, int h, OpalGame g) : base(w, h, "Fiery Opal")
         {
-            string performed_action = action.Invoke(this);
-            if (new[] { "Update", "Draw" }.Contains(performed_action)) return;
+            Game = g;
+            InternalMessagePipeline = new MessagePipeline<OpalGame>();
+            InternalMessagePipeline.OnMessageSent += InternalMessagePipeline_OnMessageSent;
+        }
 
-            Log(new ColoredString("ReceiveMessage: " + performed_action, new Cell(Color.DarkMagenta, Color.Black)), true);
+        /// <summary>
+        /// Peek at messages broadcast by the game to (technically other game instances) nothingness.
+        /// </summary>
+        /// <param name="_args"></param>
+        private void InternalMessagePipeline_OnMessageSent(MessageSentEventArgs<OpalGame> _args)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Update(TimeSpan delta)
+        {
+            base.Update(delta);
+            Game.Update(delta);
+        }
+
+        public override void Draw(TimeSpan delta)
+        {
+            base.Draw(delta);
+            Game.Draw(delta);
+        }
+
+        public override void OnWindowManagerRegistration(WindowManager wm)
+        {
+            ConnectedWindowManagers.Add(wm);
+        }
+
+        public override void OnWindowManagerUnregistration(WindowManager wm)
+        {
+            ConnectedWindowManagers.Remove(wm);
+        }
+
+        public void Log(ColoredString msg, bool debug)
+        {
+            ConnectedWindowManagers.ForEach(wm => wm.InternalMessagePipeline.BroadcastLogMessage(this, msg, debug));
         }
     }
 }
