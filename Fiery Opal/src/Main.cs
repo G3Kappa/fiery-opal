@@ -3,16 +3,20 @@ using SadConsole;
 using Console = SadConsole.Console;
 using Microsoft.Xna.Framework;
 using FieryOpal.src.UI;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace FieryOpal
 {
     class Program
     {
 
-        public const int Width = 80;
-        public const int Height = 40;
+        public const int Width = 201;
+        public const int Height = 120;
 
         static MainGameWindowManager mainGameWindowManager;
+
+        public static Texture2D FontTexture;
+        public static Font Font;
 
         static void Main(string[] args)
         {
@@ -39,6 +43,8 @@ namespace FieryOpal
         private static void Init()
         {
             mainGameWindowManager = new MainGameWindowManager(Width, Height);
+            FontTexture = SadConsole.Game.Instance.Content.Load<Texture2D>("taffer");
+            Font = new FontMaster(FontTexture, 10, 10).GetFont(Font.FontSizes.One);
         }
     }
 }

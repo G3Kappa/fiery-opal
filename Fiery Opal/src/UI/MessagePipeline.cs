@@ -28,7 +28,7 @@ namespace FieryOpal.src.UI
         }
     }
 
-    public delegate void MessageSentDelegate<T>(MessageSentEventArgs<T> _args);
+    public delegate void MessageSentDelegate<T>(MessageSentEventArgs<T> args);
 
     public class MessagePipeline<T> : IDisposable where T : IPipelineSubscriber<T>
     {
@@ -104,6 +104,29 @@ namespace FieryOpal.src.UI
             return true;
         }
 
+        public void Forward<U>(Guid original_pipeline, Guid original_sender, Guid receiver_handle, Func<T, string> translation)
+            where U : IPipelineSubscriber<U>
+        {
+            var pipeline = MessagePipeline<U>.GetPipeline(original_pipeline);
+            if (pipeline == null) throw new ArgumentException("original_pipeline");
+
+            Subscribers[receiver_handle].ReceiveMessage(original_pipeline, original_sender, translation, false);
+            //OnMessageSent?.Invoke(new MessageSentEventArgs<T>(original_sender, receiver_handle, translation));
+        }
+
+        public void BroadcastForward<U>(Guid original_pipeline, Guid original_sender, Func<T, string> translation)
+            where U : IPipelineSubscriber<U>
+        {
+            var pipeline = MessagePipeline<U>.GetPipeline(original_pipeline);
+            if (pipeline == null) throw new ArgumentException("original_pipeline");
+
+            foreach (IPipelineSubscriber<T> sub in Subscribers.Values)
+            {
+                sub.ReceiveMessage(original_pipeline, original_sender, translation, true);
+                //OnMessageSent?.Invoke(new MessageSentEventArgs<T>(original_sender, sub.Handle, translation));
+            }
+        }
+
         public void Dispose()
         {
             Pipelines.Remove(Handle);
@@ -114,7 +137,7 @@ namespace FieryOpal.src.UI
     {
         public static void BroadcastLogMessage(this MessagePipeline<OpalConsoleWindow> self, OpalConsoleWindow sender, ColoredString msg, bool debug)
         {
-            self.Broadcast(null, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(msg, debug); }; return "BroadcastLogMessage"; }));
+            self.Broadcast(sender, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(msg, debug); }; return "BroadcastLogMessage"; }));
         }
     }
 }

@@ -42,12 +42,14 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="src\lib\SimplexNoise.cs" />
     <Compile Include="src\Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\OpalCreature.cs" />
     <Compile Include="src\OpalGame.cs" />
-    <Compile Include="src\UI\MessagePipeline.cs" />
-    <Compile Include="src\UI\OpalConsoleWindow.cs" />
-    <Compile Include="src\UI\WindowManager.cs" />
+    <Compile Include="src\ui\MessagePipeline.cs" />
+    <Compile Include="src\ui\OpalConsoleWindow.cs" />
+    <Compile Include="src\ui\WindowManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">
