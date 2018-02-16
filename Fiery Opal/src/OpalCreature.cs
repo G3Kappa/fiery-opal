@@ -1,13 +1,7 @@
-﻿using FieryOpal.src.UI;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
 using SadConsole;
-using SadConsole.Surfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FieryOpal.src
 {
@@ -110,7 +104,7 @@ namespace FieryOpal.src
             int cx = (c.Glyph % 16) * f.Size.X;
             int cy = (c.Glyph / 16) * f.Size.Y;
 
-            Program.FontTexture.GetData(pixels1d);
+            f.FontImage.GetData(pixels1d);
             for (int x = 0; x < f.Size.X; x++)
             {
                 for (int y = 0; y < f.Size.Y; y++)

@@ -1,22 +1,22 @@
 using System;
 using SadConsole;
-using Console = SadConsole.Console;
 using Microsoft.Xna.Framework;
-using FieryOpal.src.UI;
-using Microsoft.Xna.Framework.Graphics;
+using FieryOpal.src.ui;
+using FieryOpal.src;
 
 namespace FieryOpal
 {
     class Program
     {
 
-        public const int Width = 201;
-        public const int Height = 120;
+        public const int Width = 160;
+        public const int Height = 80;
 
         static MainGameWindowManager mainGameWindowManager;
 
-        public static Texture2D FontTexture;
         public static Font Font;
+        public static Font FPFont;
+        public static Font HDFont;
 
         static void Main(string[] args)
         {
@@ -32,6 +32,7 @@ namespace FieryOpal
 
         private static void Update(GameTime time)
         {
+            Keybind.Update();
             mainGameWindowManager.Update(time);
         }
 
@@ -42,9 +43,14 @@ namespace FieryOpal
 
         private static void Init()
         {
-            mainGameWindowManager = new MainGameWindowManager(Width, Height);
-            FontTexture = SadConsole.Game.Instance.Content.Load<Texture2D>("taffer");
-            Font = new FontMaster(FontTexture, 10, 10).GetFont(Font.FontSizes.One);
+            Font = Global.LoadFont("Taffer.font").GetFont(Font.FontSizes.One);
+            FPFont = Global.LoadFont("Kein.font").GetFont(Font.FontSizes.One);
+            HDFont = Global.LoadFont("HD.font").GetFont(Font.FontSizes.One);
+
+            OpalLocalMap map = new OpalLocalMap(Width / 2, Height / 2);
+            OpalGame g = new OpalGame(map);
+
+            mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
         }
     }
 }
