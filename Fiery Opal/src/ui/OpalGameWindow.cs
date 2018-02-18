@@ -7,7 +7,6 @@ namespace FieryOpal.src.ui
     public class OpalGameWindow : OpalConsoleWindow
     {
         public MessagePipeline<OpalGame> InternalMessagePipeline { get; protected set; }
-        protected List<WindowManager> ConnectedWindowManagers = new List<WindowManager>();
         public OpalGame Game { get; protected set; }
         public Viewport Viewport { get; set; }
 
@@ -43,21 +42,6 @@ namespace FieryOpal.src.ui
         public override void Draw(TimeSpan delta)
         {
             base.Draw(delta);
-        }
-
-        public override void OnWindowManagerRegistration(WindowManager wm)
-        {
-            ConnectedWindowManagers.Add(wm);
-        }
-
-        public override void OnWindowManagerUnregistration(WindowManager wm)
-        {
-            ConnectedWindowManagers.Remove(wm);
-        }
-
-        public void Log(ColoredString msg, bool debug)
-        {
-            ConnectedWindowManagers.ForEach(wm => wm.InternalMessagePipeline.BroadcastLogMessage(this, msg, debug));
         }
     }
 

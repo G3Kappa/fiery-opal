@@ -9,8 +9,8 @@ namespace FieryOpal
     class Program
     {
 
-        public const int Width = 160;
-        public const int Height = 80;
+        public const int Width = 120;
+        public const int Height = 60;
 
         static MainGameWindowManager mainGameWindowManager;
 
@@ -33,6 +33,7 @@ namespace FieryOpal
         private static void Update(GameTime time)
         {
             Keybind.Update();
+            Util.Update(time);
             mainGameWindowManager.Update(time);
         }
 
@@ -47,10 +48,11 @@ namespace FieryOpal
             FPFont = Global.LoadFont("Kein.font").GetFont(Font.FontSizes.One);
             HDFont = Global.LoadFont("HD.font").GetFont(Font.FontSizes.One);
 
-            OpalLocalMap map = new OpalLocalMap(Width / 2, Height / 2);
+            OpalLocalMap map = new OpalLocalMap(80, 80);
             OpalGame g = new OpalGame(map);
 
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
+            Util.Log(new ColoredString("Welcome to Fiery Opal!"), false);
         }
     }
 }

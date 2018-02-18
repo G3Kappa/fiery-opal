@@ -10,13 +10,13 @@ namespace FieryOpal.src
         public MessagePipeline<OpalConsoleWindow> InternalMessagePipeline { get; protected set; }
         public Guid Handle { get; }
 
-        public OpalCreature Player = new OpalCreature();
+        public OpalActorBase Player = new OpalActorBase();
         public OpalLocalMap CurrentMap { get; set; }
 
         public OpalGame(OpalLocalMap startingMap)
         {
             Handle = Guid.NewGuid();
-            Player = new OpalCreature();
+            Player = new OpalActorBase();
             CurrentMap = startingMap;
 
             Player.ChangeLocalMap(CurrentMap, new Point(CurrentMap.Width / 2, CurrentMap.Height / 2));
@@ -36,11 +36,10 @@ namespace FieryOpal.src
                 cw => 
                 {
                     OpalGameWindow w = cw as OpalGameWindow;
-                    w.Clear();
                     if (w.Viewport.Target.Actors.Count > 0) // TODO: Change this somehow
                     {
-                        w.Viewport.ViewArea = new Rectangle(w.Viewport.Target.Actors[0].LocalPosition.X - w.Width / 2,
-                                                            w.Viewport.Target.Actors[0].LocalPosition.Y - w.Height / 2, 
+                        w.Viewport.ViewArea = new Rectangle(Player.LocalPosition.X - w.Width / 2,
+                                                            Player.LocalPosition.Y - w.Height / 2, 
                                                             w.Width, 
                                                             w.Height);
                     }

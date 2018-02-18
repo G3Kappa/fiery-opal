@@ -16,6 +16,7 @@ namespace FieryOpal.src.ui
 
         public virtual void Print(OpalConsoleWindow surface, Rectangle targetArea)
         {
+            surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
             foreach (var tuple in tiles)
             {
@@ -31,12 +32,15 @@ namespace FieryOpal.src.ui
             var actors = Target.ActorsWithin(ViewArea);
             foreach (var act in actors)
             {
+                if (!act.Visible) continue;
                 Point pos = act.LocalPosition - new Point(ViewArea.X, ViewArea.Y);
                 if (pos.X >= targetArea.Width || pos.Y >= targetArea.Height)
                 {
                     continue;
                 }
                 surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics);
+                // Replace background with original background
+                surface.SetBackground(targetArea.X + pos.X, targetArea.Y + pos.Y, Target.TileAt(act.LocalPosition.X, act.LocalPosition.Y).Graphics.Background);
             }
         }
     }

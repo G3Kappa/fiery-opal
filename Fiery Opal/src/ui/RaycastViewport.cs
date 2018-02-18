@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.src.ui
 {
@@ -13,6 +15,8 @@ namespace FieryOpal.src.ui
         public Vector2 PlaneVector { get; protected set; }
         public Vector2 Position { get; protected set; }
         public Font RenderFont { get; protected set; }
+        public bool Dirty { get; set; }
+        public float ViewDistance { get; set; }
 
         public RaycastViewport(OpalLocalMap target, Rectangle view_area, IOpalGameActor following, Font f = null) : base(target, view_area)
         {
@@ -21,6 +25,8 @@ namespace FieryOpal.src.ui
             DirectionVector = new Vector2(-1, 0);
             PlaneVector = new Vector2(0, .66f);
             Position = new Vector2(0, 0);
+            Dirty = true;
+            ViewDistance = 64f;
         }
 
         public void Rotate(float deg)
@@ -31,31 +37,32 @@ namespace FieryOpal.src.ui
             // Round them to cut any possible floating point errors short and maintain a constant ratio, just in case
             DirectionVector = new Vector2((float)Math.Round(DirectionVector.X, 0), (float)Math.Round(DirectionVector.Y, 0));
             PlaneVector = new Vector2((float)Math.Round(PlaneVector.X, 5), (float)Math.Round(PlaneVector.Y, 5));
+
+            if(deg != 0) Dirty = true;
         }
 
-        private void CalcStep(Vector2 rayDir, Vector2 mapPos, Vector2 deltaDist, ref Vector2 stepDir, ref Vector2 sideDist)
+        private void CalcStep(Vector2 rayDir, Vector2 position, Vector2 mapPos, Vector2 deltaDist, ref Vector2 stepDir, ref Vector2 sideDist)
         {
             if (rayDir.X < 0)
             {
                 stepDir.X = -1;
-                sideDist.X = (Position.X - mapPos.X) * deltaDist.X;
+                sideDist.X = (position.X - mapPos.X) * deltaDist.X;
             }
             else
             {
                 stepDir.X = 1;
-                sideDist.X = (mapPos.X + 1 - Position.X) * deltaDist.X;
+                sideDist.X = (mapPos.X + 1 - position.X) * deltaDist.X;
             }
             if (rayDir.Y < 0)
             {
                 stepDir.Y = -1;
-                sideDist.Y = (Position.Y - mapPos.Y) * deltaDist.Y;
+                sideDist.Y = (position.Y - mapPos.Y) * deltaDist.Y;
             }
             else
             {
                 stepDir.Y = 1;
-                sideDist.Y = (mapPos.Y + 1 - Position.Y) * deltaDist.Y;
+                sideDist.Y = (mapPos.Y + 1 - position.Y) * deltaDist.Y;
             }
-
         }
 
         private bool DDA(Vector2 deltaDist, Vector2 stepDir, ref Vector2 mapPos, ref Vector2 sideDist)
@@ -85,7 +92,7 @@ namespace FieryOpal.src.ui
             return side;
         }
 
-        private void DrawWallVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
+        private void DrawWallVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight, List<Tuple<Color, double>> lighting)
         {
             OpalTile wallTile = Target.TileAt((int)mapPos.X, (int)mapPos.Y);
             if (wallTile == null)
@@ -103,23 +110,39 @@ namespace FieryOpal.src.ui
             if (!side && rayDir.X > 0) texX = texWidth - texX - 1;
             if (side && rayDir.Y < 0) texX = texWidth - texX - 1;
 
+            OpalTile lastTile = null;
+            Color[,] lastPixels = null;
             for (int y = drawStart; y <= drawEnd; y++)
             {
                 int d = y * 256 - viewportHeight * 128 + lineHeight * 128;  //256 and 128 factors to avoid floats
                                                                             // TODO: avoid the division to speed this up
                 int texY = ((d * texHeight) / (lineHeight + 1)) / 256;
 
-                Color[,] wallPixels = wallTile.Graphics.GetPixels(RenderFont);
+
+                Color[,] wallPixels;
+                if (lastTile != wallTile)
+                {
+                    wallPixels = FontTextureCache.GetRecoloredPixels(RenderFont, (byte)wallTile.Graphics.Glyph, wallTile.Graphics.Foreground, wallTile.Graphics.Background);
+                }
+                else wallPixels = lastPixels;
+
                 Color wallColor = texY < 0 ? Target.SkyColor : wallPixels[texX, texY];
                 //make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
                 if (side) wallColor = Color.Lerp(wallColor, Color.Black, .25f);
                 //shade color with distance
-                wallColor = Color.Lerp(wallColor, Target.SkyColor, (float)perpWallDist / 30f);
+                wallColor = Color.Lerp(wallColor, Target.SkyColor, (float)perpWallDist / ViewDistance);
+                //apply lighting
+                foreach(var t in lighting)
+                {
+                    wallColor = Color.Lerp(wallColor, t.Item1, (float)t.Item2);
+                }
                 surface.SetCell(x, y, new Cell(wallColor, wallColor, ' '));
+
+                lastTile = wallTile;
+                lastPixels = wallPixels;
             }
         }
-
-        private void DrawFloorAndSkyVLines(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
+        private void DrawFloorAndSkyVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
         {
             int texWidth = RenderFont.Size.X, texHeight = RenderFont.Size.Y;
 
@@ -154,6 +177,8 @@ namespace FieryOpal.src.ui
 
             if (drawEnd < 0) drawEnd = viewportHeight; //becomes < 0 when the integer overflows
 
+            OpalTile lastTile = null;
+            Color[,] lastPixels = null;
             for (int y = drawEnd + viewportHeight % 2; y < viewportHeight; y++)
             {
                 currentDist = viewportHeight / (2.0f * y - viewportHeight); //you could make a small lookup table for this instead
@@ -172,21 +197,167 @@ namespace FieryOpal.src.ui
                 OpalTile floorTile = Target.TileAt((int)currentFloorX, (int)currentFloorY);
                 if (floorTile == null || floorTexX < 0 || floorTexY < 0) { continue; }
 
-                Color[,] floorPixels = floorTile.Graphics.GetPixels(RenderFont);
-                Color floorColor = Color.Lerp(floorPixels[floorTexX, floorTexY], Target.SkyColor, (float)Math.Pow(((viewportHeight) / 2f) / y, 8));
+                Color[,] floorPixels;
+                if (lastTile != floorTile)
+                {
+                    floorPixels = FontTextureCache.GetRecoloredPixels(RenderFont, (byte)floorTile.Graphics.Glyph, floorTile.Graphics.Foreground, floorTile.Graphics.Background);
+                }
+                else floorPixels = lastPixels;
+
+                Color floorColor = Color.Lerp(floorPixels[floorTexX, floorTexY], Target.SkyColor, (float)Math.Pow(((viewportHeight) / 2f) / y, ViewDistance / 2));
 
                 //surface.SetCell(x, y, new Cell(Color.Blue, Color.Blue, ' '));
                 surface.SetCell(x, y, new Cell(floorColor, floorColor, ' '));
                 //ceiling (symmetrical!)
                 surface.SetCell(x, viewportHeight - y - 1, new Cell(Target.SkyColor, Target.SkyColor, ' '));
+
+                lastTile = floorTile;
+                lastPixels = floorPixels;
             }
+            if (viewportHeight - (drawEnd + viewportHeight % 2) - 1 < 0) return;
             surface.SetCell(x, viewportHeight - (drawEnd + viewportHeight % 2) - 1, new Cell(Target.SkyColor, Target.SkyColor, ' '));
+        }
+        private void DrawActorSpriteVLines(OpalConsoleWindow surface, float[] zbuffer, int viewportWidth, int viewportHeight)
+        {
+            List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)Position.X, (int)Position.Y, (int)ViewDistance, 0)
+                .Where(a => 
+                       a.Visible 
+                       && a is OpalActorBase
+                       && a != Following
+                       && (Math.Sign(a.LocalPosition.X - Position.X) == Math.Sign(DirectionVector.X)
+                       || Math.Sign(a.LocalPosition.Y - Position.Y) == Math.Sign(DirectionVector.Y))
+                ).ToList();
+            actors_within_viewarea.Sort((a, b) => {
+                var b_dist = Math.Pow(a.LocalPosition.X + .5 - Position.X, 2) + Math.Pow(a.LocalPosition.Y + .5 - Position.Y, 2);
+                var a_dist = Math.Pow(b.LocalPosition.X + .5 - Position.X, 2) + Math.Pow(b.LocalPosition.Y + .5 - Position.Y, 2);
+                return a_dist > b_dist ? 1 : (a_dist == b_dist ? 0 : -1);
+            });
+            foreach (var actor in actors_within_viewarea)
+            {
+                Vector2 spritePosition = (new Vector2(actor.LocalPosition.X + .5f, actor.LocalPosition.Y + .5f) - Position);
+                Vector2 spriteProjection = new Vector2();
+
+                float invDet = 1.0f / (PlaneVector.X * DirectionVector.Y - DirectionVector.X * PlaneVector.Y); //required for correct matrix multiplication
+                spriteProjection.X = invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X);
+                spriteProjection.Y = invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X);
+                if (spriteProjection.Y == 0) continue;
+
+
+                int spriteScreenX = (int)((viewportWidth / 2) * (1 + spriteProjection.X / spriteProjection.Y));
+                int spriteHeight = (int)(Math.Abs((int)(viewportHeight / spriteProjection.Y)) / actor.FirstPersonScale.Y); //using "transformY" instead of the real distance prevents fisheye
+                int vMoveScreen = (int)(actor.FirstPersonVerticalOffset * RenderFont.Size.Y / spriteProjection.Y);
+
+                //calculate lowest and highest pixel to fill in current stripe
+                int drawStartY = -spriteHeight / 2 + viewportHeight / 2 + vMoveScreen;
+                if (drawStartY < 0) drawStartY = 0;
+                int drawEndY = spriteHeight / 2 + viewportHeight / 2 + vMoveScreen;
+                if (drawEndY >= viewportHeight) drawEndY = viewportHeight - 1;
+
+                //calculate width of the sprite
+                int spriteWidth = (int)(Math.Abs((int)(viewportHeight / (spriteProjection.Y))) / actor.FirstPersonScale.X);
+                int drawStartX = -spriteWidth / 2 + spriteScreenX;
+                if (drawStartX < 0) drawStartX = 0;
+                int drawEndX = spriteWidth / 2 + spriteScreenX;
+                if (drawEndX >= viewportWidth) drawEndX = viewportWidth - 1;
+
+                int texWidth = RenderFont.Size.X, texHeight = RenderFont.Size.Y;
+                if (drawStartX >= drawEndX || spriteHeight == 0) continue;
+                Color[,] spritePixels = null;
+                //loop through every vertical stripe of the sprite on screen
+                for (int stripe = drawStartX; stripe < drawEndX; stripe++)
+                {
+                    int texX = (int)(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
+                    //the conditions in the if are:
+                    //1) it's in front of camera plane so you don't see things behind you
+                    //2) it's on the screen (left)
+                    //3) it's on the screen (right)
+                    //4) ZBuffer, with perpendicular distance
+                    int lineHeight = (int)(viewportHeight / zbuffer[stripe]);
+                    int drawStart = Math.Max(-lineHeight / 2 + viewportHeight / 2, 0);
+                    if (spriteProjection.Y > 0 && stripe > 0 && stripe < viewportWidth && (spriteProjection.Y < zbuffer[stripe] || drawStartY < drawStart))
+                        for (int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
+                        {
+                            if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStart) break;
+                            if(spritePixels == null) // Wait as long as possible to load the pixels to save some cache hits
+                            {
+                                spritePixels = FontTextureCache.GetRecoloredPixels(RenderFont, (byte)actor.FirstPersonGraphics.Glyph, actor.FirstPersonGraphics.Foreground, Color.Transparent); ;
+                            }
+
+                            int d = (y - vMoveScreen) * 256 - viewportHeight * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
+                            int texY = ((d * texHeight) / spriteHeight) / 256;
+
+                            Color spriteColor = spritePixels[texX, texY];
+                            if (spriteColor == Color.Transparent) continue;
+                            spriteColor = Color.Lerp(spriteColor, Target.SkyColor, (float)actor.LocalPosition.Dist(Position) / ViewDistance);
+                            surface.SetCell(stripe, y, new Cell(spriteColor, spriteColor, ' '));
+
+                            // uint color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; //get current color from the texture
+                            // if ((color & 0x00FFFFFF) != 0) buffer[y][stripe] = color; //paint pixel if it isn't black, black is the invisible color
+                        }
+                }
+            }
+        }
+
+        private Tuple<Color, double> CalcLighting(Vector2 mapPos, ILightSource l)
+        {
+            //Util.Log(new ColoredString(mapPos.ToString()), true);
+            // Cast a ray from the light to mapPos
+            Vector2 lightRayPos = new Vector2(l.LocalPosition.X + .5f, l.LocalPosition.Y + .5f), initialPos = lightRayPos;
+            // Direction is mapPos - lightPos, normalized
+            Vector2 lightRayDir = new Vector2((mapPos.X + .5f) - lightRayPos.X, (mapPos.Y + .5f) - lightRayPos.Y);
+            bool _side = false;
+
+            float dist = CastRay(initialPos, ref lightRayPos, lightRayDir, ref _side);
+
+
+            // If there are no obstructions
+            var ls = (l as ILightSource);
+            double brightness = ls.LightIntensity / (4 * Math.PI * Math.Pow(dist, 2));
+            if (lightRayPos.Dist(mapPos) <= 2)
+            {
+                // Calculate the light intensity at this distance and yield it along with the source color
+                return new Tuple<Color, double>(ls.LightColor, brightness);
+            }
+            else
+            {
+                // Util.Log(new ColoredString(String.Format("Dist Rejected: {0} vs {1} ({2})", lightRayPos, mapPos, lightRayPos.Dist(mapPos)), new Cell(Color.Red)), true);
+                return new Tuple<Color, double>(Target.SkyColor, 0);
+            }
+
+        }
+
+        public float CastRay(Vector2 position, ref Vector2 mapPos, Vector2 rayDir, ref bool side)
+        {
+            //length of ray from current position to next x or y-side
+            Vector2 sideDist = new Vector2();
+            //what direction to step in x or y-direction (either +1 or -1)
+            Vector2 stepDir = new Vector2();
+            //length of ray from one x or y-side to next x or y-side
+            Vector2 deltaDist = new Vector2(Math.Abs(1 / rayDir.X), Math.Abs(1 / rayDir.Y));
+            float perpWallDist;
+
+            // Calculate stepDir and initial sideDist
+            CalcStep(rayDir, position, mapPos, deltaDist, ref stepDir, ref sideDist);
+            // Perform DDA
+            side = DDA(deltaDist, stepDir, ref mapPos, ref sideDist);
+            // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
+            if (!side) perpWallDist = (mapPos.X - position.X + (1 - stepDir.X) / 2) / rayDir.X;
+            else perpWallDist = (mapPos.Y - position.Y + (1 - stepDir.Y) / 2) / rayDir.Y;
+
+            return perpWallDist;
+        }
+
+        public float CastRay(Vector2 position, ref Vector2 mapPos, Point rayDir, ref bool side)
+        {
+            return CastRay(position, ref mapPos, new Vector2(rayDir.X, rayDir.Y), ref side);
         }
 
         public override void Print(OpalConsoleWindow surface, Rectangle targetArea)
         {
-            Position = new Vector2(Following.LocalPosition.X + .5f, Following.LocalPosition.Y + .5f);
+            if (!Dirty) return;
 
+            Position = new Vector2(Following.LocalPosition.X + .5f, Following.LocalPosition.Y + .5f);
+            float[] zbuffer = new float[targetArea.Width];
             for (int x = 0; x < targetArea.Width; ++x)
             {
                 // -- DECLARATIONS --
@@ -196,28 +367,23 @@ namespace FieryOpal.src.ui
 
                 // Direction of this ray
                 Vector2 rayDir = new Vector2(DirectionVector.X + PlaneVector.X * cameraX, DirectionVector.Y + PlaneVector.Y * cameraX);
-
-                //which box of the map we're in, later gets changed inside the loop
+                // Which box of the map we're in, later gets changed inside the loop
                 Vector2 mapPos = new Vector2(Following.LocalPosition.X, Following.LocalPosition.Y);
-                //length of ray from current position to next x or y-side
-                Vector2 sideDist = new Vector2();
-                //what direction to step in x or y-direction (either +1 or -1)
-                Vector2 stepDir = new Vector2();
-                //length of ray from one x or y-side to next x or y-side
-                Vector2 deltaDist = new Vector2(Math.Abs(1 / rayDir.X), Math.Abs(1 / rayDir.Y));
-                float perpWallDist;
+                // Did we hit a side?
+                bool side = false;
+                float perpWallDist = zbuffer[x] = CastRay(Position, ref mapPos, rayDir, ref side);
 
-
-                // -- ALGORITHM --
-                // Calculate stepDir and initial sideDist
-                CalcStep(rayDir, mapPos, deltaDist, ref stepDir, ref sideDist);
-
-                // Perform DDA
-                bool side = DDA(deltaDist, stepDir, ref mapPos, ref sideDist);
-
-                // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-                if (!side) perpWallDist = (mapPos.X - Position.X + (1 - stepDir.X) / 2) / rayDir.X;
-                else perpWallDist = (mapPos.Y - Position.Y + (1 - stepDir.Y) / 2) / rayDir.Y;
+                // If we hit a wall, calc the correct lighting
+                List<Tuple<Color, double>> lighting = new List<Tuple<Color, double>>();
+                if (Target.TileAt((int)mapPos.X, (int)mapPos.Y) != null)
+                {
+                    var lights = Target.Actors.Where(a => a is ILightSource).ToList();
+                    foreach(var l in lights)
+                    {
+                        var color_dist = CalcLighting(mapPos, l as ILightSource);
+                        lighting.Add(color_dist);
+                    }
+                }
 
                 // Calculate height of line to draw on screen
                 int lineHeight = (int)(targetArea.Height / perpWallDist);
@@ -234,9 +400,11 @@ namespace FieryOpal.src.ui
 
                 wallX -= (float)Math.Floor(wallX);
 
-                DrawFloorAndSkyVLines(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
-                DrawWallVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
+                DrawFloorAndSkyVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
+                DrawWallVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height, lighting);
             }
+            DrawActorSpriteVLines(surface, zbuffer, targetArea.Width, targetArea.Height);
+            Dirty = false;
         }
     }
 }

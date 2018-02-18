@@ -16,7 +16,7 @@ namespace FieryOpal.src
         }
     }
 
-    public class OpalTile
+    public class OpalTile : IDisposable
     {
         private static Dictionary<int, OpalTile> InstantiatedTiles = new Dictionary<int, OpalTile>();
 
@@ -49,10 +49,35 @@ namespace FieryOpal.src
             InstantiatedTiles[Id] = this;
         }
 
-        public static OpalTile DebugGround = new OpalTile(0, "DebugGround", new OpalTileProperties(false), new Cell(Color.Magenta, Color.DarkMagenta, 247));
-        public static OpalTile DebugWall = new OpalTile(1, "DebugWall", new OpalTileProperties(false), new Cell(Color.Green, Color.DarkGreen, 8));
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
 
-        public static OpalTile DungeonWall = new OpalTile(2, "DungeonWall", new OpalTileProperties(false), new Cell(Color.Red, Color.DarkRed, 16));
-        public static OpalTile DungeonGround = new OpalTile(3, "DungeonGround", new OpalTileProperties(false), new Cell(Color.White, Color.Gray, 16));
+        public override bool Equals(object obj)
+        {
+            if (obj is OpalTile)
+            {
+                return (obj as OpalTile).Id == Id;
+            }
+            return base.Equals(obj);
+        }
+
+        public void Dispose()
+        {
+            InstantiatedTiles.Remove(Id);
+        }
+
+        public static OpalTile DebugGround = new OpalTile(0, "DebugGround", new OpalTileProperties(false), new Cell(Color.Magenta, Color.DarkMagenta, 247));
+        public static OpalTile DebugWall = new OpalTile(1, "DebugWall", new OpalTileProperties(true), new Cell(Color.Green, Color.DarkGreen, 8));
+
+        public static OpalTile DungeonGround = new OpalTile(2, "DungeonGround", new OpalTileProperties(false), new Cell(Color.Green, Color.ForestGreen, '.'));
+        public static OpalTile DungeonWall = new OpalTile(3, "DungeonWall", new OpalTileProperties(true), new Cell(Color.DimGray, Color.Gray, 176));
+        public static OpalTile StairsUp = new OpalTile(4, "StairsUp", new OpalTileProperties(false), new Cell(Color.FloralWhite, Color.Gray, 60));
+        public static OpalTile StairsDown = new OpalTile(5, "StairsDown", new OpalTileProperties(false), new Cell(Color.FloralWhite, Color.Gray, 62));
+
+        public static OpalTile Sand = new OpalTile(6, "Soil", new OpalTileProperties(false), new Cell(Color.Beige, Color.SandyBrown, '~'));
+        public static OpalTile Grass = new OpalTile(7, "Grass", new OpalTileProperties(false), new Cell(Color.ForestGreen, Color.Green, ','));
+        public static OpalTile ThickGrass = new OpalTile(8, "ThickGrass", new OpalTileProperties(false), new Cell(Color.ForestGreen, Color.DarkGreen, ';'));
     }
 }

@@ -29,13 +29,12 @@ namespace FieryOpal.src.ui
             LogWindow.Position = new Point(0, h - h / 4);
 
             //RegisterWindow(InfoWindow);
+
             RegisterWindow(LogWindow);
+            Util.GlobalLogPipeline.Subscribe(LogWindow); // So that this window can receive logs from anywhere
+
             RegisterWindow(FirstPersonWindow);
             RegisterWindow(TopDownWindow);
-
-            g.CurrentMap.Generate(new BasicTerrainGenerator());
-            LogWindow.Log(new ColoredString("Map successfully generated."), true);
-
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press), (info) => { MovePlayer(0, -1); });
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press), (info) => { MovePlayer(-1, 0); });
@@ -44,6 +43,9 @@ namespace FieryOpal.src.ui
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.Q, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport((float)Math.PI / 4); });
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport(-(float)Math.PI / 4); });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press), (info) => { RegenMap(); });
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press), (info) => { SpawnCreatureInFrontOfPlayer(); });
         }
 
         public override void Update(GameTime gameTime)
@@ -52,9 +54,20 @@ namespace FieryOpal.src.ui
             base.Update(gameTime);
         }
 
-        private static Point ViewportVectorToMovementPoint(Vector2 v)
+        private void RegenMap()
         {
-            return new Point((v.X > 0 ? 1 : (v.X < 0 ? -1 : 0)), (v.Y > 0 ? 1 : (v.Y < 0 ? -1 : 0)));
+            Game.CurrentMap.Actors.Clear();
+            Game.CurrentMap.Generate(new BasicTerrainGenerator(openness: 0.92f), new BasicTerrainDecorator());
+            LogWindow.Log(new ColoredString("Map successfully generated."), true);
+            Game.Player.ChangeLocalMap(Game.CurrentMap, Game.CurrentMap.FirstAccessibleTileAround(Game.Player.LocalPosition));
+
+            var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
+            fp_view.Dirty = true;
+        }
+
+        private void SpawnCreatureInFrontOfPlayer()
+        {
+            var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
         }
 
         /// <summary>
@@ -63,10 +76,11 @@ namespace FieryOpal.src.ui
         private void MovePlayer(int x, int y)
         {
             var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
-            if (x == 0 && y == -1) Game.Player.Move(ViewportVectorToMovementPoint(fp_view.DirectionVector));
-            else if (x == -1 && y == 0) Game.Player.Move(ViewportVectorToMovementPoint(-fp_view.PlaneVector));
-            else if (x == 0 && y == 1) Game.Player.Move(ViewportVectorToMovementPoint(-fp_view.DirectionVector));
-            else if (x == 1 && y == 0) Game.Player.Move(ViewportVectorToMovementPoint(fp_view.PlaneVector));
+            fp_view.Dirty = true;
+            if (x == 0 && y == -1) Game.Player.Move(Util.NormalizedStep(fp_view.DirectionVector));
+            else if (x == -1 && y == 0) Game.Player.Move(Util.NormalizedStep(-fp_view.PlaneVector));
+            else if (x == 0 && y == 1) Game.Player.Move(Util.NormalizedStep(-fp_view.DirectionVector));
+            else if (x == 1 && y == 0) Game.Player.Move(Util.NormalizedStep(fp_view.PlaneVector));
         }
 
         /// <summary>

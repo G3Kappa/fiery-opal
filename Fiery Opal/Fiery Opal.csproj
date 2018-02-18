@@ -42,6 +42,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="src\actors\Humanoid.cs" />
     <Compile Include="src\FeatureGenerator.cs" />
     <Compile Include="src\Keybind.cs" />
     <Compile Include="src\lib\SimplexNoise.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="src\ui\RaycastViewport.cs" />
     <Compile Include="src\ui\Viewport.cs" />
     <Compile Include="src\ui\WindowManager.cs" />
+    <Compile Include="src\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">
