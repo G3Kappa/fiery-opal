@@ -47,6 +47,14 @@ namespace FieryOpal.src
         }
     }
 
+    /// <summary>
+    /// Used to speed up the retrieval of colored glyph textures in first person mode.
+    /// These are much larger than the minimap characters, and recoloring them every time
+    /// is incredibly wasteful. A simple garbage collector runs every once in a while and 
+    /// removes cached objects that weren't hit enough times to justify their caching.
+    /// 
+    /// GC properties are defined as static readonly fields.
+    /// </summary>
     public static class FontTextureCache
     {
         public static readonly TimeSpan GC_FREQUENCY = new TimeSpan(0, 0, 10);
@@ -144,7 +152,12 @@ namespace FieryOpal.src
 
         public static Color[,] GetRecoloredPixels(Font f, byte glyph, Color newForeground, Color newBackground)
         {
-            if(DateTime.Now - lastGarbageCollection >= GC_FREQUENCY)
+            return GetCachedRecolor(f, glyph, newForeground, newBackground).Pixels;
+        }
+
+        static CachedFont.RecoloredGlyph GetCachedRecolor(Font f, byte glyph, Color newForeground, Color newBackground)
+        {
+            if (DateTime.Now - lastGarbageCollection >= GC_FREQUENCY)
             {
                 CollectGarbage();
             }
@@ -154,14 +167,14 @@ namespace FieryOpal.src
             if (!CachedFonts.ContainsKey(f.Name) || !CachedFonts[f.Name].GlyphPixels.ContainsKey(glyph))
             {
                 GetPixels(f, glyph, ref pixels2d);
-                return GetRecoloredPixels(f, glyph, newForeground, newBackground);
+                return GetCachedRecolor(f, glyph, newForeground, newBackground);
             }
 
             CachedFont cf = CachedFonts[f.Name];
             if (cf.RecoloredGlyphPixels.ContainsKey(key))
             {
                 cf.RecoloredGlyphPixels[key].Hits++;
-                return cf.RecoloredGlyphPixels[key].Pixels;
+                return cf.RecoloredGlyphPixels[key];
             }
 
             cf.RecoloredGlyphPixels[key] = new CachedFont.RecoloredGlyph(glyph, newForeground.PackedValue, newBackground.PackedValue);
@@ -174,7 +187,7 @@ namespace FieryOpal.src
             }
 
             cf.RecoloredGlyphPixels[key].Pixels = pixels2d;
-            return cf.RecoloredGlyphPixels[key].Pixels;
+            return cf.RecoloredGlyphPixels[key];
         }
 
         public static void CollectGarbage()
@@ -190,26 +203,22 @@ namespace FieryOpal.src
                     // If too much time passed since the last hit
                     if (cf.RecoloredGlyphPixels[key].HitDelta >= HIT_DELTA_TOO_HIGH)
                     {
-                        to_remove.Add(key);
-
-                        ColoredString msg = new ColoredString("FontGC: Deallocated ")
-                            + new ColoredString(((char)key.Item1).ToString(), new Color(key.Item2), new Color(key.Item3))
-                            + new ColoredString(String.Format(" due to HIT_DELTA_TOO_HIGH ({0}s).", Math.Round(cf.RecoloredGlyphPixels[key].HitDelta.TotalSeconds, 2)));
-
-                        Util.Log(msg, true);
-                        continue;
-                    }
-
-                    // If this copy wasn't rendered enough times after the previous garbage collection
-                    var time_elapsed = now - lastGarbageCollection;
-                    if (cf.RecoloredGlyphPixels[key].Hits <= HIT_COUNT_TOO_LOW * Util.Framerate * time_elapsed.TotalSeconds)
-                    {
-                        to_remove.Add(key);
-                        ColoredString msg = new ColoredString("FontGC: Deallocated ")
-                            + new ColoredString(((char)key.Item1).ToString(), new Color(key.Item2), new Color(key.Item3))
-                            + new ColoredString(String.Format(" due to HIT_COUNT_TOO_LOW ({0}h/{1}s).", cf.RecoloredGlyphPixels[key].Hits, Math.Round(time_elapsed.TotalSeconds, 2)));
-                        Util.Log(msg, true);
-                        continue;
+                        // And this sprite didn't get enough hits since the previous GC pass
+                        var time_elapsed = now - lastGarbageCollection;
+                        if (cf.RecoloredGlyphPixels[key].Hits <= HIT_COUNT_TOO_LOW * Util.Framerate * time_elapsed.TotalSeconds)
+                        {
+                            to_remove.Add(key);
+                            ColoredString msg = new ColoredString("FontGC: Deallocated ")
+                                + new ColoredString(((char)key.Item1).ToString(), new Color(key.Item2), new Color(key.Item3))
+                                + new ColoredString(String.Format(". ({0}hits/{1}s, last hit {2}s ago)", 
+                                cf.RecoloredGlyphPixels[key].Hits, 
+                                Math.Round(time_elapsed.TotalSeconds, 2), 
+                                Math.Round(cf.RecoloredGlyphPixels[key].HitDelta.TotalSeconds, 2)));
+                            Util.Log(msg, true);
+                            continue;
+                        }
+                        // Reset the number of hits to 0 so that this will get deallocated during the next pass if it doesn't get displayed again
+                        cf.RecoloredGlyphPixels[key].Hits = 0;
                     }
                 }
                 to_remove.ForEach(k => cf.RecoloredGlyphPixels.Remove(k));

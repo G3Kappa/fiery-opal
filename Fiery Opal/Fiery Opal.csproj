@@ -53,6 +53,7 @@
     <Compile Include="src\OpalLocalMap.cs" />
     <Compile Include="src\OpalTile.cs" />
     <Compile Include="src\MessagePipeline.cs" />
+    <Compile Include="src\ui\ColorPalette.cs" />
     <Compile Include="src\ui\MainGameWindowManager.cs" />
     <Compile Include="src\ui\OpalConsoleWindow.cs" />
     <Compile Include="src\ui\OpalGameWindow.cs" />

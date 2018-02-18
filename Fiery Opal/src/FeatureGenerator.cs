@@ -290,7 +290,16 @@ namespace FieryOpal.src
                 {
                     return new Plant();
                 }
-                return new Sapling();
+                IDecoration decoration;
+                if(Util.GlobalRng.NextDouble() < .05)
+                {
+                    decoration = new Flower();
+                }
+                else
+                {
+                    decoration = new Sapling();
+                }
+                return decoration;
             }
             return null;
         }

@@ -160,6 +160,12 @@ namespace FieryOpal.src
 
         public void NotifyActorMoved(IOpalGameActor actor, Point oldPos)
         {
+            if(oldPos == new Point(-2, -2)) /* Actor died */
+            {
+                actorsAtHashmap[actor.LocalPosition].Remove(actor);
+                return;
+            }
+
             if(oldPos != new Point(-1, -1) /* Actor is from another map */ && actorsAtHashmap.ContainsKey(oldPos))
             {
                 actorsAtHashmap[oldPos].Remove(actor);

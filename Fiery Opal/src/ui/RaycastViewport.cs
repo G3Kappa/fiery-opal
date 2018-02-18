@@ -219,6 +219,7 @@ namespace FieryOpal.src.ui
         }
         private void DrawActorSpriteVLines(OpalConsoleWindow surface, float[] zbuffer, int viewportWidth, int viewportHeight)
         {
+
             List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)Position.X, (int)Position.Y, (int)ViewDistance, 0)
                 .Where(a => 
                        a.Visible 
@@ -232,6 +233,7 @@ namespace FieryOpal.src.ui
                 var a_dist = Math.Pow(b.LocalPosition.X + .5 - Position.X, 2) + Math.Pow(b.LocalPosition.Y + .5 - Position.Y, 2);
                 return a_dist > b_dist ? 1 : (a_dist == b_dist ? 0 : -1);
             });
+
             foreach (var actor in actors_within_viewarea)
             {
                 Vector2 spritePosition = (new Vector2(actor.LocalPosition.X + .5f, actor.LocalPosition.Y + .5f) - Position);
@@ -241,7 +243,6 @@ namespace FieryOpal.src.ui
                 spriteProjection.X = invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X);
                 spriteProjection.Y = invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X);
                 if (spriteProjection.Y == 0) continue;
-
 
                 int spriteScreenX = (int)((viewportWidth / 2) * (1 + spriteProjection.X / spriteProjection.Y));
                 int spriteHeight = (int)(Math.Abs((int)(viewportHeight / spriteProjection.Y)) / actor.FirstPersonScale.Y); //using "transformY" instead of the real distance prevents fisheye
@@ -264,6 +265,8 @@ namespace FieryOpal.src.ui
                 if (drawStartX >= drawEndX || spriteHeight == 0) continue;
                 Color[,] spritePixels = null;
                 //loop through every vertical stripe of the sprite on screen
+
+                float distance_scaled = (float)actor.LocalPosition.Dist(Position) / ViewDistance;
                 for (int stripe = drawStartX; stripe < drawEndX; stripe++)
                 {
                     int texX = (int)(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
@@ -274,26 +277,39 @@ namespace FieryOpal.src.ui
                     //4) ZBuffer, with perpendicular distance
                     int lineHeight = (int)(viewportHeight / zbuffer[stripe]);
                     int drawStart = Math.Max(-lineHeight / 2 + viewportHeight / 2, 0);
+
                     if (spriteProjection.Y > 0 && stripe > 0 && stripe < viewportWidth && (spriteProjection.Y < zbuffer[stripe] || drawStartY < drawStart))
+                    {
                         for (int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
                         {
                             if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStart) break;
-                            if(spritePixels == null) // Wait as long as possible to load the pixels to save some cache hits
+                            if (spritePixels == null) // Wait as long as possible to load the pixels to save some cache hits
                             {
-                                spritePixels = FontTextureCache.GetRecoloredPixels(RenderFont, (byte)actor.FirstPersonGraphics.Glyph, actor.FirstPersonGraphics.Foreground, Color.Transparent); ;
+                                spritePixels = FontTextureCache.GetRecoloredPixels(RenderFont, (byte)actor.FirstPersonGraphics.Glyph, actor.FirstPersonGraphics.Foreground, Color.Transparent);
+
                             }
 
                             int d = (y - vMoveScreen) * 256 - viewportHeight * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
                             int texY = ((d * texHeight) / spriteHeight) / 256;
 
                             Color spriteColor = spritePixels[texX, texY];
-                            if (spriteColor == Color.Transparent) continue;
-                            spriteColor = Color.Lerp(spriteColor, Target.SkyColor, (float)actor.LocalPosition.Dist(Position) / ViewDistance);
-                            surface.SetCell(stripe, y, new Cell(spriteColor, spriteColor, ' '));
+                            if (spriteColor == Color.Transparent)
+                            {
+                                continue;
+                            }
 
-                            // uint color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; //get current color from the texture
-                            // if ((color & 0x00FFFFFF) != 0) buffer[y][stripe] = color; //paint pixel if it isn't black, black is the invisible color
+                            // Shade to sky color with distance from player
+                            spriteColor = Color.Lerp(spriteColor, Target.SkyColor, distance_scaled);
+
+                            // If the sprite is close and large enough, outline it
+                            if (spriteHeight >= 5 && distance_scaled * ViewDistance < ViewDistance / 3)
+                            {
+                                // TODO: Add outline
+                            }
+
+                            surface.SetCell(stripe, y, new Cell(spriteColor, spriteColor, ' '));
                         }
+                    }
                 }
             }
         }

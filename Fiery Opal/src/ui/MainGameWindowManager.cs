@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
+using System.Linq;
 
 namespace FieryOpal.src.ui
 {
@@ -45,7 +46,18 @@ namespace FieryOpal.src.ui
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport(-(float)Math.PI / 4); });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press), (info) => { RegenMap(); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press), (info) => { SpawnCreatureInFrontOfPlayer(); });
+
+            // CTRL+F1: Log window toggles debug mode. If compiling a debug assembly, DBG: messages can be hidden and shown at will.
+            // Under release mode, DBG: messages will not be logged at all. It is still possible to enable debug logging, but it will
+            // only log debug messages for as long as debug logging is enabled, and discard anything else.
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, ctrl: true), (info) => {
+                LogWindow.DebugMode = !LogWindow.DebugMode;
+                LogWindow.Log(new ColoredString("--" + (LogWindow.DebugMode ? "Enabled " : "Disabled") + " debug logging.", Color.Gold, Color.Black), false);
+            });
+
+#if DEBUG
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press), (info) => { DestroyWhateverLiesInFrontOfPlayer(); });
+#endif
         }
 
         public override void Update(GameTime gameTime)
@@ -65,9 +77,22 @@ namespace FieryOpal.src.ui
             fp_view.Dirty = true;
         }
 
-        private void SpawnCreatureInFrontOfPlayer()
+        private void DestroyWhateverLiesInFrontOfPlayer()
         {
             var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
+            var pos = Game.Player.LocalPosition + Util.NormalizedStep(fp_view.DirectionVector);
+            var tile_in_front = Game.CurrentMap.TileAt(pos.X, pos.Y);
+            if (tile_in_front != null && tile_in_front.Properties.BlocksMovement)
+            {
+                Game.CurrentMap.SetTile(pos.X, pos.Y, OpalTile.DebugGround);
+            }
+            var actors_in_front = Game.CurrentMap.ActorsAt(pos.X, pos.Y).ToList();
+            foreach (var act in actors_in_front)
+            {
+                if (!(act is Plant)) continue;
+                (act as Plant).Kill();
+            }
+            fp_view.Dirty = true;
         }
 
         /// <summary>

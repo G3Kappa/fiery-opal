@@ -67,6 +67,9 @@ namespace FieryOpal.src
         private bool visible = true;
         public bool Visible { get => visible; set => visible = value; }
 
+        private bool is_dead;
+        public bool IsDead => is_dead;
+
 
         public OpalActorBase()
         {
@@ -99,17 +102,17 @@ namespace FieryOpal.src
             if (actors_there.Count() > 0)
             {
                 bool can_pass_through = true;
-                foreach(var actor in actors_there)
+                foreach (var actor in actors_there)
                 {
                     if (!actor.OnBump(this)) can_pass_through = false;
                 }
-                if(!can_pass_through) return false;
+                if (!can_pass_through) return false;
             }
 
             var tile = Map.TileAt(p.X, p.Y);
             if (tile == null) return false; //TODO: ChangeLocalMap?
             bool ret = !tile.Properties.BlocksMovement;
-            if(ret)
+            if (ret)
             {
                 var oldPos = localPosition;
                 localPosition = p;
@@ -123,7 +126,7 @@ namespace FieryOpal.src
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
             if (tile == null) return false;
             bool ret = !tile.Properties.BlocksMovement;
-            if(ret)
+            if (ret)
             {
                 map = new_map;
                 map.Actors.Add(this);
@@ -134,6 +137,14 @@ namespace FieryOpal.src
         }
 
         public virtual bool OnBump(IOpalGameActor other) { return false; }
+
+        public void Kill()
+        {
+            if (Map == null) return;
+            is_dead = true;
+            Map.Actors.Remove(this);
+            Map.NotifyActorMoved(this, new Point(-2, -2));
+        }
     }
 
     public abstract class LightSourceBase : OpalActorBase, ILightSource
@@ -167,15 +178,24 @@ namespace FieryOpal.src
     public class Plant : DecorationBase
     {
         public override bool BlocksMovement => true;
-        protected static Color[] PossibleColors = new[] { Color.LawnGreen, Color.LimeGreen, Color.SpringGreen };
+        protected static Color[] PossibleColors;
+        protected static int[] PossibleGlyphs;
 
         public Plant()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, Util.GlobalRng.NextDouble() > .5 ? 23 : 244));
+            PossibleGlyphs = new[] { 23, 244 };
+            PossibleColors = new[] { Color.LawnGreen, Color.LimeGreen, Color.SpringGreen };
 
-            float random_variance = .5f - (float)Util.GlobalRng.NextDouble();
+            float random_variance = (.5f - (float)Util.GlobalRng.NextDouble()) * 2; // -1 to 1
             FirstPersonVerticalOffset = 1f + random_variance / 2;
             FirstPersonScale = new Vector2(1.0f, 2f + random_variance);
+
+            SetGraphics();
+        }
+
+        protected void SetGraphics()
+        {
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, PossibleGlyphs[Util.GlobalRng.Next(PossibleGlyphs.Length)]));
         }
     }
 
@@ -185,24 +205,29 @@ namespace FieryOpal.src
 
         public Sapling()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, 231));
+            PossibleGlyphs = new[] { 231, 252, 245 };
+            
+            float random_variance = (.5f - (float)Util.GlobalRng.NextDouble()) * 2; // -1 to 1
+            FirstPersonVerticalOffset = 1.5f + random_variance / 2;
+            FirstPersonScale = new Vector2(1.0f, 3f + random_variance);
 
-            float random_variance = .5f - (float)Util.GlobalRng.NextDouble();
-            FirstPersonVerticalOffset = 1.25f + random_variance / 2;
-            FirstPersonScale = new Vector2(1.0f, 2.5f + random_variance / 2);
+            SetGraphics();
         }
     }
 
-    public class Flower : DecorationBase
+    public class Flower : Plant
     {
         public override bool BlocksMovement => false;
-        protected static Color[] PossibleColors = new[] { Color.Pink, Color.SkyBlue, Color.Violet, Color.LightGoldenrodYellow, Color.Turquoise, Color.Orchid, Color.FloralWhite, Color.MistyRose };
 
         public Flower()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, 42));
+            PossibleGlyphs = new[] { 42 };
+            PossibleColors = new[] { Color.CornflowerBlue, Color.MediumVioletRed, Color.Violet, Color.Goldenrod };
+
             FirstPersonVerticalOffset = 1.25f;
-            FirstPersonScale = new Vector2(1.0f, 2.5f);
+            FirstPersonScale = new Vector2(2.0f, 2.5f);
+
+            SetGraphics();
         }
     }
 }

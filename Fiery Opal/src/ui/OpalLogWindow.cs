@@ -20,18 +20,32 @@ namespace FieryOpal.src.ui
             LastShownMessagesCap = last_shown_cap;
             LastShownMessagesDumpAmount = dump_amount;
             LastShownMessages = new List<Tuple<ColoredString, bool>>(LastShownMessagesCap);
+
+#if DEBUG
+            DebugMode = true;
+#else
+            DebugMode = false;
+#endif
         }
 
         public void Log(ColoredString msg, bool debug)
         {
-            if (debug && !DebugMode) return;
+            // Don't even log debug messages in release mode
+#if !DEBUG
+            if (debug && !DebugMode) return; 
+#endif
+            Color debug_foreground = ColorPalette.DefaultUiPalette.GetOrDefault("DebugMessage", Color.RoyalBlue);
+            Color debug_background = ColorPalette.DefaultUiPalette.GetOrDefault("DefaultBackground", Color.Black);
+            // Debug header has inverted foreground and background on purpose
+            ColoredString debug_header = new ColoredString(debug ? "DBG:" : "", debug_background, debug_foreground);
+            if (debug) debug_header += new ColoredString(" ");
 
-            LastShownMessages.Add(new Tuple<ColoredString, bool>(msg, debug));
+            LastShownMessages.Add(new Tuple<ColoredString, bool>(debug_header + msg, debug));
             if (LastShownMessages.Count >= LastShownMessagesCap)
             {
                 // TODO: Dump `LastShownMessagesDumpAmount` messages to disk.
                 LastShownMessages.RemoveRange(0, LastShownMessagesDumpAmount);
-                Log(new ColoredString(string.Format("Log: Dumped last {0} shown messages.", LastShownMessagesDumpAmount), new Cell(Color.Magenta, Color.Black)), true);
+                Log(new ColoredString(string.Format("Log: Dumped last {0} shown messages.", LastShownMessagesDumpAmount), new Cell(debug_foreground, debug_background)), true);
             }
         }
 
