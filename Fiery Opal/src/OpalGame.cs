@@ -20,7 +20,7 @@ namespace FieryOpal.src
             CurrentMap = startingMap;
 
             Player.ChangeLocalMap(CurrentMap, new Point(CurrentMap.Width / 2, CurrentMap.Height / 2));
-            CurrentMap.Actors.Add(Player);
+            CurrentMap.AddActor(Player);
             InternalMessagePipeline = new MessagePipeline<OpalConsoleWindow>();
         }
 
@@ -36,7 +36,7 @@ namespace FieryOpal.src
                 cw => 
                 {
                     OpalGameWindow w = cw as OpalGameWindow;
-                    if (w.Viewport.Target.Actors.Count > 0) // TODO: Change this somehow
+                    if (Player != null)
                     {
                         w.Viewport.ViewArea = new Rectangle(Player.LocalPosition.X - w.Width / 2,
                                                             Player.LocalPosition.Y - w.Height / 2, 

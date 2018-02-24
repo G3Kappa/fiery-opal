@@ -3,9 +3,7 @@ using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static FieryOpal.src.procgen.GenUtil;
 
 namespace FieryOpal.src
 {
@@ -30,8 +28,8 @@ namespace FieryOpal.src
 
         public static void Log(String msg, bool debug, Color? fg = null, Color? bg = null)
         {
-            Color fore = fg.HasValue ? fg.Value : Color.White;
-            Color back = bg.HasValue ? bg.Value : Color.Black;
+            Color fore = fg.HasValue ? fg.Value : (debug ? Palette.Ui["BoringMessage"] : Palette.Ui["DefaultForeground"]);
+            Color back = bg.HasValue ? bg.Value : Palette.Ui["DefaultBackground"];
 
             GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
         }
@@ -39,6 +37,16 @@ namespace FieryOpal.src
         public static Point NormalizedStep(Vector2 v)
         {
             return new Point((v.X > 0 ? 1 : (v.X < 0 ? -1 : 0)), (v.Y > 0 ? 1 : (v.Y < 0 ? -1 : 0)));
+        }
+
+        public static Point RandomUnitPoint(bool xy=true)
+        {
+            if(xy)
+            {
+                return new Point(Util.GlobalRng.Next(3) - 1, Util.GlobalRng.Next(3) - 1);
+            }
+            bool x = Util.GlobalRng.NextDouble() < .5f;
+            return new Point(x ? Util.GlobalRng.Next(3) - 1 : 0, !x ? Util.GlobalRng.Next(3) - 1 : 0);
         }
 
         public static Point NormalizedStep(Point p)
@@ -182,7 +190,20 @@ namespace FieryOpal.src
             {
                 for (int y = 0; y < f.Size.Y; y++)
                 {
-                    pixels2d[x, y] = cf.GlyphPixels[glyph][x, y].A == 0 ? newBackground : newForeground;
+                    // If gray: Lerp -the newbackground with the new foreground multiplied by the normalized grey value- by the alpha value.
+                    // Otherwise: Retain sprite color (i.e. tree trunks)
+
+                    var c = cf.GlyphPixels[glyph][x, y];
+                    if(c.GetSaturation() == 0f)
+                    {
+                        float grey = c.R / 255f;
+                        // grey = grey / 2f + .5f;
+                        pixels2d[x, y] = Color.Lerp(newBackground, new Color((int)(newForeground.R * grey), (int)(newForeground.G * grey), (int)(newForeground.B * grey)), c.A / 255f);
+                    }
+                    else
+                    {
+                        pixels2d[x, y] = cf.GlyphPixels[glyph][x, y];
+                    }
                 }
             }
 
@@ -193,6 +214,10 @@ namespace FieryOpal.src
         public static void CollectGarbage()
         {
             var now = DateTime.Now;
+
+            var m_fore = Palette.Ui["BoringMessage"];
+            var m_back = Palette.Ui["DefaultBackground"];
+
             foreach (CachedFont cf in CachedFonts.Values)
             {
                 List<Tuple<byte, uint, uint>> to_remove = new List<Tuple<byte, uint, uint>>();
@@ -208,12 +233,12 @@ namespace FieryOpal.src
                         if (cf.RecoloredGlyphPixels[key].Hits <= HIT_COUNT_TOO_LOW * Util.Framerate * time_elapsed.TotalSeconds)
                         {
                             to_remove.Add(key);
-                            ColoredString msg = new ColoredString("FontGC: Deallocated ")
+                            ColoredString msg = new ColoredString("FontGC: Deallocated ", m_fore, m_back)
                                 + new ColoredString(((char)key.Item1).ToString(), new Color(key.Item2), new Color(key.Item3))
                                 + new ColoredString(String.Format(". ({0}hits/{1}s, last hit {2}s ago)", 
                                 cf.RecoloredGlyphPixels[key].Hits, 
                                 Math.Round(time_elapsed.TotalSeconds, 2), 
-                                Math.Round(cf.RecoloredGlyphPixels[key].HitDelta.TotalSeconds, 2)));
+                                Math.Round(cf.RecoloredGlyphPixels[key].HitDelta.TotalSeconds, 2)), m_fore, m_back);
                             Util.Log(msg, true);
                             continue;
                         }
@@ -249,6 +274,16 @@ namespace FieryOpal.src
             return Math.Sqrt(Math.Pow(w.X - v.X, 2) + Math.Pow(w.Y - v.Y, 2));
         }
 
+        public static float SquaredEuclidianDistance(this Point p, Point q)
+        {
+            return (q.X - p.X) * (q.X - p.X) + (q.Y - p.Y) * (q.Y - p.Y);
+        }
+
+        public static float SquaredEuclidianDistance(this int p, int q)
+        {
+            return (q - p) * (q - p);
+        }
+
         public static void DeepClone(this Color[,] c, ref Color[,] other)
         {
             if(c.GetLength(0) != other.GetLength(0) || c.GetLength(1) != other.GetLength(1))
@@ -261,6 +296,24 @@ namespace FieryOpal.src
                 for(int y = 0; y < H; ++y)
                 {
                     other[x, y] = c[x, y];
+                }
+            }
+        }
+
+        public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs=1, bool break_early=true)
+        {
+            List<int> done = new List<int>();
+            for(int k = 0; k < epochs; ++k)
+            {
+                int i = -1;
+                foreach (var m in mr)
+                {
+                    if (done.Contains(++i)) continue;
+                    if (!m.SlideAcross(tiles, stride, zero, one) && break_early)
+                    {
+                        done.Add(i);
+                        Util.Log(String.Format("MatrixReplacement[].SlideAcross: Matrix done in {0} out of {1} epochs.", k + 1, epochs), true);
+                    }
                 }
             }
         }

@@ -3,6 +3,8 @@ using SadConsole;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using FieryOpal.src.ui;
+using FieryOpal.src.actors;
 
 namespace FieryOpal.src
 {
@@ -19,6 +21,7 @@ namespace FieryOpal.src
 
         void Update(TimeSpan delta);
 
+        bool CanMove { get; }
         bool Move(Point rel, bool absolute);
 
         /// <summary>
@@ -42,6 +45,11 @@ namespace FieryOpal.src
         Color LightColor { get; }
         float LightIntensity { get; }
         float LightRadius { get; }
+    }
+
+    public interface IUseable : IOpalGameActor
+    {
+        bool Use(OpalActorBase actor);
     }
 
     public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor
@@ -70,6 +78,9 @@ namespace FieryOpal.src
         private bool is_dead;
         public bool IsDead => is_dead;
 
+        private bool can_move = true;
+        private IOpalGameActor held_by = null;
+        public bool CanMove => can_move && held_by == null;
 
         public OpalActorBase()
         {
@@ -78,7 +89,7 @@ namespace FieryOpal.src
             FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
         }
 
-        public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalActorBase, string> msg, bool is_broadcast)
+        public virtual void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalActorBase, string> msg, bool is_broadcast)
         {
 
         }
@@ -88,17 +99,32 @@ namespace FieryOpal.src
             if (Map == null) return;
         }
 
+        public bool BlockMovement(IOpalGameActor holder)
+        {
+            if (holder == null) return false;
+            held_by = holder;
+            return true;
+        }
+
+        public bool ReleaseMovement(IOpalGameActor holder)
+        {
+            if (held_by != holder) return false;
+            held_by = null;
+            return true;
+        }
+
         public bool Move(Point p, bool absolute = false)
         {
-            p = new Point((absolute ? 0 : LocalPosition.X) + p.X, (absolute ? 0 : LocalPosition.Y) + p.Y);
+            if (!CanMove) return false;
+            Point new_p = new Point((absolute ? 0 : LocalPosition.X) + p.X, (absolute ? 0 : LocalPosition.Y) + p.Y);
 
             if (map == null)
             {
-                localPosition = p;
+                localPosition = new_p;
                 return true;
             }
 
-            var actors_there = Map.ActorsAt(p.X, p.Y);
+            var actors_there = Map.ActorsAt(new_p.X, new_p.Y);
             if (actors_there.Count() > 0)
             {
                 bool can_pass_through = true;
@@ -109,13 +135,24 @@ namespace FieryOpal.src
                 if (!can_pass_through) return false;
             }
 
-            var tile = Map.TileAt(p.X, p.Y);
+            var tile = Map.TileAt(new_p.X, new_p.Y);
             if (tile == null) return false; //TODO: ChangeLocalMap?
             bool ret = !tile.Properties.BlocksMovement;
             if (ret)
             {
+                // If moving diagonally by only one square
+                if(Math.Abs(p.X) + Math.Abs(p.Y) == 2)
+                {
+                    // Check that you're not trying to squeeze through two walls
+                    if((Map.TileAt(new_p.X - p.X, new_p.Y)?.Properties.BlocksMovement ?? true)
+                        && (Map.TileAt(new_p.X, new_p.Y - p.Y)?.Properties.BlocksMovement ?? true))
+                    {
+                        return false;
+                    }
+                }
+
                 var oldPos = localPosition;
-                localPosition = p;
+                localPosition = new_p;
                 map.NotifyActorMoved(this, oldPos);
             }
             return ret;
@@ -124,29 +161,36 @@ namespace FieryOpal.src
         public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn)
         {
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
-            if (tile == null) return false;
-            bool ret = !tile.Properties.BlocksMovement;
+            bool ret = tile == null || !tile.Properties.BlocksMovement;
             if (ret)
             {
                 map = new_map;
-                map.Actors.Add(this);
                 localPosition = new_spawn;
-                map.NotifyActorMoved(this, new Point(-1, -1));
+                map.AddActor(this);
             }
             return ret;
         }
 
         public virtual bool OnBump(IOpalGameActor other) { return false; }
 
+        public override bool Equals(object obj)
+        {
+            if (!(obj is OpalActorBase)) return false;
+            return (obj as OpalActorBase).Handle == Handle;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public void Kill()
         {
             if (Map == null) return;
             is_dead = true;
-            Map.Actors.Remove(this);
-            Map.NotifyActorMoved(this, new Point(-2, -2));
+            Map.RemoveActor(this);
         }
     }
-
     public abstract class LightSourceBase : OpalActorBase, ILightSource
     {
         protected Color lightColor = Color.Gold;
@@ -164,70 +208,14 @@ namespace FieryOpal.src
             lightColor = c;
         }
     }
-
     public abstract class DecorationBase : OpalActorBase, IDecoration
     {
         public virtual bool BlocksMovement => false;
+        public virtual bool DisplayAsBlock => false;
 
         public override bool OnBump(IOpalGameActor other)
         {
             return !BlocksMovement;
-        }
-    }
-
-    public class Plant : DecorationBase
-    {
-        public override bool BlocksMovement => true;
-        protected static Color[] PossibleColors;
-        protected static int[] PossibleGlyphs;
-
-        public Plant()
-        {
-            PossibleGlyphs = new[] { 23, 244 };
-            PossibleColors = new[] { Color.LawnGreen, Color.LimeGreen, Color.SpringGreen };
-
-            float random_variance = (.5f - (float)Util.GlobalRng.NextDouble()) * 2; // -1 to 1
-            FirstPersonVerticalOffset = 1f + random_variance / 2;
-            FirstPersonScale = new Vector2(1.0f, 2f + random_variance);
-
-            SetGraphics();
-        }
-
-        protected void SetGraphics()
-        {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, PossibleGlyphs[Util.GlobalRng.Next(PossibleGlyphs.Length)]));
-        }
-    }
-
-    public class Sapling : Plant
-    {
-        public override bool BlocksMovement => false;
-
-        public Sapling()
-        {
-            PossibleGlyphs = new[] { 231, 252, 245 };
-            
-            float random_variance = (.5f - (float)Util.GlobalRng.NextDouble()) * 2; // -1 to 1
-            FirstPersonVerticalOffset = 1.5f + random_variance / 2;
-            FirstPersonScale = new Vector2(1.0f, 3f + random_variance);
-
-            SetGraphics();
-        }
-    }
-
-    public class Flower : Plant
-    {
-        public override bool BlocksMovement => false;
-
-        public Flower()
-        {
-            PossibleGlyphs = new[] { 42 };
-            PossibleColors = new[] { Color.CornflowerBlue, Color.MediumVioletRed, Color.Violet, Color.Goldenrod };
-
-            FirstPersonVerticalOffset = 1.25f;
-            FirstPersonScale = new Vector2(2.0f, 2.5f);
-
-            SetGraphics();
         }
     }
 }

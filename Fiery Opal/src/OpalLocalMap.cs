@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.src.procgen;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,25 +10,75 @@ namespace FieryOpal.src
 
     public class OpalLocalMap
     {
-        protected int[,] TerrainGrid { get; private set; }
-        public List<IOpalGameActor> Actors { get; private set; }
+        protected OpalTile[,] TerrainGrid { get; private set; }
+        protected List<IOpalGameActor> Actors { get; private set; }
 
         public int Width { get; }
         public int Height { get; }
 
         public Color SkyColor { get; set; }
+        public Color FogColor { get; set; }
 
         public OpalLocalMap(int width, int height)
         {
-            TerrainGrid = new int[width, height];
+            TerrainGrid = new OpalTile[width, height];
             Actors = new List<IOpalGameActor>();
             Width = width;
             Height = height;
             SkyColor = Color.DeepSkyBlue;
+            FogColor = Color.DarkSlateGray;
+           
+        }
+
+        public bool AddActor(IOpalGameActor actor)
+        {
+            if (Actors.Contains(actor)) return false;
+            Actors.Add(actor);
+            NotifyActorMoved(actor, new Point(-1, -1));
+            return true;
+        }
+
+        public void AddActors(IEnumerable<IOpalGameActor> actors)
+        {
+            foreach(var actor in actors)
+            {
+                AddActor(actor);
+            }
+        }
+
+        public bool RemoveActor(IOpalGameActor actor)
+        {
+            if (!Actors.Contains(actor)) return false;
+            Actors.Remove(actor);
+            NotifyActorMoved(actor, new Point(-2, -2));
+            return true;
+        }
+
+        public void RemoveAllActors()
+        {
+            foreach(var actor in Actors.ToList())
+            {
+                RemoveActor(actor);
+            }
+        }
+
+        public void RemoveActors(IEnumerable<IOpalGameActor> actors)
+        {
+            foreach (var actor in actors)
+            {
+                RemoveActor(actor);
+            }
         }
 
         public virtual void Generate(params IOpalFeatureGenerator[] generators)
         {
+
+            Iter((self, x, y, t) =>
+            {
+                self.TileAt(x, y)?.Dispose();
+                return false;
+            });
+
             actorsAtHashmap = new Dictionary<Point, List<IOpalGameActor>>();
             foreach (var gen in generators)
             {
@@ -37,7 +88,7 @@ namespace FieryOpal.src
                     OpalTile output = gen.Get(x, y);
                     if (output != null)
                     {
-                        self.TerrainGrid[x, y] = output.Id;
+                        self.TerrainGrid[x, y] = output;
                     }
                     IDecoration decor = gen.GetDecoration(x, y);
                     if(decor != null)
@@ -68,7 +119,7 @@ namespace FieryOpal.src
         public IEnumerable<Point> FloodFill(int x, int y, OpalTile newTile)
         {
             Stack<Point> neighbours = new Stack<Point>();
-            List<Point> processed = new List<Point>();
+            HashSet<Point> processed = new HashSet<Point>();
 
             OpalTile replace_me = TileAt(x, y);
             if (replace_me == null) yield break;
@@ -80,7 +131,7 @@ namespace FieryOpal.src
                     neighbours.Push(n.Item2);
                 }
 
-                SetTile(x, y, newTile);
+                if(newTile != null) SetTile(x, y, newTile); // Flood fill is still useful even without actually applying it.
                 processed.Add(new Point(x, y));
 
                 yield return processed.Last();
@@ -138,7 +189,7 @@ namespace FieryOpal.src
             {
                 return null;
             }
-            return OpalTile.FromId(TerrainGrid[x, y]);
+            return TerrainGrid[x, y];
         }
 
         public bool SetTile(int x, int y, OpalTile t)
@@ -147,7 +198,7 @@ namespace FieryOpal.src
             {
                 return false;
             }
-            TerrainGrid[x, y] = t.Id;
+            TerrainGrid[x, y] = t;
             return true;
         }
 
@@ -195,14 +246,21 @@ namespace FieryOpal.src
             return new List<IOpalGameActor>();
         }
 
-        public IEnumerable<Tuple<OpalTile, Point>> TilesWithin(Rectangle r)
+        public IEnumerable<Tuple<OpalTile, Point>> TilesWithin(Rectangle? R, bool yield_null = false)
         {
+            Rectangle r;
+            if (!R.HasValue)
+            {
+                r = new Rectangle(0, 0, Width, Height);
+            }
+            else r = R.Value;
+
             for (int x = r.X; x < r.Width + r.X; ++x)
             {
                 for (int y = r.Y; y < r.Height + r.Y; ++y)
                 {
                     OpalTile t = TileAt(x, y);
-                    if (t != null)
+                    if ((!yield_null && t != null) || yield_null)
                     {
                         yield return new Tuple<OpalTile, Point>(t, new Point(x, y));
                     }
@@ -210,8 +268,16 @@ namespace FieryOpal.src
             }
         }
 
-        public IEnumerable<IOpalGameActor> ActorsWithin(Rectangle r)
+        public IEnumerable<IOpalGameActor> ActorsWithin(Rectangle? R)
         {
+            Rectangle r;
+            if (!R.HasValue)
+            {
+                foreach (var actor in Actors) yield return actor;
+                yield break;
+            }
+            else r = R.Value;
+
             for (int x = r.X; x < r.Width + r.X; ++x)
             {
                 for (int y = r.Y; y < r.Height + r.Y; ++y)
@@ -248,7 +314,7 @@ namespace FieryOpal.src
                     {
                         // No need to display hundreds of decorations, only the closest ones will suffice.
                         // This is an optimization for the RaycastViewport.
-                        if (!include_all_decorations && act is IDecoration && dist > r1 / 3.0f) continue;
+                        if (!include_all_decorations && act is IDecoration && dist > r1 / 2.0f) continue;
 
                         yield return act;
                     }
@@ -276,6 +342,50 @@ namespace FieryOpal.src
             while (tiles_in_ring.Count() == 0);
 
             return tiles_in_ring.First().Item2;
+        }
+
+
+        public float[,] CalcDistanceField(Func<Point, Point, float> D, Func<OpalTile, float> f)
+        {
+            // TODO: Use proper algorithm
+
+            float[,] distfield = new float[Width, Height];
+            var seeds = TilesWithin(new Rectangle(0, 0, Width, Height)).Where(t => f(t.Item1) == 0);
+            float max_dist = 0;
+            Iter((self, x, y, t) =>
+            {
+                float min_dist = float.MaxValue;
+                float f_val = f(t);
+
+                distfield[x, y] = 1f;
+                return false; // TODO: REENABLE
+
+                if (f_val > 0)
+                {
+                    foreach (var s in seeds)
+                    {
+                        float dist = D(s.Item2, new Point(x, y));
+                        if (dist < min_dist)
+                        {
+                            min_dist = dist;
+                        }
+                        if(dist > max_dist)
+                        {
+                            max_dist = dist;
+                        }
+                    }
+                    distfield[x, y] = (min_dist * f_val);
+                }
+                else distfield[x, y] = 0;
+                return false;
+            });
+            Iter((self, x, y, t) =>
+            {
+                distfield[x, y] /= max_dist;
+                return false;
+            });
+
+            return distfield;
         }
     }
 

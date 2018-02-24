@@ -1,8 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.src.actors;
+using FieryOpal.src.procgen;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace FieryOpal.src.ui
 {
@@ -42,8 +45,8 @@ namespace FieryOpal.src.ui
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press), (info) => { MovePlayer(0, 1); });
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press), (info) => { MovePlayer(1, 0); });
 
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Q, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport((float)Math.PI / 4); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport(-(float)Math.PI / 4); });
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Q, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport(-(float)Math.PI / 4); });
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press), (info) => { RotateFirstPersonViewport((float)Math.PI / 4); });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press), (info) => { RegenMap(); });
 
@@ -52,11 +55,28 @@ namespace FieryOpal.src.ui
             // only log debug messages for as long as debug logging is enabled, and discard anything else.
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, ctrl: true), (info) => {
                 LogWindow.DebugMode = !LogWindow.DebugMode;
-                LogWindow.Log(new ColoredString("--" + (LogWindow.DebugMode ? "Enabled " : "Disabled") + " debug logging.", Color.Gold, Color.Black), false);
+                LogWindow.Log(
+                    new ColoredString("--" + (LogWindow.DebugMode ? "Enabled " : "Disabled") + " debug logging.", 
+                        Palette.Ui["DebugMessage"], 
+                        Palette.Ui["DefaultBackground"]),
+                    false);
             });
 
 #if DEBUG
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press), (info) => { DestroyWhateverLiesInFrontOfPlayer(); });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, ctrl: true), (info) => {
+                SeeEverything();
+                LogWindow.Log(
+                    new ColoredString("--" + (FirstPersonWindow.Viewport.Fog.IsEnabled ? "Enabled " : "Disabled") + " fog.",
+                        Palette.Ui["DebugMessage"],
+                        Palette.Ui["DefaultBackground"]),
+                    false);
+            });
+
+            // Add suppression rules for unneeded messages when debugging.
+            LogWindow.AddSuppressionRule(new Regex("FontGC: .*?"));
+            LogWindow.AddSuppressionRule(new Regex("MatrixReplacement.*?"));
 #endif
         }
 
@@ -68,13 +88,22 @@ namespace FieryOpal.src.ui
 
         private void RegenMap()
         {
-            Game.CurrentMap.Actors.Clear();
-            Game.CurrentMap.Generate(new BasicTerrainGenerator(openness: 0.92f), new BasicTerrainDecorator());
-            LogWindow.Log(new ColoredString("Map successfully generated."), true);
+            DateTime now = DateTime.Now;
+            Game.CurrentMap.RemoveAllActors();
+            Game.CurrentMap.Generate(new BasicTerrainGenerator(), new BasicBuildingGenerator(), new BasicTerrainDecorator());
             Game.Player.ChangeLocalMap(Game.CurrentMap, Game.CurrentMap.FirstAccessibleTileAround(Game.Player.LocalPosition));
 
             var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
             fp_view.Dirty = true;
+            fp_view.Fog.UnseeEverything();
+            fp_view.Fog.ForgetEverything();
+
+            LogWindow.Log(new ColoredString(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), Palette.Ui["BoringMessage"], Palette.Ui["DefaultBackground"]), true);
+        }
+
+        private void SeeEverything()
+        {
+            FirstPersonWindow.Viewport.Fog.Toggle();
         }
 
         private void DestroyWhateverLiesInFrontOfPlayer()
@@ -82,15 +111,22 @@ namespace FieryOpal.src.ui
             var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
             var pos = Game.Player.LocalPosition + Util.NormalizedStep(fp_view.DirectionVector);
             var tile_in_front = Game.CurrentMap.TileAt(pos.X, pos.Y);
-            if (tile_in_front != null && tile_in_front.Properties.BlocksMovement)
+            if(tile_in_front != null)
             {
-                Game.CurrentMap.SetTile(pos.X, pos.Y, OpalTile.DebugGround);
+                if(tile_in_front.Skeleton is DoorSkeleton)
+                {
+                    (tile_in_front as Door).Toggle();
+                }
+                else if (tile_in_front.Properties.BlocksMovement)
+                {
+                    Game.CurrentMap.SetTile(pos.X, pos.Y, OpalTile.ConstructedFloor);
+                }
             }
             var actors_in_front = Game.CurrentMap.ActorsAt(pos.X, pos.Y).ToList();
             foreach (var act in actors_in_front)
             {
-                if (!(act is Plant)) continue;
-                (act as Plant).Kill();
+                if (!(act is DecorationBase)) continue;
+                (act as DecorationBase).Kill();
             }
             fp_view.Dirty = true;
         }
@@ -119,6 +155,7 @@ namespace FieryOpal.src.ui
 
         public override void Draw(GameTime gameTime)
         {
+            TopDownWindow.Viewport.Fog = FirstPersonWindow.Viewport.Fog;
             Game.Draw(gameTime.ElapsedGameTime);
             base.Draw(gameTime);
         }

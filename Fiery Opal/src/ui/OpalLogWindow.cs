@@ -2,6 +2,7 @@
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace FieryOpal.src.ui
 {
@@ -12,6 +13,7 @@ namespace FieryOpal.src.ui
         public readonly int LastShownMessagesDumpAmount;
 
         public bool DebugMode { get; set; } = true;
+        protected List<Regex> SuppressedMessagesRegexps;
 
         public OpalLogWindow(int w, int h, int last_shown_cap = 500, int dump_amount = 100, Font f = null) : base(w, h, "Log", f)
         {
@@ -20,12 +22,26 @@ namespace FieryOpal.src.ui
             LastShownMessagesCap = last_shown_cap;
             LastShownMessagesDumpAmount = dump_amount;
             LastShownMessages = new List<Tuple<ColoredString, bool>>(LastShownMessagesCap);
-
+            SuppressedMessagesRegexps = new List<Regex>();
 #if DEBUG
             DebugMode = true;
 #else
             DebugMode = false;
 #endif
+        }
+
+        public bool AddSuppressionRule(Regex exp)
+        {
+            if (SuppressedMessagesRegexps.Contains(exp)) return false;
+            SuppressedMessagesRegexps.Add(exp);
+            return true;
+        }
+
+        public bool RemoveSuppressionRule(Regex exp)
+        {
+            if (!SuppressedMessagesRegexps.Contains(exp)) return false;
+            SuppressedMessagesRegexps.Remove(exp);
+            return true;
         }
 
         public void Log(ColoredString msg, bool debug)
@@ -34,8 +50,15 @@ namespace FieryOpal.src.ui
 #if !DEBUG
             if (debug && !DebugMode) return; 
 #endif
-            Color debug_foreground = ColorPalette.DefaultUiPalette.GetOrDefault("DebugMessage", Color.RoyalBlue);
-            Color debug_background = ColorPalette.DefaultUiPalette.GetOrDefault("DefaultBackground", Color.Black);
+            string msg_str = msg.ToString();
+            foreach(var exp in SuppressedMessagesRegexps)
+            {
+                if (exp.IsMatch(msg_str)) return;
+            }
+
+
+            Color debug_foreground = Palette.Ui["DebugMessage"];
+            Color debug_background = Palette.Ui["DefaultBackground"];
             // Debug header has inverted foreground and background on purpose
             ColoredString debug_header = new ColoredString(debug ? "DBG:" : "", debug_background, debug_foreground);
             if (debug) debug_header += new ColoredString(" ");

@@ -1,0 +1,416 @@
+﻿using Microsoft.Xna.Framework;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace FieryOpal.src.procgen
+{
+    public static class GenUtil
+    {
+        public static IEnumerable<Rectangle> Partition(Rectangle r, float openness, float min_size, float partition_rand)
+        {
+            List<Rectangle> partitions = new List<Rectangle>();
+            Stack<Rectangle> stack = new Stack<Rectangle>();
+
+            Rectangle I = r;
+            do
+            {
+                bool ver = I.Width > I.Height; // Vertical cut?
+                int xRandOffset = ver ? (int)(partition_rand * I.Width / 2) - Util.GlobalRng.Next((int)(partition_rand * I.Width)) : 0;
+                int yRandOffset = ver ? 0 : (int)(partition_rand * I.Height / 2) - Util.GlobalRng.Next((int)(partition_rand * I.Height));
+
+                int r1W = (ver ? I.Width / 2 : I.Width) + xRandOffset;
+                int r1H = (ver ? I.Height : I.Height / 2) + yRandOffset;
+
+                Rectangle r1 = new Rectangle(I.X, I.Y, r1W, r1H);
+                Rectangle r2 = new Rectangle(I.X + (ver ? r1W : 0), I.Y + (ver ? 0 : r1H), (ver ? r1W : I.Width), (ver ? I.Height : r1H));
+
+                if (r1.Width / (float)r.Width <= min_size || r2.Width / (float)r.Width <= min_size
+                    || r1.Height / (float)r.Height <= min_size || r2.Height / (float)r.Height <= min_size)
+                {
+                    partitions.Add(I);
+
+                    if (stack.Count == 0) break;
+                    I = stack.Pop();
+                    continue;
+                }
+
+                stack.Push(r1);
+                I = r2;
+            }
+            while (true);
+
+            // Remove some random partitions
+            int partitions_to_remove = (int)(partitions.Count * (1 - openness));
+            while (partitions_to_remove-- > 0)
+            {
+                partitions.RemoveAt(Util.GlobalRng.Next(partitions.Count));
+            }
+
+            return partitions;
+        }
+        public static IEnumerable<Tuple<IEnumerable<Point>, Point>> GetEnclosedAreasAndCentroids(OpalLocalMap tiles, Predicate<OpalTile> enclosed_tile)
+        {
+            Dictionary<Point, bool> AlreadyFilled = new Dictionary<Point, bool>();
+            for (int x = 0; x < tiles.Width; ++x)
+            {
+                for (int y = 0; y < tiles.Height; ++y)
+                {
+                    Point p = new Point(x, y);
+                    if (!enclosed_tile(tiles.TileAt(x, y)) || AlreadyFilled.ContainsKey(p) && AlreadyFilled[p]) continue;
+
+                    var area = tiles.FloodFill(x, y, null);
+
+                    // Centroid is the average of each point
+                    // Instead of having it calculated elsewhere, we save one potentially wasteful loop by calculating it now.
+                    Point centroid = new Point(0);
+                    int count = 0;
+                    foreach (Point q in area)
+                    {
+                        AlreadyFilled[q] = true;
+                        centroid += q;
+                        ++count;
+                    }
+                    centroid /= new Point(count);
+
+                    yield return new Tuple<IEnumerable<Point>, Point>(area, centroid);
+                }
+            }
+        }
+        public static Rectangle GetEnclosingRectangle(IEnumerable<Point> area)
+        {
+            Point min = new Point(int.MaxValue, int.MaxValue), max = new Point(int.MinValue, int.MinValue);
+            foreach(var p in area)
+            {
+                if (p.X < min.X)
+                {
+                    min.X = p.X;
+                }
+                else if (p.X > max.X)
+                {
+                    max.X = p.X;
+                }
+                if (p.Y < min.Y)
+                {
+                    min.Y = p.Y;
+                }
+                else if (p.Y > max.Y)
+                {
+                    max.Y = p.Y;
+                }
+            }
+            return new Rectangle(min.X, min.Y, max.X - min.X + 1, max.Y - min.Y + 1);
+        }
+        public static void ConnectEnclosedAreas(OpalLocalMap tiles, IEnumerable<Tuple<IEnumerable<Point>, Point>> enclosedAreas, OpalTile pathTile, int minThickness, int maxThickness, int maxRadius)
+        {
+            var enclosed_areas = enclosedAreas.ToList();
+            if (enclosed_areas.Count <= 1) return; // Done
+
+            Dictionary<int, List<int>> connections = new Dictionary<int, List<int>>();
+            Dictionary<int, List<int>> is_connected = new Dictionary<int, List<int>>();
+            int remaining_connections = enclosed_areas.Count;
+            int radius = 2; // Tiles
+
+            for (int i = 0; i < enclosed_areas.Count; ++i)
+            {
+                connections[i] = new List<int>();
+            }
+
+            while (remaining_connections > 0 && radius <= maxRadius)
+            {
+                for (int i = 0; i < enclosed_areas.Count; ++i)
+                {
+                    if (connections[i].Count >= 2) continue;
+                    Point p1 = enclosed_areas[i].Item2;
+                    for (int j = 0; j < enclosed_areas.Count; ++j)
+                    {
+                        if (i == j || connections[j].Count >= 2 || connections[j].Contains(i)) continue;
+                        Point p2 = enclosed_areas[j].Item2;
+                        if (p1.Dist(p2) <= 2 * radius)
+                        {
+                            connections[i].Add(j);
+                            connections[j].Add(i);
+                            // Now that an optimal path has been found, shuffle the centroids of i and j around
+                            enclosed_areas[i] = new Tuple<IEnumerable<Point>, Point>(
+                                enclosed_areas[i].Item1,
+                                enclosed_areas[i].Item2 + new Point(Util.GlobalRng.Next(-radius / 4, radius / 4), Util.GlobalRng.Next(-radius / 4, radius / 4))
+                            );
+                            enclosed_areas[j] = new Tuple<IEnumerable<Point>, Point>(
+                                enclosed_areas[j].Item1,
+                                enclosed_areas[j].Item2 + new Point(Util.GlobalRng.Next(-radius / 4, radius / 4), Util.GlobalRng.Next(-radius / 4, radius / 4))
+                            );
+                            remaining_connections--;
+                            tiles.DrawLine(p1, p2, pathTile, thickness: Util.GlobalRng.Next(minThickness, maxThickness)).ToList(); // Actually calls the enumerator
+                        }
+                    }
+                }
+                radius *= 2;
+            }
+        }
+
+        public class MRRule : Tuple<Predicate<OpalTile>, OpalTile>
+        {
+            public MRRule(Predicate<OpalTile> pred, OpalTile ret) : base(pred, ret) { }
+        }
+
+        public struct MatrixReplacement
+        {
+            public int[][,] Patterns;
+            public int[][,] Replacements;
+
+            public readonly int MatrixSize;
+            public readonly string DebugName;
+
+            public MatrixReplacement(int[,] pattern, int[,] replacement, string debug_name = "MatrixReplacement")
+            {
+                if (pattern.GetLength(0) != replacement.GetLength(0) || pattern.GetLength(0) != pattern.GetLength(1) || replacement.GetLength(0) != replacement.GetLength(1))
+                {
+                    throw new ArgumentException("Pattern and replacement must have the same size and both dimension must have the same size.");
+                }
+
+                Patterns = new int[4][,];
+                Replacements = new int[4][,];
+                MatrixSize = pattern.GetLength(0);
+                DebugName = debug_name;
+
+                Patterns[0] = pattern;
+                Replacements[0] = replacement;
+                for (int i = 1; i < 4; ++i)
+                {
+                    Patterns[i] = RotateMatrix(Patterns[i - 1], MatrixSize);
+                    Replacements[i] = RotateMatrix(Replacements[i - 1], MatrixSize);
+                }
+            }
+
+            public bool SlideAcross(OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, bool shuffle = false)
+            {
+                bool at_least_one_match = false;
+                for (int x = 0; x < tiles.Width; x += stride.X)
+                {
+                    for (int y = 0; y < tiles.Height; y += stride.Y)
+                    {
+                        bool matches = false;
+                        Apply(tiles, new Point(x, y), zero, one, ref matches, shuffle);
+                        if (!at_least_one_match && matches) at_least_one_match = true;
+                    }
+                }
+                if (!at_least_one_match)
+                {
+                    Util.Log(String.Format("MatrixReplacement.SlideAcross  : No matches for {0}.", DebugName), true);
+                }
+                return at_least_one_match;
+            }
+
+            public bool Matches(OpalLocalMap map, Point p, Predicate<OpalTile> zero, Predicate<OpalTile> one, ref int matrix_index, bool shuffle = false)
+            {
+                var indices = new Stack<int>();
+                var arr = new[] { 0, 1, 2, 3 };
+                if (shuffle)
+                {
+                    arr = arr.OrderBy(x => Util.GlobalRng.Next()).ToArray();
+                }
+                for (int i = 0; i < 4; ++i)
+                {
+                    indices.Push(arr[i]);
+                }
+
+                /* For each rotated matrix */
+                for (int i = 0; indices.Count > 0; i = indices.Pop())
+                {
+                    var pattern = Patterns[i];
+                    bool bad_pattern = false;
+                    /* For each value in this pattern */
+                    for (int x = 0; x < MatrixSize; ++x)
+                    {
+                        for (int y = 0; y < MatrixSize; ++y)
+                        {
+                            if (pattern[x, y] > 1) continue; // > 1 is catch all
+                            bool bit = pattern[x, y] == 1;
+                            var t = map.TileAt(p.X + x - (MatrixSize / 2), p.Y + y - (MatrixSize / 2));
+                            if (bit == zero(t) || bit != one(t))
+                            {
+                                bad_pattern = true;
+                                break;
+                            }
+                        }
+                        if (bad_pattern) break;
+                    }
+                    if (bad_pattern) continue;
+                    matrix_index = i;
+                    return true;
+                }
+                return false;
+            }
+
+            public void Apply(OpalLocalMap map, Point p, MRRule zero, MRRule one, ref bool matches, bool shuffle = false)
+            {
+                if (one == null || zero == null) return;
+                int matrix_index = 0;
+
+                if (!(matches = Matches(map, p, zero.Item1, one.Item1, ref matrix_index, shuffle))) return;
+
+                for (int x = 0; x < MatrixSize; ++x)
+                {
+                    for (int y = 0; y < MatrixSize; ++y)
+                    {
+                        bool bit = Replacements[matrix_index][x, y] == 1;
+                        if (Replacements[matrix_index][x, y] <= 1) // > 1 is ignored
+                        {
+                            map.SetTile(p.X + x - (MatrixSize / 2), p.Y + y - (MatrixSize / 2), bit ? one.Item2 : zero.Item2);
+                        }
+                    }
+                }
+            }
+
+            static int[,] Invert(int[,] matrix, int n)
+            {
+                int[,] ret = new int[n, n];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j < n; ++j)
+                    {
+                        if (matrix[i, j] <= 1)
+                        {
+                            ret[i, j] = 1 - matrix[i, j];
+                        }
+                        else ret[i, j] = matrix[i, j];
+                    }
+                }
+
+                return ret;
+            }
+
+            static int[,] Mirror(int[,] matrix, int n, bool x)
+            {
+                int[,] ret = new int[n, n];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j < n; ++j)
+                    {
+                        int ni = x ? n - i - 1 : i;
+                        int nj = !x ? n - j - 1 : j;
+
+                        if (matrix[ni, nj] <= 1)
+                        {
+                            ret[i, j] = 1 - matrix[ni, nj];
+                        }
+                        else ret[i, j] = matrix[ni, nj];
+                    }
+                }
+
+                return ret;
+            }
+
+            public MatrixReplacement Inverted()
+            {
+                return new MatrixReplacement(Invert(Patterns[0], MatrixSize), Invert(Replacements[0], MatrixSize), DebugName + " (Inverted)");
+            }
+
+            public MatrixReplacement MirroredX()
+            {
+                return new MatrixReplacement(Mirror(Patterns[0], MatrixSize, true), Mirror(Replacements[0], MatrixSize, true), DebugName + " (Mirrored[X])");
+            }
+
+            public MatrixReplacement MirroredY()
+            {
+                return new MatrixReplacement(Mirror(Patterns[0], MatrixSize, false), Mirror(Replacements[0], MatrixSize, false), DebugName + " (Mirrored[Y])");
+            }
+
+            static int[,] RotateMatrix(int[,] matrix, int n)
+            {
+                int[,] ret = new int[n, n];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j < n; ++j)
+                    {
+                        ret[i, j] = matrix[n - j - 1, i];
+                    }
+                }
+
+                return ret;
+            }
+
+            public static MatrixReplacement NinetyDegCorners = new MatrixReplacement(
+                new int[3, 3] {
+                    { 0, 0, 0, },
+                    { 0, 1, 1, },
+                    { 0, 1, 1, },
+                },
+                new int[3, 3] {
+                    { 0, 0, 0, },
+                    { 0, 0, 1, },
+                    { 0, 1, 1, },
+                },
+                "90° Corners"
+            );
+
+            public static MatrixReplacement SmallGaps = new MatrixReplacement(
+                new int[3, 3] {
+                    { 1, 0, 0, },
+                    { 0, 0, 0, },
+                    { 0, 0, 1, },
+                },
+                new int[3, 3] {
+                    { 0, 0, 0, },
+                    { 0, 0, 0, },
+                    { 0, 0, 0, },
+                },
+                "Small Gaps"
+            );
+
+            public static MatrixReplacement JaggedSurface = new MatrixReplacement(
+                new int[3, 3] {
+                    { 0, 0, 2, },
+                    { 2, 1, 1, },
+                    { 0, 0, 2, },
+                },
+                new int[3, 3] {
+                    { 0, 0, 2, },
+                    { 0, 0, 1, },
+                    { 0, 0, 2, },
+                },
+                "Jagged Surface"
+            );
+
+            public static MatrixReplacement LoneTile = new MatrixReplacement(
+                new int[3, 3] {
+                    { 0, 0, 0, },
+                    { 0, 1, 0, },
+                    { 0, 0, 2, },
+                },
+                new int[3, 3] {
+                    { 0, 0, 0, },
+                    { 0, 0, 0, },
+                    { 0, 0, 0, },
+                },
+                "Lone Tile"
+            );
+
+            public static MatrixReplacement DiagonalGaps = new MatrixReplacement(
+                new int[3, 3] {
+                    { 0, 0, 1, },
+                    { 0, 0, 1, },
+                    { 1, 1, 0, },
+                },
+                new int[3, 3] {
+                    { 0, 0, 1, },
+                    { 0, 0, 0, },
+                    { 1, 0, 0, },
+                },
+                "Diagonal Gaps"
+            );
+
+            public static MatrixReplacement[] CaveSystemRules = new[] {
+                NinetyDegCorners,
+                NinetyDegCorners.Inverted(),
+                SmallGaps,
+                JaggedSurface,
+                DiagonalGaps,
+                LoneTile,
+            };
+        }
+    }
+}
