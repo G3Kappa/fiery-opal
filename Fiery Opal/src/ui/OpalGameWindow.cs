@@ -29,6 +29,17 @@ namespace FieryOpal.src.ui
                 case "RequestInfo": // Forward RequestInfo messages to any connected OpalGames. Pass pipeline handle as original sender to enable broadcast on the other end.
                     InternalMessagePipeline.BroadcastForward<OpalConsoleWindow>(pipeline_handle, sender_handle, new Func<OpalGame, string>(g => { return performed_action; }));
                     break;
+                case "FlagRaycastViewportForRedraw":
+                    if (!(Viewport is RaycastViewport)) break;
+                    (Viewport as RaycastViewport).FlagForRedraw();
+                    break;
+                case "UpdateRaycastWindowRotation":
+                    if (!(Viewport is RaycastViewport)) break;
+                    var v = (Viewport as RaycastViewport);
+                    v.DirectionVector = Game.Player.LookingAt;
+                    v.PlaneVector = Game.Player.LookingAt.Orthogonal();
+                    v.FlagForRedraw();
+                    break;
                 default:
                     break;
             }

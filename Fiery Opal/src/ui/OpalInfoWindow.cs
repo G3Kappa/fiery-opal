@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.src.actors;
+using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
@@ -10,15 +11,8 @@ namespace FieryOpal.src.ui
     {
         public struct GameInfo
         {
-            public string PlayerName;
-            public string PlayerTitle;
-
-            public int PlayerLevel;
-
-            public int PlayerHp;
-            public int PlayerMaxHp;
-
-            public Point PlayerLocalPosition;
+            public TurnTakingActor Player;
+            public float CurrentTurnTime;
         }
 
         protected List<WindowManager> ConnectedWindowManagers = new List<WindowManager>();
@@ -98,17 +92,8 @@ namespace FieryOpal.src.ui
         public void ReceiveInfoUpdateFromGame(Guid game_handle, ref GameInfo info)
         {
             Clear();
-            Print(0, 0, String.Format("{0}, Level {1} {2}", info.PlayerName, info.PlayerLevel, info.PlayerTitle));
-
-            var healthbar = MakeHealthbar(info.PlayerHp, info.PlayerMaxHp, (int)(Width / 1.5f), new Cell(Color.Red, Color.Black), new Cell(Color.Yellow, Color.Black), new Cell(Color.Green, Color.Black));
-            Print(1, 3, healthbar);
-            Print(healthbar.Count + 2, 3, new ColoredString(String.Format("({0}/{1})", info.PlayerHp, info.PlayerMaxHp), new Cell(Color.White, Color.Black)));
-
-            var localpos_str = info.PlayerLocalPosition.ToString();
-            Print(1, 4, new ColoredString(localpos_str.Substring(1, localpos_str.Length - 2), new Cell(Color.Gray, Color.Black)));
-
-
-            //ConnectedWindowManagers.ForEach(wm => wm.InternalMessagePipeline.BroadcastLogMessage(this, new ColoredString("ReceiveInfoUpdateFromGame"), true));
+            Print(0, 0, String.Format("T{0}: {1:0.00}", (char)255, info.CurrentTurnTime));
+            Print(0, 1, String.Format("XY: ({0}, {1})", info.Player.LocalPosition.X, info.Player.LocalPosition.Y));
         }
     }
 }

@@ -6,27 +6,29 @@ using System;
 
 namespace FieryOpal.src.ui
 {
-    public class OpalConsoleWindow : SadConsole.Console, IPipelineSubscriber<OpalConsoleWindow>
+    public class OpalConsoleWindow : SadConsole.Window, IPipelineSubscriber<OpalConsoleWindow>
     {
-        SadConsole.Console borderSurfaceConsole;
+        public SadConsole.Console BorderSurface { get; }
 
         public Guid Handle { get; }
         public string Caption { get; set; }
 
         public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(width - 2, height - 2)
         {
+            Show();
             TextSurface.Font = f ?? Program.Font;
 
             // Render the border and wrap it inside a console in order to print the caption
             BasicSurface borderSurface = new BasicSurface(width, height, base.textSurface.Font);
             var editor = new SurfaceEditor(borderSurface);
+            BorderSurface = new SadConsole.Console(borderSurface);
+            BorderSurface.Fill(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"], ' ');
 
             Box box = Box.GetDefaultBox();
             box.Width = borderSurface.Width;
             box.Height = borderSurface.Height;
             box.Draw(editor);
 
-            borderSurfaceConsole = new SadConsole.Console(borderSurface);
 
             // Assign a new handle to this window, used by MessagePipelines as addresses
             Handle = Guid.NewGuid();
@@ -39,13 +41,13 @@ namespace FieryOpal.src.ui
             // Store current position
             Point oldPos = Position;
             // Set the bordered surface the be rendered at this position
-            borderSurfaceConsole.Position = oldPos;
+            BorderSurface.Position = oldPos;
             // Add 1,1 to this position so that Print() doesn't need that offset every time
             Position += new Point(1);
             // Print the caption at 1,0 on the bordered surface
-            borderSurfaceConsole.Print(1, 0, Caption, Color.White, Color.Black);
+            BorderSurface.Print(1, 0, Caption, Color.White, Color.Black);
             // Draw both surfaces
-            borderSurfaceConsole.Draw(delta);
+            BorderSurface.Draw(delta);
             base.Draw(delta);
             // Restore the position to its intended value
             Position = oldPos;

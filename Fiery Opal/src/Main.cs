@@ -40,6 +40,7 @@ namespace FieryOpal
         private static void Draw(GameTime time)
         {
             mainGameWindowManager.Draw(time);
+            OpalDialog.Draw(time);
         }
 
         private static void Init()

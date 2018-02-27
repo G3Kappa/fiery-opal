@@ -46,6 +46,9 @@
     <Compile Include="src\actors\Humanoid.cs" />
     <Compile Include="src\actors\Item.cs" />
     <Compile Include="src\actors\Plant.cs" />
+    <Compile Include="src\actors\PlayerControlledAI.cs" />
+    <Compile Include="src\actors\TurnTakingActor.cs" />
+    <Compile Include="src\actors\TurnTakingAI.cs" />
     <Compile Include="src\procgen\BasicBuildingDesigner.cs" />
     <Compile Include="src\procgen\BasicBuildingGenerator.cs" />
     <Compile Include="src\procgen\BasicRoomDesigner.cs" />
@@ -63,6 +66,7 @@
     <Compile Include="src\OpalTile.cs" />
     <Compile Include="src\MessagePipeline.cs" />
     <Compile Include="src\procgen\GenUtil.cs" />
+    <Compile Include="src\Turn.cs" />
     <Compile Include="src\ui\ColorPalette.cs" />
     <Compile Include="src\ui\MainGameWindowManager.cs" />
     <Compile Include="src\ui\OpalConsoleWindow.cs" />
@@ -159,6 +163,7 @@
     <Content Include="kein.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Include="src\ui\Dialog.cs" />
     <Content Include="taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

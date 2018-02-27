@@ -8,8 +8,19 @@ using FieryOpal.src.actors;
 
 namespace FieryOpal.src
 {
+    public struct ActorIdentity
+    {
+        public string Name;
+
+        public ActorIdentity(string name = "Nameless Actor")
+        {
+            Name = name;
+        }
+    }
+
     public interface IOpalGameActor
     {
+        Guid Handle { get; }
         Point LocalPosition { get; }
 
         OpalLocalMap Map { get; }
@@ -18,11 +29,12 @@ namespace FieryOpal.src
         Vector2 FirstPersonScale { get; set; }
         float FirstPersonVerticalOffset { get; set; }
         bool Visible { get; set; }
+        ActorIdentity Identity { get; set; }
 
         void Update(TimeSpan delta);
 
         bool CanMove { get; }
-        bool Move(Point rel, bool absolute);
+        bool MoveTo(Point rel, bool absolute);
 
         /// <summary>
         /// Removes the actor from the current map and spawns it at the given coordinates on another map.
@@ -47,14 +59,13 @@ namespace FieryOpal.src
         float LightRadius { get; }
     }
 
-    public interface IUseable : IOpalGameActor
+    public interface IInteractive : IOpalGameActor
     {
-        bool Use(OpalActorBase actor);
+        bool InteractWith(OpalActorBase actor);
     }
 
     public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor
     {
-        public Guid Handle { get; }
 
         private Point localPosition;
         public Point LocalPosition => localPosition;
@@ -82,10 +93,16 @@ namespace FieryOpal.src
         private IOpalGameActor held_by = null;
         public bool CanMove => can_move && held_by == null;
 
+        public Guid Handle { get; }
+
+        private ActorIdentity identity;
+        public ActorIdentity Identity { get => identity; set => identity = value; }
+
         public OpalActorBase()
         {
             Handle = Guid.NewGuid();
             Graphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
+            identity = new ActorIdentity(name: "Nameless Actor");
             FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
         }
 
@@ -113,7 +130,20 @@ namespace FieryOpal.src
             return true;
         }
 
-        public bool Move(Point p, bool absolute = false)
+        public bool MoveTo(Point p, bool absolute = false)
+        {
+            var newPos = new Point();
+            var ret = CanMoveTo(p, ref newPos, absolute);
+            if(ret)
+            {
+                var oldPos = localPosition;
+                localPosition = newPos;
+                map.NotifyActorMoved(this, oldPos);
+            }
+            return ret;
+        }
+
+        public bool CanMoveTo(Point p, ref Point newPos, bool absolute = false)
         {
             if (!CanMove) return false;
             Point new_p = new Point((absolute ? 0 : LocalPosition.X) + p.X, (absolute ? 0 : LocalPosition.Y) + p.Y);
@@ -141,19 +171,16 @@ namespace FieryOpal.src
             if (ret)
             {
                 // If moving diagonally by only one square
-                if(Math.Abs(p.X) + Math.Abs(p.Y) == 2)
+                if (Math.Abs(p.X) + Math.Abs(p.Y) == 2)
                 {
                     // Check that you're not trying to squeeze through two walls
-                    if((Map.TileAt(new_p.X - p.X, new_p.Y)?.Properties.BlocksMovement ?? true)
+                    if ((Map.TileAt(new_p.X - p.X, new_p.Y)?.Properties.BlocksMovement ?? true)
                         && (Map.TileAt(new_p.X, new_p.Y - p.Y)?.Properties.BlocksMovement ?? true))
                     {
                         return false;
                     }
                 }
-
-                var oldPos = localPosition;
-                localPosition = new_p;
-                map.NotifyActorMoved(this, oldPos);
+                newPos = new_p;
             }
             return ret;
         }

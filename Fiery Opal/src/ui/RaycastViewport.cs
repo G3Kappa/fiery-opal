@@ -11,11 +11,11 @@ namespace FieryOpal.src.ui
     public class RaycastViewport : Viewport
     {
         public IOpalGameActor Following { get; protected set; }
-        public Vector2 DirectionVector { get; protected set; }
-        public Vector2 PlaneVector { get; protected set; }
+        public Vector2 DirectionVector { get; set; }
+        public Vector2 PlaneVector { get; set; }
         public Vector2 Position { get; protected set; }
         public Font RenderFont { get; protected set; }
-        public bool Dirty { get; set; }
+        public bool Dirty { get; private set; }
         public float ViewDistance { get; set; }
 
         public RaycastViewport(OpalLocalMap target, Rectangle view_area, IOpalGameActor following, Font f = null) : base(target, view_area)
@@ -23,10 +23,15 @@ namespace FieryOpal.src.ui
             RenderFont = f ?? Program.Font;
             Following = following;
             DirectionVector = new Vector2(0, 1);
-            PlaneVector = new Vector2(-.66f, 0);
+            PlaneVector = new Vector2(-1, 0);
             Position = new Vector2(0, 0);
             Dirty = true;
             ViewDistance = 64f;
+        }
+
+        public void FlagForRedraw()
+        {
+            Dirty = true;
         }
 
         public void Rotate(float deg)
@@ -68,9 +73,9 @@ namespace FieryOpal.src.ui
         private bool DDA(Vector2 deltaDist, Vector2 stepDir, ref Vector2 mapPos, ref Vector2 sideDist, bool update_fog = true)
         {
             // Wall hit? Side hit?
-            bool hit = false, side = false;
+            bool side = false;
             //perform DDA
-            while (!hit)
+            while (true)
             {
                 //jump to next map square, OR in x-direction, OR in y-direction
                 if (sideDist.X < sideDist.Y)
@@ -94,20 +99,18 @@ namespace FieryOpal.src.ui
                 //Check if ray has hit a wall
                 if (t == null || t.Properties.BlocksMovement && !(t is Door && (t as Door).IsOpen))
                 {
-                    hit = true;
-                    continue;
+                    return side;
                 }
                 // Check if it hit a decoration that should render as a wall
                 var decos = Target.ActorsAt((int)mapPos.X, (int)mapPos.Y).Where(d => d is DecorationBase && (d as DecorationBase).DisplayAsBlock);
-                if(decos.Count() > 0)
+                if (decos.Count() > 0)
                 {
-                    hit = true;
+                    return side;
                 }
             }
-            return side;
         }
 
-        private void DrawWallVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight, List<Tuple<Color, double>> lighting)
+        private void DrawWallVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
         {
             //Fog.Clear(new Point((int)mapPos.X, (int)mapPos.Y));
             OpalTile wallTile = Target.TileAt((int)mapPos.X, (int)mapPos.Y);
@@ -152,10 +155,12 @@ namespace FieryOpal.src.ui
                 //shade color with distance
                 wallColor = Color.Lerp(wallColor, Target.SkyColor, (float)perpWallDist / ViewDistance);
                 //apply lighting
+                /*
                 foreach(var t in lighting)
                 {
                     wallColor = Color.Lerp(wallColor, t.Item1, (float)t.Item2);
                 }
+                */
                 surface.SetCell(x, y, new Cell(wallColor, wallColor, ' '));
             }
         }
@@ -330,7 +335,7 @@ namespace FieryOpal.src.ui
                             int d = (y - vMoveScreen) * 256 - viewportHeight * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
                             int texY = ((d * texHeight) / spriteHeight) / 256;
 
-                            Color spriteColor = spritePixels[texX, texY];
+                            Color spriteColor = spritePixels[texX, texY >= 0 ? texY : 0];
                             if (spriteColor == Color.Transparent)
                             {
                                 continue;
@@ -411,7 +416,21 @@ namespace FieryOpal.src.ui
             if (!Dirty) return;
             Fog.UnseeEverything();
             Position = new Vector2(Following.LocalPosition.X + .5f, Following.LocalPosition.Y + .5f);
-            DirectionVector /= 1.5f;
+
+            var oldD = DirectionVector;
+            var oldP = PlaneVector;
+
+            if(DirectionVector.LengthSquared() == 2)
+            {
+                DirectionVector /= 2f;
+                PlaneVector /= 2f;
+            }
+            else
+            {
+                DirectionVector /= 1.5f;
+                PlaneVector /= 1.5f;
+            }
+
             Fog.See(Following.LocalPosition);
             Fog.Learn(Following.LocalPosition);
             float[] zbuffer = new float[targetArea.Width];
@@ -430,6 +449,7 @@ namespace FieryOpal.src.ui
                 bool side = false;
                 float perpWallDist = zbuffer[x] = CastRay(Position, ref mapPos, rayDir, ref side);
 
+                /*
                 // If we hit a wall, calc the correct lighting
                 List<Tuple<Color, double>> lighting = new List<Tuple<Color, double>>();
                 if (Target.TileAt((int)mapPos.X, (int)mapPos.Y) != null)
@@ -441,6 +461,7 @@ namespace FieryOpal.src.ui
                         lighting.Add(color_dist);
                     }
                 }
+                */
 
                 // Calculate height of line to draw on screen
                 int lineHeight = (int)(targetArea.Height / perpWallDist);
@@ -462,15 +483,16 @@ namespace FieryOpal.src.ui
                 {
                     RenderFont = Program.Font;
                 }
-                DrawWallVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height, lighting);
+                DrawWallVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
                 if (perpWallDist > ViewDistance / 4)
                 {
                     RenderFont = Program.HDFont;
                 }
             }
             DrawActorSpriteVLines(surface, zbuffer, targetArea.Width, targetArea.Height);
-            DirectionVector *= 1.5f;
             Dirty = false;
+            DirectionVector = oldD;
+            PlaneVector = oldP;
         }
     }
 }

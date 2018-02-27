@@ -22,7 +22,7 @@ namespace FieryOpal.src.actors
             /* Dead Tree */
             if (Util.GlobalRng.NextDouble() > .8f)
             {
-                PossibleGlyphs = new[] { 255 };
+                PossibleGlyphs = new[] { (byte)'v' + 16 };
                 PossibleColors = new[] {
                     Palette.Vegetation["GenericPlant4"],
                 };

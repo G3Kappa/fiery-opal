@@ -27,7 +27,6 @@ namespace FieryOpal.src
             Height = height;
             SkyColor = Color.DeepSkyBlue;
             FogColor = Color.DarkSlateGray;
-           
         }
 
         public bool AddActor(IOpalGameActor actor)

@@ -13,7 +13,7 @@ namespace FieryOpal.src.actors
     {
         public override bool BlocksMovement => true;
     }
-    public abstract class Seating : Furniture, IUseable
+    public abstract class Seating : Furniture, IInteractive
     {
         bool IsOccupied => Occupant != null;
 
@@ -25,7 +25,7 @@ namespace FieryOpal.src.actors
 
         }
 
-        public bool Use(OpalActorBase actor)
+        public bool InteractWith(OpalActorBase actor)
         {
             if (occupant == actor)
             {
@@ -35,7 +35,7 @@ namespace FieryOpal.src.actors
             }
             if (IsOccupied) return false;
             occupant = actor;
-            occupant.Move(LocalPosition, absolute: true);
+            occupant.MoveTo(LocalPosition, absolute: true);
             occupant.BlockMovement(this);
             return true;
         }
@@ -45,13 +45,13 @@ namespace FieryOpal.src.actors
     {
         public Chair()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Terrain["DirtForeground"], Palette.Terrain["DirtBackground"], 'h'));
-            FirstPersonVerticalOffset = 0f;
-            FirstPersonScale = new Vector2(1f, 1f);
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Terrain["DirtForeground"], Palette.Terrain["DirtBackground"], 208));
+            FirstPersonVerticalOffset = 2f;
+            FirstPersonScale = new Vector2(2, 2);
         }
     }
 
-    public class MapGlobe : Furniture, IUseable
+    public class MapGlobe : Furniture, IInteractive
     {
         public MapGlobe()
         {
@@ -60,18 +60,20 @@ namespace FieryOpal.src.actors
             FirstPersonScale = new Vector2(1f, 1f);
         }
 
-        public bool Use(OpalActorBase actor)
+        public bool InteractWith(OpalActorBase actor)
         {
             throw new NotImplementedException();
         }
     }
 
-    public abstract class Workbench : Furniture, IUseable
+    public abstract class Workbench : Furniture, IInteractive
     {
-        public abstract bool Use(OpalActorBase actor);
+        public override bool DisplayAsBlock => true;
+
+        public abstract bool InteractWith(OpalActorBase actor);
         public Workbench()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.White, 93));
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.White, 209));
             FirstPersonVerticalOffset = 0f;
             FirstPersonScale = new Vector2(1f, 1f);
         }
@@ -79,7 +81,7 @@ namespace FieryOpal.src.actors
 
     public class WritingTable : Workbench
     {
-        public override bool Use(OpalActorBase actor)
+        public override bool InteractWith(OpalActorBase actor)
         {
             throw new NotImplementedException();
         }
@@ -96,7 +98,7 @@ namespace FieryOpal.src.actors
         }
     }
 
-    public class Bookshelf : PhysicalStorage<Book>, IUseable
+    public class Bookshelf : PhysicalStorage<Book>, IInteractive
     {
         public override bool DisplayAsBlock => true;
 
@@ -107,13 +109,13 @@ namespace FieryOpal.src.actors
             FirstPersonScale = new Vector2(1f, 1f);
         }
 
-        public bool Use(OpalActorBase actor)
+        public bool InteractWith(OpalActorBase actor)
         {
             return true;
         }
     }
 
-    public class ItemChest : PhysicalStorage<Item>, IUseable
+    public class ItemChest : PhysicalStorage<Item>, IInteractive
     {
         public ItemChest() : base(10)
         {
@@ -122,7 +124,7 @@ namespace FieryOpal.src.actors
             FirstPersonScale = new Vector2(1f, 1f);
         }
 
-        public bool Use(OpalActorBase actor)
+        public bool InteractWith(OpalActorBase actor)
         {
             return true;
         }

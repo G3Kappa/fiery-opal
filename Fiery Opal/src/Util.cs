@@ -1,4 +1,5 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.src.actors;
+using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -15,6 +16,8 @@ namespace FieryOpal.src
 
         private static double framerate = 0;
         public static double Framerate => framerate;
+
+        public static List<OpalDialog> Dialogs { get; } = new List<OpalDialog>();
 
         public static void Log(ColoredString msg, bool debug)
         {
@@ -49,9 +52,32 @@ namespace FieryOpal.src
             return new Point(x ? Util.GlobalRng.Next(3) - 1 : 0, !x ? Util.GlobalRng.Next(3) - 1 : 0);
         }
 
+        public static Vector2 Orthogonal(this Vector2 v)
+        {
+            return new Vector2(-v.Y, v.X);
+        }
+
         public static Point NormalizedStep(Point p)
         {
             return NormalizedStep(new Vector2(p.X, p.Y));
+        }
+
+        public static PlayerActionsKeyConfiguration LoadDefaultKeyconfig()
+        {
+            var cfg = new PlayerActionsKeyConfiguration();
+            cfg.AssignKey(PlayerAction.Wait, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.OemPeriod, Keybind.KeypressState.Press));
+
+            cfg.AssignKey(PlayerAction.MoveU, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.W, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.MoveD, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.S, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.MoveL, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.A, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.MoveR, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.D, Keybind.KeypressState.Press));
+
+            cfg.AssignKey(PlayerAction.TurnL, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Q, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.TurnR, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.E, Keybind.KeypressState.Press));
+
+            cfg.AssignKey(PlayerAction.Interact, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Space, Keybind.KeypressState.Press));
+
+            return cfg;
         }
     }
 

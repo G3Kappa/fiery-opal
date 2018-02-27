@@ -21,7 +21,7 @@ namespace FieryOpal.src.procgen
             Tiles = new OpalLocalMap(m.Width, m.Height);
 
             // Starting point: some random rectangles.
-            var partitions = GenUtil.Partition(new Rectangle(0, 0, m.Width, m.Height), .85f, 1 / 10f, .33f);
+            var partitions = GenUtil.Partition(new Rectangle(0, 0, m.Width, m.Height), .85f, 1 / 30f, .33f);
             Tiles.Iter((s, x, y, t) =>
             {
                 if (!partitions.Any(p => p.Contains(x, y)))

@@ -1,4 +1,5 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.src.actors;
+using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using System;
 
@@ -10,18 +11,20 @@ namespace FieryOpal.src
         public MessagePipeline<OpalConsoleWindow> InternalMessagePipeline { get; protected set; }
         public Guid Handle { get; }
 
-        public OpalActorBase Player = new OpalActorBase();
+        public TurnTakingActor Player = new Humanoid();
         public OpalLocalMap CurrentMap { get; set; }
+
+        public TurnManager TurnManager { get; private set; }
 
         public OpalGame(OpalLocalMap startingMap)
         {
             Handle = Guid.NewGuid();
-            Player = new OpalActorBase();
             CurrentMap = startingMap;
 
             Player.ChangeLocalMap(CurrentMap, new Point(CurrentMap.Width / 2, CurrentMap.Height / 2));
             CurrentMap.AddActor(Player);
             InternalMessagePipeline = new MessagePipeline<OpalConsoleWindow>();
+            TurnManager = new TurnManager();
         }
 
         public virtual void Update(TimeSpan delta)
@@ -60,21 +63,22 @@ namespace FieryOpal.src
                         w => 
                         {
                             OpalInfoWindow info_window = (OpalInfoWindow)w;
-
                             OpalInfoWindow.GameInfo info = new OpalInfoWindow.GameInfo
                             {
-                                PlayerName = "Kappa",
-                                PlayerTitle = "Human",
-                                PlayerLevel = 1,
-                                PlayerHp = 2,
-                                PlayerMaxHp = 4,
-                                PlayerLocalPosition = Player.LocalPosition
+                                Player = Player,
+                                CurrentTurnTime = TurnManager.CurrentTime
                             };
 
                             info_window.ReceiveInfoUpdateFromGame(Handle, ref info);
                             return "ServeInfo";
                         }
                         ));
+                    break;
+                case "MapRefreshed":
+                    TurnManager.ResetAccumulator();
+                    break;
+                case "PlayerInputHandled":
+                    TurnManager.BeginTurn(CurrentMap, Player.Handle);
                     break;
                 default:
                     break;
