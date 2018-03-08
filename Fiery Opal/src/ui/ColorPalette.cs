@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,7 +67,7 @@ namespace FieryOpal.src.ui
 
         public static Palette Ui = new Palette(new[] {
             new Tuple<string, Color>("DefaultForeground", Color.White),
-            new Tuple<string, Color>("DefaultBackground", Color.Black),
+            new Tuple<string, Color>("DefaultBackground", new Color(0, 0, 0)),
 
             new Tuple<string, Color>("UnseenTileForeground", Color.Gray),
             new Tuple<string, Color>("UnseenTileBackground", new Color(50, 50, 50)),
@@ -76,6 +77,11 @@ namespace FieryOpal.src.ui
             new Tuple<string, Color>("InfoMessage",       Color.Gold),
             new Tuple<string, Color>("BoringMessage",     Color.DarkGray),
         });
+
+        public static Cell DefaultTextStyle = new Cell(
+            Ui["DefaultForeground"],
+            Ui["DefaultBackground"]
+        );
 
         public static Palette Vegetation = new Palette(new[] {
             new Tuple<string, Color>("GenericPlant1", Color.LawnGreen),

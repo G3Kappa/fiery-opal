@@ -20,12 +20,11 @@ namespace FieryOpal.src.ui
 
         public MainGameWindowManager(int w, int h, OpalGame g) : base(w, h)
         {
+            
             Game = g;
             Game.Player.Brain = new PlayerControlledAI(Game.Player, Util.LoadDefaultKeyconfig());
             (Game.Player.Brain as PlayerControlledAI).InternalMessagePipeline.Subscribe(Game);
             (Game.Player.Brain as PlayerControlledAI).BindKeys();
-
-            Game.Player.Identity = new ActorIdentity(name: "Kappa");
 
             FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player, Program.HDFont), Program.FPFont);
 
@@ -39,19 +38,23 @@ namespace FieryOpal.src.ui
             LogWindow.Position = new Point(0, h - h / 4);
 
             RegisterWindow(InfoWindow);
+            InfoWindow.Show();
 
             RegisterWindow(LogWindow);
             Util.GlobalLogPipeline.Subscribe(LogWindow); // So that this window can receive logs from anywhere
+            LogWindow.Show();
 
             RegisterWindow(FirstPersonWindow);
+            FirstPersonWindow.Show();
             RegisterWindow(TopDownWindow);
+            TopDownWindow.Show();
 
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press), (info) => { RegenMap(); });
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press, "Regen map"), (info) => { RegenMap(); });
 
             // CTRL+F1: Log window toggles debug mode. If compiling a debug assembly, DBG: messages can be hidden and shown at will.
             // Under release mode, DBG: messages will not be logged at all. It is still possible to enable debug logging, but it will
             // only log debug messages for as long as debug logging is enabled, and discard anything else.
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, ctrl: true), (info) => {
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, "Toggle debug logging", ctrl: true), (info) => {
                 LogWindow.DebugMode = !LogWindow.DebugMode;
                 LogWindow.Log(
                     new ColoredString("--" + (LogWindow.DebugMode ? "Enabled " : "Disabled") + " debug logging.", 
@@ -61,10 +64,7 @@ namespace FieryOpal.src.ui
             });
 
 #if DEBUG
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press), (info) => { DestroyWhateverLiesInFrontOfPlayer(); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press), (info) => { SpawnHumanoid(); });
-
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, ctrl: true), (info) => {
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, "Debug: Toggle fog", ctrl: true), (info) => {
                 SeeEverything();
                 LogWindow.Log(
                     new ColoredString("--" + (FirstPersonWindow.Viewport.Fog.IsEnabled ? "Enabled " : "Disabled") + " fog.",
@@ -87,9 +87,11 @@ namespace FieryOpal.src.ui
 
         private void RegenMap()
         {
+            Util.Log(new GoodDeityGenerator().Generate().Name, true);
+            Util.Log(new BadDeityGenerator().Generate().Name, true);
             DateTime now = DateTime.Now;
             Game.CurrentMap.RemoveAllActors();
-            Game.CurrentMap.Generate(new BasicTerrainGenerator(), new BasicBuildingGenerator(), new BasicTerrainDecorator());
+            Game.CurrentMap.Generate(new BasicTerrainGenerator(), new BasicBuildingGenerator());
             Game.Player.ChangeLocalMap(Game.CurrentMap, Game.CurrentMap.FirstAccessibleTileAround(Game.Player.LocalPosition));
 
             var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
@@ -101,42 +103,9 @@ namespace FieryOpal.src.ui
             LogWindow.Log(new ColoredString(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), Palette.Ui["BoringMessage"], Palette.Ui["DefaultBackground"]), true);
         }
 
-        private void SpawnHumanoid()
-        {
-            var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
-            var pos = Game.Player.LocalPosition + Util.NormalizedStep(fp_view.DirectionVector);
-            var dude = new Humanoid();
-            dude.ChangeLocalMap(Game.CurrentMap, pos);
-        }
-
         private void SeeEverything()
         {
             FirstPersonWindow.Viewport.Fog.Toggle();
-        }
-
-        private void DestroyWhateverLiesInFrontOfPlayer()
-        {
-            var fp_view = (RaycastViewport)FirstPersonWindow.Viewport;
-            var pos = Game.Player.LocalPosition + Util.NormalizedStep(fp_view.DirectionVector);
-            var tile_in_front = Game.CurrentMap.TileAt(pos.X, pos.Y);
-            if(tile_in_front != null)
-            {
-                if(tile_in_front.Skeleton is DoorSkeleton)
-                {
-                    (tile_in_front as Door).Toggle();
-                }
-                else if (tile_in_front.Properties.BlocksMovement)
-                {
-                    Game.CurrentMap.SetTile(pos.X, pos.Y, OpalTile.ConstructedFloor);
-                }
-            }
-            var actors_in_front = Game.CurrentMap.ActorsAt(pos.X, pos.Y).ToList();
-            foreach (var act in actors_in_front)
-            {
-                if (!(act is DecorationBase)) continue;
-                (act as DecorationBase).Kill();
-            }
-            fp_view.FlagForRedraw();
         }
 
         public override void Draw(GameTime gameTime)

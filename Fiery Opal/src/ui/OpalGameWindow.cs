@@ -32,6 +32,7 @@ namespace FieryOpal.src.ui
                 case "FlagRaycastViewportForRedraw":
                     if (!(Viewport is RaycastViewport)) break;
                     (Viewport as RaycastViewport).FlagForRedraw();
+                    Invalidate();
                     break;
                 case "UpdateRaycastWindowRotation":
                     if (!(Viewport is RaycastViewport)) break;

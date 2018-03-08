@@ -3,8 +3,12 @@ using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using static FieryOpal.src.procgen.GenUtil;
+using System.Text;
+using SadConsole.Surfaces;
+using Microsoft.Xna.Framework.Input;
 
 namespace FieryOpal.src
 {
@@ -17,11 +21,35 @@ namespace FieryOpal.src
         private static double framerate = 0;
         public static double Framerate => framerate;
 
-        public static List<OpalDialog> Dialogs { get; } = new List<OpalDialog>();
+        public static List<OkCancelDialog> Dialogs { get; } = new List<OkCancelDialog>();
 
         public static void Log(ColoredString msg, bool debug)
         {
             GlobalLogPipeline.BroadcastLogMessage(null, msg, debug);
+        }
+
+        public static T Choose<T>(IList<T> from)
+        {
+            return from[GlobalRng.Next(from.Count)];
+        }
+
+        public static IEnumerable<T> ChooseN<T>(IList<T> from, int n)
+        {
+            if (n >= from.Count) throw new ArgumentException();
+
+            foreach (var t in from.OrderBy(t => GlobalRng.Next()))
+            {
+                if (n-- > 0) yield return t;
+                else break;
+            }
+        }
+
+        public static bool? RandomTernary()
+        {
+            var r = GlobalRng.NextDouble();
+            if (r < .33) return true;
+            if (r < .66) return false;
+            return new bool?();
         }
 
         public static void Update(GameTime gt)
@@ -65,17 +93,18 @@ namespace FieryOpal.src
         public static PlayerActionsKeyConfiguration LoadDefaultKeyconfig()
         {
             var cfg = new PlayerActionsKeyConfiguration();
-            cfg.AssignKey(PlayerAction.Wait, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.OemPeriod, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.Wait, new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Player: Wait"));
 
-            cfg.AssignKey(PlayerAction.MoveU, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.W, Keybind.KeypressState.Press));
-            cfg.AssignKey(PlayerAction.MoveD, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.S, Keybind.KeypressState.Press));
-            cfg.AssignKey(PlayerAction.MoveL, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.A, Keybind.KeypressState.Press));
-            cfg.AssignKey(PlayerAction.MoveR, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.D, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.MoveU, new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Player: Walk forwards"));
+            cfg.AssignKey(PlayerAction.MoveD, new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press, "Player: Walk backwards"));
+            cfg.AssignKey(PlayerAction.MoveL, new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press, "Player: Strafe left"));
+            cfg.AssignKey(PlayerAction.MoveR, new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press, "Player: Strafe right"));
 
-            cfg.AssignKey(PlayerAction.TurnL, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Q, Keybind.KeypressState.Press));
-            cfg.AssignKey(PlayerAction.TurnR, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.E, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.TurnL, new Keybind.KeybindInfo(Keys.Q, Keybind.KeypressState.Press, "Player: Turn left"));
+            cfg.AssignKey(PlayerAction.TurnR, new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press, "Player: Turn right"));
 
-            cfg.AssignKey(PlayerAction.Interact, new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Space, Keybind.KeypressState.Press));
+            cfg.AssignKey(PlayerAction.Interact, new Keybind.KeybindInfo(Keys.Space, Keybind.KeypressState.Press, "Player: Interact"));
+            cfg.AssignKey(PlayerAction.OpenInventory, new Keybind.KeybindInfo(Keys.I, Keybind.KeypressState.Press, "Player: Open inventory"));
 
             return cfg;
         }
@@ -326,7 +355,61 @@ namespace FieryOpal.src
             }
         }
 
-        public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs=1, bool break_early=true)
+        public static Rectangle Intersection(this Rectangle r, Rectangle other)
+        {
+            if (!r.Intersects(other)) return new Rectangle(0, 0, 0, 0);
+            return new Rectangle(
+                Math.Max(r.Left, other.Left),
+                Math.Max(r.Top, other.Top),
+                Math.Min(r.Right, other.Right) - Math.Max(r.Left, other.Left),
+                Math.Min(r.Bottom, other.Bottom) - Math.Max(r.Top, other.Top)
+            );
+        }
+
+        public static string Repeat(this string s, int n)
+        {
+            StringBuilder sb = new StringBuilder();
+            while (n-- > 0) sb.Append(s);
+            return sb.ToString();
+        }
+
+        public static string Repeat(this char c, int n)
+        {
+            StringBuilder sb = new StringBuilder();
+            while (n-- > 0) sb.Append(c);
+            return sb.ToString();
+        }
+
+        private static readonly Encoding asciiEncoding = Encoding.GetEncoding(437);
+
+        public static string ToAscii(this string dirty)
+        {
+            byte[] bytes = asciiEncoding.GetBytes(dirty);
+            string clean = asciiEncoding.GetString(bytes);
+            return clean;
+        }
+
+        public static ColoredString ToColoredString(this string s, Color? fg = null, Color? bg = null)
+        {
+            return new ColoredString(s, fg ?? Color.White, bg ?? Color.Transparent);
+        }
+
+        public static ColoredString ToColoredString(this string s, Cell c)
+        {
+            return new ColoredString(s, c);
+        }
+
+        public static ColoredString ToColoredString(this int glyph, Cell c)
+        {
+            return new ColoredString(((char)glyph).ToString(), c);
+        }
+
+        public static ColoredString ToColoredString(this char glyph, Cell c)
+        {
+            return new ColoredString(glyph.ToString(), c);
+        }
+
+        public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs=1, bool break_early=true, bool shuffle = false, bool randomize_order = false)
         {
             List<int> done = new List<int>();
             for(int k = 0; k < epochs; ++k)
@@ -335,13 +418,18 @@ namespace FieryOpal.src
                 foreach (var m in mr)
                 {
                     if (done.Contains(++i)) continue;
-                    if (!m.SlideAcross(tiles, stride, zero, one) && break_early)
+                    if (!m.SlideAcross(tiles, stride, zero, one, shuffle: shuffle, randomize_order: randomize_order) && break_early)
                     {
                         done.Add(i);
                         Util.Log(String.Format("MatrixReplacement[].SlideAcross: Matrix done in {0} out of {1} epochs.", k + 1, epochs), true);
                     }
                 }
             }
+        }
+
+        public static string CapitalizeFirst(this string s)
+        {
+            return Char.ToUpper(s[0]) + s.Substring(1);
         }
     }
 }

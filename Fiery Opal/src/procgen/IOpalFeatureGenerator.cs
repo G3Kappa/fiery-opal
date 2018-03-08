@@ -1,6 +1,8 @@
-﻿namespace FieryOpal.src.procgen
+﻿using System;
+
+namespace FieryOpal.src.procgen
 {
-    public interface IOpalFeatureGenerator
+    public interface IOpalFeatureGenerator : IDisposable
     {
         /// <summary>
         /// Yield the generated tile at coordinates X, Y.

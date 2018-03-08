@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 
 namespace FieryOpal.src.actors
 {
-    public abstract class TurnTakingActor : OpalActorBase, ITurnTaker
+    public abstract class TurnTakingActor : OpalActorBase, ITurnTaker, IInventoryHolder
     {
         public abstract float TurnPriority { get; }
         public Queue<TurnBasedAction> EnqueuedActions { get; } = new Queue<TurnBasedAction>();
         public TurnBasedAI Brain { get; set; }
         public Vector2 LookingAt { get; set; } = new Vector2(0, 1);
+        public PersonalInventory Inventory { get; protected set; }
 
         public TurnTakingActor() : base() { }
 

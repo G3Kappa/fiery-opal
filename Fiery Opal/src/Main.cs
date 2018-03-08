@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
 using SadConsole;
 using Microsoft.Xna.Framework;
 using FieryOpal.src.ui;
 using FieryOpal.src;
+using FieryOpal.src.procgen;
+using System.Collections.Generic;
 
 namespace FieryOpal
 {
@@ -20,6 +23,7 @@ namespace FieryOpal
 
         static void Main(string[] args)
         {
+            Keybind.PushState();
             SadConsole.Game.Create("Taffer.font", Width, Height);
             
             SadConsole.Game.OnInitialize = Init;
@@ -28,6 +32,7 @@ namespace FieryOpal
 
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
+            Keybind.PopState();
         }
 
         private static void Update(GameTime time)
@@ -35,6 +40,7 @@ namespace FieryOpal
             Keybind.Update();
             Util.Update(time);
             mainGameWindowManager.Update(time);
+            OpalDialog.Update(time);
         }
 
         private static void Draw(GameTime time)
@@ -53,7 +59,7 @@ namespace FieryOpal
             OpalGame g = new OpalGame(map);
 
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
-            Util.Log(new ColoredString("Welcome to Fiery Opal!", Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]), false);
+            Util.Log("Welcome to Fiery Opal!", false);
         }
     }
 }

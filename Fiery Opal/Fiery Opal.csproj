@@ -55,6 +55,7 @@
     <Compile Include="src\procgen\BasicTerrainDecorator.cs" />
     <Compile Include="src\procgen\BasicTerrainGenerator.cs" />
     <Compile Include="src\procgen\BuildingDesigner.cs" />
+    <Compile Include="src\procgen\Deity.cs" />
     <Compile Include="src\procgen\IOpalFeatureGenerator.cs" />
     <Compile Include="src\Keybind.cs" />
     <Compile Include="src\lib\SimplexNoise.cs" />
@@ -66,9 +67,16 @@
     <Compile Include="src\OpalTile.cs" />
     <Compile Include="src\MessagePipeline.cs" />
     <Compile Include="src\procgen\GenUtil.cs" />
+    <Compile Include="src\procgen\NameGenerator.cs" />
+    <Compile Include="src\procgen\Settlement.cs" />
     <Compile Include="src\Turn.cs" />
+    <Compile Include="src\ui\BookDialog.cs" />
     <Compile Include="src\ui\ColorPalette.cs" />
+    <Compile Include="src\ui\ContextMenu.cs" />
+    <Compile Include="src\ui\DialogueDialog.cs" />
+    <Compile Include="src\ui\InventoryDialog - Copy.cs" />
     <Compile Include="src\ui\MainGameWindowManager.cs" />
+    <Compile Include="src\ui\OkCancelDialog.cs" />
     <Compile Include="src\ui\OpalConsoleWindow.cs" />
     <Compile Include="src\ui\OpalGameWindow.cs" />
     <Compile Include="src\ui\OpalLogWindow.cs" />
@@ -149,6 +157,7 @@
     <None Include="Kein.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Philosophy.md" />
     <None Include="Taffer.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -163,7 +172,7 @@
     <Content Include="kein.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Compile Include="src\ui\Dialog.cs" />
+    <Compile Include="src\ui\OpalDialogBase.cs" />
     <Content Include="taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

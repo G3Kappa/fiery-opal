@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
 using SadConsole.Input;
+using FieryOpal.src.ui;
 
 namespace FieryOpal.src
 {
@@ -21,30 +22,71 @@ namespace FieryOpal.src
 
         public struct KeybindInfo
         {
-            Keys MainKey;
-            bool CtrlDown;
-            bool ShiftDown;
-            bool AltDown;
+            public Keys MainKey;
+            public bool CtrlDown;
+            public bool ShiftDown;
+            public bool AltDown;
 
-            KeypressState State;
+            public KeypressState State;
+            public string HelpText;
 
-            public KeybindInfo(Keys k, KeypressState state, bool ctrl = false, bool shift = false, bool alt = false)
+            public KeybindInfo(Keys k, KeypressState state, string help_text, bool ctrl = false, bool shift = false, bool alt = false)
             {
                 MainKey = k;
                 CtrlDown = ctrl;
                 ShiftDown = shift;
                 AltDown = alt;
                 State = state;
+                HelpText = help_text;
+            }
+
+            public override string ToString()
+            {
+                var fmt = "{0}{1}{2}";
+                var s = String.Format(fmt, CtrlDown ? "ctrl+" : "", AltDown ? "alt+" : "", ShiftDown ? MainKey.ToString().ToUpper() : MainKey.ToString().ToLower());
+
+                return s;
+            }
+
+            private KeybindInfo Stripped()
+            {
+                if (HelpText.Length == 0) return this;
+                return new KeybindInfo(MainKey, State, "", CtrlDown, ShiftDown, AltDown);
+            }
+
+            public override int GetHashCode()
+            {
+                int hash = MainKey.GetHashCode();
+                hash = (hash * 17) + CtrlDown.GetHashCode();
+                hash = (hash * 17) + ShiftDown.GetHashCode();
+                hash = (hash * 17) + AltDown.GetHashCode();
+                hash = (hash * 17) + State.GetHashCode();
+                return hash;
+            }
+
+            public override bool Equals(object obj)
+            {
+                KeybindInfo? info = obj as KeybindInfo?;
+                if (!info.HasValue) return false;
+
+                return info.Value.GetHashCode() == GetHashCode();
             }
         }
 
-        protected static Dictionary<KeybindInfo, KeybindTriggered> Delegates = new Dictionary<KeybindInfo, KeybindTriggered>();
+        protected static Stack<Dictionary<KeybindInfo, KeybindTriggered>> Delegates = new Stack<Dictionary<KeybindInfo, KeybindTriggered>>();
+
+        private static Dictionary<KeybindInfo, KeybindTriggered> currentDelegates = new Dictionary<KeybindInfo, KeybindTriggered>();
+        protected static Dictionary<KeybindInfo, KeybindTriggered> CurrentDelegates
+        {
+            get => currentDelegates;
+            set => currentDelegates = value;
+        }
 
         public static bool BindKey(KeybindInfo kb, KeybindTriggered onkbtriggered)
         {
-            if (!Delegates.ContainsKey(kb))
+            if (!CurrentDelegates.ContainsKey(kb))
             {
-                Delegates.Add(kb, onkbtriggered);
+                CurrentDelegates.Add(kb, onkbtriggered);
                 return true;
             }
             return false;
@@ -52,9 +94,9 @@ namespace FieryOpal.src
 
         public static bool UnbindKey(KeybindInfo kb)
         {
-            if(Delegates.ContainsKey(kb))
+            if(CurrentDelegates.ContainsKey(kb))
             {
-                Delegates.Remove(kb);
+                CurrentDelegates.Remove(kb);
                 return true;
             }
             return false;
@@ -62,10 +104,27 @@ namespace FieryOpal.src
 
         private static void FireEvent(KeybindInfo info)
         {
-            if (Delegates.ContainsKey(info))
+            if (CurrentDelegates.ContainsKey(info))
             {
-                Delegates[info](info);
+                CurrentDelegates[info](info);
             }
+        }
+
+        private static void BindPermanent()
+        {
+            BindKey(new KeybindInfo(Keys.F10, KeypressState.Press, "Show this dialog"), (info) => ShowCurrentKeybindsDialog());
+        }
+
+        public static void PushState()
+        {
+            Delegates.Push(CurrentDelegates);
+            CurrentDelegates = new Dictionary<KeybindInfo, KeybindTriggered>();
+            BindPermanent();
+        }
+
+        public static void PopState()
+        {
+            CurrentDelegates = Delegates.Pop();
         }
 
         public static void Update()
@@ -76,21 +135,39 @@ namespace FieryOpal.src
 
             foreach (var k in SadConsole.Global.KeyboardState.KeysDown)
             {
-                var info = new KeybindInfo(k.Key, KeypressState.Down, ctrl, shift, alt);
+                var info = new KeybindInfo(k.Key, KeypressState.Down, "", ctrl, shift, alt);
                 FireEvent(info);
             }
 
             foreach (var k in SadConsole.Global.KeyboardState.KeysPressed)
             {
-                var info = new KeybindInfo(k.Key, KeypressState.Press, ctrl, shift, alt);
+                var info = new KeybindInfo(k.Key, KeypressState.Press, "", ctrl, shift, alt);
                 FireEvent(info);
             }
 
             foreach (var k in SadConsole.Global.KeyboardState.KeysReleased)
             {
-                var info = new KeybindInfo(k.Key, KeypressState.Release, ctrl, shift, alt);
+                var info = new KeybindInfo(k.Key, KeypressState.Release, "", ctrl, shift, alt);
                 FireEvent(info);
             }
+        }
+
+        public static void ShowCurrentKeybindsDialog()
+        {
+            var dialog = OpalDialog.Make<ContextMenu<Keybind>>("Current Key Mapping", "");
+            dialog.BindActions = false;
+            foreach (var bind in CurrentDelegates.Keys)
+            {
+                if (bind.HelpText.EndsWith("this dialog")) continue;
+
+                dialog.AddAction(bind.HelpText, (kb) => { }, bind);
+            }
+            OpalDialog.LendKeyboardFocus(dialog);
+            foreach (var bind in CurrentDelegates.Keys)
+            {
+                dialog.AddAction(bind.HelpText, (kb) => { }, bind);
+            }
+            dialog.Show();
         }
 
     }

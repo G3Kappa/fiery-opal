@@ -20,7 +20,8 @@ namespace FieryOpal.src.actors
         TurnL = 5,
         TurnR = 6,
 
-        Interact = 7
+        Interact = 7,
+        OpenInventory = 8
     }
 
     public class PlayerActionsKeyConfiguration
@@ -64,6 +65,8 @@ namespace FieryOpal.src.actors
 
     class PlayerControlledAI : TurnBasedAI
     {
+        private bool isHandlingDialog => OpalDialog.CurrentDialogCount > 0;
+
         public PlayerActionsKeyConfiguration KeyConfig;
         public MessagePipeline<OpalGame> InternalMessagePipeline { get; }
 
@@ -75,6 +78,11 @@ namespace FieryOpal.src.actors
             }
             KeyConfig = keyconfig;
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
+
+            Body.Inventory.Store(new Journal());
+
+            Body.Inventory.ItemStored += (item) => Util.Log("Got ".ToColoredString() + item.ItemInfo.Name, false);
+            Body.Inventory.ItemRetrieved += (item) => Util.Log("Dropped ".ToColoredString() + item.ItemInfo.Name, false);
         }
 
         public void BindKeys()
@@ -90,6 +98,7 @@ namespace FieryOpal.src.actors
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.TurnR), (info) => { Turn((float)Math.PI / 4); });
 
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Interact), (info) => { Interact(); });
+            Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
         }
 
         public override IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy)
@@ -115,7 +124,23 @@ namespace FieryOpal.src.actors
 
             var interactive = Body.Map.ActorsAt(pos.X, pos.Y).FirstOrDefault(a => a is IInteractive);
             if (interactive == null) return;
-            (interactive as IInteractive).InteractWith(Body);
+            Body.EnqueuedActions.Enqueue(() =>
+            {
+                (interactive as IInteractive).InteractWith(Body);
+                InputHandled("FlagRaycastViewportForRedraw");
+                return 0f;
+            });
+            InputHandled();
+        }
+
+        private void OpenInventory()
+        {
+            if (isHandlingDialog) return;
+
+            var inventory_window = OpalDialog.Make<InventoryDialog>("Inventory", "");
+            inventory_window.Inventory = Body.Inventory;
+            OpalDialog.LendKeyboardFocus(inventory_window);
+            inventory_window.Show();
         }
 
         private void Turn(float angle)

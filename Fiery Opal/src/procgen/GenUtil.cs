@@ -7,48 +7,116 @@ namespace FieryOpal.src.procgen
 {
     public static class GenUtil
     {
-        public static IEnumerable<Rectangle> Partition(Rectangle r, float openness, float min_size, float partition_rand)
+        public class Rectanglef
+        {
+            public Vector2 Location { get; set; }
+            public Vector2 Size { get; set; }
+
+            public float X => Location.X;
+            public float Y => Location.Y;
+            public float Width => Size.X;
+            public float Height => Size.Y;
+
+            public float Left => Location.X;
+            public float Top => Location.Y;
+            public float Right => Location.X + Size.X;
+            public float Bottom => Location.Y + Size.Y;
+
+            public static implicit operator Rectanglef(Rectangle r)
+            {
+                return new Rectanglef()
+                {
+                    Location = new Vector2(r.X, r.Y),
+                    Size = new Vector2(r.Size.X, r.Size.Y)
+                };
+            }
+
+            public static implicit operator Rectangle(Rectanglef r)
+            {
+                return new Rectangle()
+                {
+                    Location = new Point((int)r.X, (int)r.Y),
+                    Size = new Point((int)r.Size.X, (int)r.Size.Y)
+                };
+            }
+
+            public Rectanglef()
+            {
+                Location = Vector2.Zero;
+                Size = Vector2.Zero;
+            }
+
+            public Rectanglef(float x, float y, float w, float h)
+            {
+                Location = new Vector2(x, y);
+                Size = new Vector2(w, h);
+            }
+        }
+
+        public static IEnumerable<Rectangle> SplitRect(Rectangle r, float pct)
+        {
+            bool ver = r.Width > r.Height; // Vertical cut?
+
+            float r1W = (ver ? r.Width * pct : r.Width);
+            float r1H = (ver ? r.Height : r.Height * pct);
+
+            float r2W = (ver ? r.Width - r1W : r.Width);
+            float r2H = (ver ? r.Height : r.Height - r1H);
+
+            Rectanglef r1 = new Rectanglef(r.X, r.Y, r1W, r1H);
+            Rectanglef r2 = new Rectanglef(r.X + (ver ? r1W : 0), r.Y + (ver ? 0 : r1H), r2W, r2H);
+
+            yield return r1;
+            yield return r2;
+        }
+
+        public static IEnumerable<Rectangle> Partition(Rectangle r, float min_size)
         {
             List<Rectangle> partitions = new List<Rectangle>();
-            Stack<Rectangle> stack = new Stack<Rectangle>();
+            Stack<Rectanglef> stack = new Stack<Rectanglef>();
 
-            Rectangle I = r;
+            Rectanglef I = r;
+
             do
             {
                 bool ver = I.Width > I.Height; // Vertical cut?
-                int xRandOffset = ver ? (int)(partition_rand * I.Width / 2) - Util.GlobalRng.Next((int)(partition_rand * I.Width)) : 0;
-                int yRandOffset = ver ? 0 : (int)(partition_rand * I.Height / 2) - Util.GlobalRng.Next((int)(partition_rand * I.Height));
 
-                int r1W = (ver ? I.Width / 2 : I.Width) + xRandOffset;
-                int r1H = (ver ? I.Height : I.Height / 2) + yRandOffset;
+                // If cutting vertically, the width of the first rectangle will be half the original size, and the height full.
+                // If cutting horizontally, the height will be half and the width full.
+                float r1W = (ver ? I.Width / 2f : I.Width);
+                float r1H = (ver ? I.Height : I.Height / 2f);
 
-                Rectangle r1 = new Rectangle(I.X, I.Y, r1W, r1H);
-                Rectangle r2 = new Rectangle(I.X + (ver ? r1W : 0), I.Y + (ver ? 0 : r1H), (ver ? r1W : I.Width), (ver ? I.Height : r1H));
-
-                if (r1.Width / (float)r.Width <= min_size || r2.Width / (float)r.Width <= min_size
-                    || r1.Height / (float)r.Height <= min_size || r2.Height / (float)r.Height <= min_size)
+                // r1 = Location of first rectangle and r1W r1H size
+                Rectanglef r1 = new Rectanglef(I.X, I.Y, r1W, r1H);
+                // r2 = Basically r1 but with X or Y incremented by the previously halved measure
+                Rectanglef r2 = new Rectanglef(
+                    I.X + (ver ? r1W : 0), 
+                    I.Y + (ver ? 0 : r1H), 
+                    (ver ? r1W : I.Width), 
+                    (ver ? I.Height : r1H)
+                );
+                // If either of the generated rectangles is too small, as in
+                // if the width of rX divided by the original width is less than min_size
+                if ( ver ? (r1W / r.Width < min_size) : (r1H / r.Height < min_size) )
                 {
+                    // Add the current rectangle to the list of returned partitions
                     partitions.Add(I);
 
+                    // If there are no more rectangles on the stack, done
                     if (stack.Count == 0) break;
+                    // Otherwise pop the stack and repeat
                     I = stack.Pop();
                     continue;
                 }
-
+                // Otherwise store r1 for later and try r2
                 stack.Push(r1);
                 I = r2;
             }
             while (true);
 
-            // Remove some random partitions
-            int partitions_to_remove = (int)(partitions.Count * (1 - openness));
-            while (partitions_to_remove-- > 0)
-            {
-                partitions.RemoveAt(Util.GlobalRng.Next(partitions.Count));
-            }
-
             return partitions;
         }
+
         public static IEnumerable<Tuple<IEnumerable<Point>, Point>> GetEnclosedAreasAndCentroids(OpalLocalMap tiles, Predicate<OpalTile> enclosed_tile)
         {
             Dictionary<Point, bool> AlreadyFilled = new Dictionary<Point, bool>();
@@ -77,6 +145,7 @@ namespace FieryOpal.src.procgen
                 }
             }
         }
+
         public static Rectangle GetEnclosingRectangle(IEnumerable<Point> area)
         {
             Point min = new Point(int.MaxValue, int.MaxValue), max = new Point(int.MinValue, int.MinValue);
@@ -101,6 +170,7 @@ namespace FieryOpal.src.procgen
             }
             return new Rectangle(min.X, min.Y, max.X - min.X + 1, max.Y - min.Y + 1);
         }
+
         public static void ConnectEnclosedAreas(OpalLocalMap tiles, IEnumerable<Tuple<IEnumerable<Point>, Point>> enclosedAreas, OpalTile pathTile, int minThickness, int maxThickness, int maxRadius)
         {
             var enclosed_areas = enclosedAreas.ToList();
@@ -182,17 +252,25 @@ namespace FieryOpal.src.procgen
                 }
             }
 
-            public bool SlideAcross(OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, bool shuffle = false)
+            public bool SlideAcross(OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, bool shuffle = false, bool randomize_order = false)
             {
                 bool at_least_one_match = false;
+                List<Point> points = new List<Point>();
                 for (int x = 0; x < tiles.Width; x += stride.X)
                 {
                     for (int y = 0; y < tiles.Height; y += stride.Y)
                     {
-                        bool matches = false;
-                        Apply(tiles, new Point(x, y), zero, one, ref matches, shuffle);
-                        if (!at_least_one_match && matches) at_least_one_match = true;
+                        points.Add(new Point(x, y));
                     }
+                }
+
+                if(randomize_order) points = points.OrderBy(x => Util.GlobalRng.Next()).ToList();
+
+                foreach (var p in points) 
+                {
+                    bool matches = false;
+                    Apply(tiles, p, zero, one, ref matches, shuffle);
+                    if (!at_least_one_match && matches) at_least_one_match = true;
                 }
                 if (!at_least_one_match)
                 {
@@ -215,7 +293,7 @@ namespace FieryOpal.src.procgen
                 }
 
                 /* For each rotated matrix */
-                for (int i = 0; indices.Count > 0; i = indices.Pop())
+                for (int i = indices.Pop(); indices.Count > 0; i = indices.Pop())
                 {
                     var pattern = Patterns[i];
                     bool bad_pattern = false;

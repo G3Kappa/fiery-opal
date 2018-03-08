@@ -61,7 +61,7 @@ namespace FieryOpal.src.ui
             Color debug_background = Palette.Ui["DefaultBackground"];
             // Debug header has inverted foreground and background on purpose
             ColoredString debug_header = new ColoredString(debug ? "DBG:" : "", debug_background, debug_foreground);
-            if (debug) debug_header += new ColoredString(" ");
+            if (debug) debug_header += new ColoredString(" ", debug_background, debug_background);
 
             LastShownMessages.Add(new Tuple<ColoredString, bool>(debug_header + msg, debug));
             if (LastShownMessages.Count >= LastShownMessagesCap)

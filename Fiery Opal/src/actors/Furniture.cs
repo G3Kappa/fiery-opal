@@ -15,6 +15,7 @@ namespace FieryOpal.src.actors
     }
     public abstract class Seating : Furniture, IInteractive
     {
+        public override bool BlocksMovement => false;
         bool IsOccupied => Occupant != null;
 
         OpalActorBase occupant = null;
@@ -27,16 +28,6 @@ namespace FieryOpal.src.actors
 
         public bool InteractWith(OpalActorBase actor)
         {
-            if (occupant == actor)
-            {
-                occupant.ReleaseMovement(this);
-                occupant = null;
-                return true;
-            }
-            if (IsOccupied) return false;
-            occupant = actor;
-            occupant.MoveTo(LocalPosition, absolute: true);
-            occupant.BlockMovement(this);
             return true;
         }
     }
@@ -98,7 +89,7 @@ namespace FieryOpal.src.actors
         }
     }
 
-    public class Bookshelf : PhysicalStorage<Book>, IInteractive
+    public class Bookshelf : PhysicalStorage<Item>, IInteractive
     {
         public override bool DisplayAsBlock => true;
 

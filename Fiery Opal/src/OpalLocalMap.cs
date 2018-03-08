@@ -71,7 +71,6 @@ namespace FieryOpal.src
 
         public virtual void Generate(params IOpalFeatureGenerator[] generators)
         {
-
             Iter((self, x, y, t) =>
             {
                 self.TileAt(x, y)?.Dispose();
@@ -94,12 +93,20 @@ namespace FieryOpal.src
                     {
                         if(!decor.ChangeLocalMap(self, new Point(x, y)))
                         {
-                            Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true, Color.Red, Color.Black);
+                            Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
                         }
                     }
 
                     return false;
                 });
+                // Generators often instantiate their own OpalLocalMaps,
+                // and they yield tiles by copying them, so they need
+                // a way to dispose of the allocated resources once the
+                // current call to Generate is no longer relevant.
+                // If they don't dispose of these resources, the function
+                // getFirstFreeId() of OpalLocalTile will take longer
+                // and longer as new maps are generated.
+                gen.Dispose();
             }
         }
 

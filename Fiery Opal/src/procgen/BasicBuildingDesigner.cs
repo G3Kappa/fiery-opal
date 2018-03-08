@@ -125,72 +125,41 @@ namespace FieryOpal.src.procgen
             "Make Walls (Diag)"
         );
 
-        public static MatrixReplacement SeedInternalWalls = new MatrixReplacement(
-            new int[7, 7] {
-                    { 2, 2, 2, 1, 0, 0, 2},
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-            },
-            new int[7, 7] {
-                    { 2, 2, 2, 1, 2, 2, 2},
-                    { 2, 2, 2, 1, 0, 2, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 1, 1, 2 },
-                    { 2, 2, 2, 1, 0, 0, 2 },
-                    { 2, 2, 2, 1, 0, 2, 2 },
-                    { 2, 2, 2, 1, 2, 2, 2 },
-            },
-            "Seed Internal Walls"
-        );
-
-        public static MatrixReplacement CompleteInternalWalls = new MatrixReplacement(
-            new int[3, 3] {
-                    { 2, 1, 2, },
-                    { 0, 1, 0, },
-                    { 2, 0, 2, },
-            },
-            new int[3, 3] {
-                    { 2, 1, 2, },
-                    { 0, 1, 0, },
-                    { 2, 1, 2, },
-            },
-            "Complete Internal Walls"
-        );
-
-        public static MatrixReplacement RemoveTightCorridors = new MatrixReplacement(
-            new int[3, 3] {
-                    { 1, 1, 1, },
-                    { 0, 0, 2, },
-                    { 1, 1, 1, },
-            },
-            new int[3, 3] {
-                    { 0, 0, 2, },
-                    { 0, 0, 2, },
-                    { 0, 0, 2, },
-            },
-            "Remove Tight Corridors"
-        );
-
         protected override void GenerateOntoWorkspace()
         {
             // ---- Generate building rects from the grid
             bool[,] matrix = GenerateBuildingMatrix();
-            Rectangle[,] complex_rects = new Rectangle[3, 3];
+            Rectangle[,] building_rects = new Rectangle[3, 3];
+            // Subpartition overlapping areas:
+            // Take a building_rect and partition it in two. Move the first partition
+            // one unit towards the other, making them intersect.
+            // Store the intersection and use it to build internal walls.
+            Rectangle[,] subpart_overlaps = new Rectangle[3, 3];
             for (int i = 0; i < 3; ++i)
             {
                 for (int j = 0; j < 3; ++j)
                 {
-                    complex_rects[i, j] = new Rectangle(0, 0, 0, 0);
+                    building_rects[i, j] = new Rectangle(0, 0, 0, 0);
                     if (!matrix[i, j]) continue;
                     Point sz = new Point((int)(Workspace.Width / (Util.GlobalRng.NextDouble() * 3 + 1)), (int)(Workspace.Height / (Util.GlobalRng.NextDouble() * 3 + 1)));
                     Point p = new Point((i + 1) * Workspace.Width / 4, (j + 1) * Workspace.Height / 4);
                     p -= new Point(sz.X / 2, sz.Y / 2);
 
-                    complex_rects[i, j] = new Rectangle(p, sz);
+                    building_rects[i, j] = new Rectangle(p, sz); // GenUtil.Partition(new Rectangle(p, sz), 1, 1 / 2f, 0.0f).ElementAt(0);
+                    var /*my_*/sides = GenUtil.SplitRect(building_rects[i, j], .5f).ToList();
+
+                    if(sides[0].X < sides[1].X)
+                    // Vertical cut
+                    {
+                        sides[1] = new Rectangle(sides[1].X - 1, sides[1].Y, sides[1].Width, sides[1].Height);
+                    }
+                    else
+                    // Horizontal cut
+                    {
+                        sides[1] = new Rectangle(sides[1].X, sides[1].Y - 1, sides[1].Width, sides[1].Height);
+                    }
+
+                    subpart_overlaps[i, j] = sides[0].Intersection(sides[1]);
                 }
             }
 
@@ -198,18 +167,22 @@ namespace FieryOpal.src.procgen
             {
                 int m_x = (int)(((float)x / s.Width) * 3);
                 int m_y = (int)(((float)y / s.Height) * 3);
-                var r = complex_rects[m_x, m_y];
+                var r = building_rects[m_x, m_y];
                 s.SetTile(x, y, OpalTile.Dirt);
                 if (!matrix[m_x, m_y]) return false;
 
                 var p = new Point(x, y);
-                if (r.Contains(p))
+                if (building_rects[m_x, m_y].Contains(p))
                 {
-                    s.SetTile(x, y, OpalTile.ConstructedFloor);
+                    if(subpart_overlaps[m_x, m_y].Contains(p))
+                    {
+                        s.SetTile(x, y, OpalTile.ConstructedWall);
+                    }
+                    else s.SetTile(x, y, OpalTile.ConstructedFloor);
                 }
                 return false;
             });
-
+            return;
             // ---- Apply MatrixReplacements to build walls and refine them.
             MRRule FloorToFloor = new MRRule(u => u == OpalTile.ConstructedFloor, OpalTile.ConstructedFloor);
             MRRule WallToWall = new MRRule(u => u == OpalTile.ConstructedWall, OpalTile.ConstructedWall);
@@ -239,25 +212,6 @@ namespace FieryOpal.src.procgen
                 new MRRule(u => u == null || u == OpalTile.Dirt, OpalTile.ConstructedWall),
                 epochs: 1
             );
-            // Nice matrix-driven internal wall building
-            SeedInternalWalls.SlideAcross(
-                Workspace, new Point(1),
-                FloorToFloor,
-                WallToWall,
-                shuffle: true
-            );
-            new[] { CompleteInternalWalls }.SlideAcross(
-                Workspace, new Point(1),
-                FloorToFloor,
-                WallToWall,
-                epochs: 100,
-                break_early: true
-            );
-            RemoveTightCorridors.SlideAcross(
-                Workspace, new Point(1),
-                FloorToFloor,
-                WallToWall
-            );
 
             // ---- Removing dirt but leaving an approximate circle to help this complex blend in with the host map
             Point center = new Point(Workspace.Width / 2, Workspace.Height / 2);
@@ -271,7 +225,7 @@ namespace FieryOpal.src.procgen
                 }
                 return false;
             });
-
+            return;
             // ---- Flood fill to get a list of enclosed rooms
             var rooms = GenUtil.GetEnclosedAreasAndCentroids(Workspace, t => t == OpalTile.ConstructedFloor);
             foreach(var room in rooms)

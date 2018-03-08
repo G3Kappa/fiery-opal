@@ -29,7 +29,6 @@ namespace FieryOpal.src
         Vector2 FirstPersonScale { get; set; }
         float FirstPersonVerticalOffset { get; set; }
         bool Visible { get; set; }
-        ActorIdentity Identity { get; set; }
 
         void Update(TimeSpan delta);
 
@@ -45,6 +44,11 @@ namespace FieryOpal.src
         bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn);
 
         bool OnBump(IOpalGameActor other);
+    }
+
+    public interface IInspectable
+    {
+        string GetInspectDescription(IOpalGameActor observer);
     }
 
     public interface IDecoration : IOpalGameActor
@@ -64,7 +68,12 @@ namespace FieryOpal.src
         bool InteractWith(OpalActorBase actor);
     }
 
-    public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor
+    public interface IInventoryHolder : IOpalGameActor
+    {
+        PersonalInventory Inventory { get; }
+    }
+
+    public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor, IInspectable
     {
 
         private Point localPosition;
@@ -94,15 +103,12 @@ namespace FieryOpal.src
         public bool CanMove => can_move && held_by == null;
 
         public Guid Handle { get; }
-
-        private ActorIdentity identity;
-        public ActorIdentity Identity { get => identity; set => identity = value; }
+        
 
         public OpalActorBase()
         {
             Handle = Guid.NewGuid();
             Graphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
-            identity = new ActorIdentity(name: "Nameless Actor");
             FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
         }
 
@@ -187,6 +193,13 @@ namespace FieryOpal.src
 
         public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn)
         {
+            if (new_map == null)
+            {
+                if (map != null) map.RemoveActor(this);
+                map = null;
+                return true;
+            }
+
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
             bool ret = tile == null || !tile.Properties.BlocksMovement;
             if (ret)
@@ -216,6 +229,11 @@ namespace FieryOpal.src
             if (Map == null) return;
             is_dead = true;
             Map.RemoveActor(this);
+        }
+
+        public string GetInspectDescription(IOpalGameActor observer)
+        {
+            return "TODO: CHANGE ME";
         }
     }
     public abstract class LightSourceBase : OpalActorBase, ILightSource
