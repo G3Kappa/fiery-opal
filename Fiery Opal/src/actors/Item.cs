@@ -1,4 +1,5 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.src.procgen;
+using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -170,7 +171,7 @@ namespace FieryOpal.src.actors
 
         public Journal() : base("Journal".ToColoredString(), ItemCategory.Book)
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.Gold, Color.CornflowerBlue, 'J'));
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.Black, Color.White, 'J'));
         }
 
         private void Read(IInventoryHolder holder)
@@ -193,6 +194,43 @@ namespace FieryOpal.src.actors
             base.RegisterInventoryActions();
             RegisterInventoryAction("read", (h) => Read(h), new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press, "Read journal"));
             RegisterInventoryAction("write on", (h) => Write(h), new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Write on journal"));
+
+            UnregisterInventoryAction("drop"); // Key item, can't be dropped.
+        }
+    }
+
+    public class WorldMap : Item
+    {
+        public WorldMap() : base("World Map".ToColoredString(), ItemCategory.Book)
+        {
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.LawnGreen, Color.CornflowerBlue, 'M'));
+        }
+
+        private void Read(IInventoryHolder holder)
+        {
+            var scr = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "");
+            World world = holder.Map.ParentRegion.ParentWorld;
+            WorldMapViewport vwp = new WorldMapViewport(world, new Rectangle(0, 0, world.Width, world.Height));
+            vwp.CursorPosition = holder.Map.ParentRegion.WorldPosition;
+            scr.Viewport = vwp;
+            OpalDialog.LendKeyboardFocus(scr);
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "World Map: Warp to location"), (i) => 
+            {
+                DateTime now = DateTime.Now;
+                holder.ChangeLocalMap(holder.Map.ParentRegion.ParentWorld.RegionAt(vwp.CursorPosition.X, vwp.CursorPosition.Y).LocalMap, new Point(0, 0));
+                Util.Log(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), false);
+            });
+            scr.Show();
+            scr.Closed += (e, eh) =>
+            {
+                Keybind.UnbindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, ""));
+            };
+        }
+
+        protected override void RegisterInventoryActions()
+        {
+            base.RegisterInventoryActions();
+            RegisterInventoryAction("view", (h) => Read(h), new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press, "View world map"));
 
             UnregisterInventoryAction("drop"); // Key item, can't be dropped.
         }

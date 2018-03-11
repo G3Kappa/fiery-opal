@@ -102,8 +102,7 @@ namespace FieryOpal.src
         public static OpalTile Dirt = TileFactory.Make(TileSkeleton.Get<DirtSkeleton>().Make);
         public static OpalTile FertileSoil = TileFactory.Make(TileSkeleton.Get<FertileSoilSkeleton>().Make);
         public static OpalTile Grass = TileFactory.Make(TileSkeleton.Get<GrassSkeleton>().Make);
-        public static OpalTile MediumGrass = TileFactory.Make(TileSkeleton.Get<MediumGrassSkeleton>().Make);
-        public static OpalTile TallGrass = TileFactory.Make(TileSkeleton.Get<TallGrassSkeleton>().Make);
+        public static OpalTile Water = TileFactory.Make(TileSkeleton.Get<WaterSkeleton>().Make);
 
         public static OpalTile RockFloor = TileFactory.Make(TileSkeleton.Get<NaturalFloorSkeleton>().Make);
         public static OpalTile RockWall = TileFactory.Make(TileSkeleton.Get<NaturalWallSkeleton>().Make);
@@ -236,29 +235,16 @@ namespace FieryOpal.src
         public override string DefaultName => "Grass";
         public override Cell DefaultGraphics => new Cell(Palette.Terrain["GrassForeground"], Palette.Terrain["GrassBackground"], ',');
     }
-    public class MediumGrassSkeleton : GrassSkeleton
+
+    public class WaterSkeleton : TileSkeleton
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
-                is_natural: base.DefaultProperties.IsNatural,
-                movement_penalty: 0.3f,
-                fertility: .6f
+                blocks_movement: false,
+                is_natural: true
             );
-        public override string DefaultName => "Medium Grass";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["MediumGrassForeground"], Palette.Terrain["MediumGrassBackground"], ':');
-    }
-    public class TallGrassSkeleton : MediumGrassSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
-                is_natural: base.DefaultProperties.IsNatural,
-                movement_penalty: 0.5f,
-                fertility: .3f
-            );
-        public override string DefaultName => "Tall Grass";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["TallGrassForeground"], Palette.Terrain["TallGrassBackground"], ':');
+        public override string DefaultName => "Water";
+        public override Cell DefaultGraphics => new Cell(Palette.Terrain["WaterForeground"], Palette.Terrain["WaterBackground"], 247);
     }
 
     public class ConstructedWallSkeleton : TileSkeleton

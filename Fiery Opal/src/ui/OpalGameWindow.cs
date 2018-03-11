@@ -1,4 +1,5 @@
-﻿using SadConsole;
+﻿using FieryOpal.src.procgen;
+using SadConsole;
 using System;
 using System.Collections.Generic;
 
@@ -16,6 +17,7 @@ namespace FieryOpal.src.ui
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
             InternalMessagePipeline.Subscribe(g);
             g.InternalMessagePipeline.Subscribe(this);
+
             Viewport = v;
         }
 

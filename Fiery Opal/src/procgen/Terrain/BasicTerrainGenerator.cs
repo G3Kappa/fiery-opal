@@ -6,14 +6,16 @@ using System.Text;
 using System.Threading.Tasks;
 using static FieryOpal.src.procgen.GenUtil;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.src.procgen.Terrain
 {
-    public class BasicTerrainGenerator : IOpalFeatureGenerator
+    public abstract class TerrainGeneratorBase : IOpalFeatureGenerator
     {
-        protected OpalLocalMap Tiles; // Used as wrapper for the extension methods
-
-        public BasicTerrainGenerator()
+        protected OpalLocalMap Tiles; 
+        protected Point WorldPosition;
+        
+        public TerrainGeneratorBase(Point worldPosition)
         {
+            WorldPosition = worldPosition;
         }
 
         public void Dispose()
@@ -25,7 +27,7 @@ namespace FieryOpal.src.procgen
             });
         }
 
-        public void Generate(OpalLocalMap m)
+        public virtual void Generate(OpalLocalMap m)
         {
             Tiles = new OpalLocalMap(m.Width, m.Height);
         }
@@ -37,7 +39,7 @@ namespace FieryOpal.src.procgen
 
         public IDecoration GetDecoration(int x, int y)
         {
-            return null;
+            return Tiles.ActorsAt(x, y).Where(a => a is IDecoration).FirstOrDefault() as IDecoration;
         }
     }
 }

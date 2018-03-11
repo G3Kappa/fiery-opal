@@ -1,4 +1,5 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.src.procgen;
+using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -80,6 +81,7 @@ namespace FieryOpal.src.actors
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
 
             Body.Inventory.Store(new Journal());
+            Body.Inventory.Store(new WorldMap());
 
             Body.Inventory.ItemStored += (item) => Util.Log("Got ".ToColoredString() + item.ItemInfo.Name, false);
             Body.Inventory.ItemRetrieved += (item) => Util.Log("Dropped ".ToColoredString() + item.ItemInfo.Name, false);
@@ -175,9 +177,6 @@ namespace FieryOpal.src.actors
             else if (x == -1 && y == 0) to = Util.NormalizedStep(-Body.LookingAt.Orthogonal());
             else if (x == 0 && y == 1) to = Util.NormalizedStep(-Body.LookingAt);
             else if (x == 1 && y == 0) to = Util.NormalizedStep(Body.LookingAt.Orthogonal());
-
-            Point _ = new Point();
-            if (!Body.CanMoveTo(to, ref _, false)) return;
 
             Body.EnqueuedActions.Enqueue(() =>
             {

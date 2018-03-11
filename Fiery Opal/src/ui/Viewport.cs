@@ -1,96 +1,40 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.src.procgen;
+using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
 
 namespace FieryOpal.src.ui
 {
-    public class ViewportFog
+    public abstract class Viewport
     {
-        protected HashSet<Point> Seen = new HashSet<Point>();
-        protected HashSet<Point> Known = new HashSet<Point>();
-        protected bool IsDisabled = false;
+        public Rectangle ViewArea { get; set; }
 
-        public void See(Point p)
-        {
-            if (!Seen.Contains(p)) Seen.Add(p);
-        }
+        public abstract int TargetWidth { get; }
+        public abstract int TargetHeight { get; }
 
-        public void Learn(Point p)
-        {
-            if (!Known.Contains(p)) Known.Add(p);
-        }
-
-        public void Unsee(Point p)
-        {
-            if (Seen.Contains(p)) Seen.Remove(p);
-        }
-
-        public void Forget(Point p)
-        {
-            if (Known.Contains(p)) Known.Remove(p);
-        }
-
-        public void UnseeEverything()
-        {
-            Seen.Clear();
-        }
-
-        public void ForgetEverything()
-        {
-            Known.Clear();
-        }
-
-        public bool CanSee(Point p)
-        {
-            if (IsDisabled) return true;
-            return Seen.Contains(p);
-        }
-
-        public bool KnowsOf(Point p)
-        {
-            if (IsDisabled) return true;
-            return Known.Contains(p);
-        }
-
-        public void Disable()
-        {
-            IsDisabled = true;
-        }
-
-        public void Enable()
-        {
-            IsDisabled = false;
-        }
-
-        public void Toggle()
-        {
-            IsDisabled = !IsDisabled;
-        }
-
-        public bool IsEnabled => !IsDisabled;
+        public abstract void Print(SadConsole.Console surface, Rectangle targetArea);
     }
 
-    public class Viewport
+    public class LocalMapViewport : Viewport
     {
-        public OpalLocalMap Target { get; protected set; }
+        public OpalLocalMap Target { get; set; }
 
-        public Rectangle ViewArea { get; set; }
-        public ViewportFog Fog { get; set; }
+        public override int TargetWidth => Target?.Width ?? -1;
+        public override int TargetHeight => Target?.Height ?? -1;
 
-        public Viewport(OpalLocalMap target, Rectangle view_area)
+        public LocalMapViewport(OpalLocalMap target, Rectangle view_area)
         {
             ViewArea = view_area;
             Target = target;
-            Fog = new ViewportFog();
         }
 
-        private void PrintFog(OpalConsoleWindow surface, Point p)
+        private void PrintFog(SadConsole.Console surface, Point p)
         {
             surface.SetCell(p.X, p.Y, new Cell(Target.FogColor, Target.FogColor, ' '));
         }
 
-        public virtual void Print(OpalConsoleWindow surface, Rectangle targetArea)
+        public override void Print(SadConsole.Console surface, Rectangle targetArea)
         {
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
@@ -102,12 +46,12 @@ namespace FieryOpal.src.ui
                 {
                     continue;
                 }
-                if (!Fog.KnowsOf(tuple.Item2))
+                if (!Target.Fog.KnowsOf(tuple.Item2))
                 {
                     PrintFog(surface, pos + targetArea.Location);
                     continue;
                 }
-                else if (!Fog.CanSee(tuple.Item2))
+                else if (!Target.Fog.CanSee(tuple.Item2))
                 {
                     surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph));
                 }
@@ -126,11 +70,11 @@ namespace FieryOpal.src.ui
                 {
                     continue;
                 }
-                if (!Fog.KnowsOf(act.LocalPosition))
+                if (!Target.Fog.KnowsOf(act.LocalPosition))
                 {
                     continue;
                 }
-                else if(act is DecorationBase && !Fog.CanSee(act.LocalPosition))
+                else if(act is DecorationBase && !Target.Fog.CanSee(act.LocalPosition))
                 {
                     surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Glyph);
                 }
@@ -138,6 +82,43 @@ namespace FieryOpal.src.ui
                 {
                     surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Foreground);
                     surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Glyph);
+                }
+            }
+        }
+    }
+
+    public class WorldMapViewport : Viewport
+    {
+        public World Target;
+        public Point CursorPosition = new Point();
+        public Cell Cursor = new Cell(Color.Red, Color.Transparent, 'X');
+
+        public override int TargetWidth => Target?.Width ?? -1;
+        public override int TargetHeight => Target?.Height ?? -1;
+
+        public WorldMapViewport(World target, Rectangle view_area) : base()
+        {
+            ViewArea = view_area;
+            Target = target;
+        }
+
+        public override void Print(SadConsole.Console surface, Rectangle targetArea)
+        {
+            surface.Clear();
+            var regions = Target.RegionsWithin(ViewArea);
+            foreach(var tuple in regions)
+            {
+                WorldTile t = tuple.Item1;
+                if (t == null) continue;
+
+                Point pos = tuple.Item2 - ViewArea.Location;
+                if (targetArea.X + pos.X >= targetArea.Width || targetArea.Y + pos.Y >= targetArea.Height) continue;
+
+                surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, t.Graphics);
+                if(tuple.Item2 == CursorPosition)
+                {
+                    surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Foreground);
+                    surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Glyph);
                 }
             }
         }

@@ -71,13 +71,15 @@ namespace FieryOpal.src.ui
 
         private void PrintActions()
         {
-            string fmt = "{0}) {1}";
+            string fmt = "{0} -> {1}";
             Cell textStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["ShadeDark"]);
+
+            int longest_key = Actions.Max(a => a.Item3.ToString().Length);
 
             for (int i = 0; i < Actions.Count; ++i)
             {
                 string letter = Actions[i].Item3.ToString();
-                var str = String.Format(fmt, letter, Actions[i].Item1);
+                var str = String.Format(fmt, letter.PadRight(longest_key, ' '), Actions[i].Item1);
 
                 Print(2, i + 2, str.ToColoredString(textStyle));
             }

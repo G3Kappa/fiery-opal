@@ -1,4 +1,5 @@
 ﻿using FieryOpal.src.actors;
+using FieryOpal.src.procgen;
 using FieryOpal.src.ui;
 using Microsoft.Xna.Framework;
 using System;
@@ -12,19 +13,34 @@ namespace FieryOpal.src
         public Guid Handle { get; }
 
         public TurnTakingActor Player = new Humanoid();
-        public OpalLocalMap CurrentMap { get; set; }
+        public OpalLocalMap CurrentMap => Player?.Map ?? null;
 
         public TurnManager TurnManager { get; private set; }
+        public World World { get; private set; }
 
-        public OpalGame(OpalLocalMap startingMap)
+        public OpalGame(World world)
         {
             Handle = Guid.NewGuid();
-            CurrentMap = startingMap;
+            World = world;
 
-            Player.ChangeLocalMap(CurrentMap, new Point(CurrentMap.Width / 2, CurrentMap.Height / 2));
-            CurrentMap.AddActor(Player);
             InternalMessagePipeline = new MessagePipeline<OpalConsoleWindow>();
             TurnManager = new TurnManager();
+
+            Player.MapChanged += (player, old_map) => {
+                // Tell any subscribed OpalGameWindow to render the viewport.
+                InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(
+                    cw =>
+                    {
+                        OpalGameWindow w = cw as OpalGameWindow;
+                        LocalMapViewport vw = w.Viewport as LocalMapViewport;
+                        if (vw == null) return "";
+
+                        vw.Target = player.Map;
+                        return "FlagRaycastViewportForRedraw";
+                    }
+                    ));
+            };
+            Player.ChangeLocalMap(World.RegionAt(0, 0).LocalMap, new Point(0, 0));
         }
 
         public virtual void Update(TimeSpan delta)
@@ -75,6 +91,7 @@ namespace FieryOpal.src
                         ));
                     break;
                 case "MapRefreshed":
+                    Util.Log("hey", true);
                     TurnManager.ResetAccumulator();
                     break;
                 case "PlayerInputHandled":

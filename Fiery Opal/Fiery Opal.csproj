@@ -53,7 +53,7 @@
     <Compile Include="src\procgen\BasicBuildingGenerator.cs" />
     <Compile Include="src\procgen\BasicRoomDesigner.cs" />
     <Compile Include="src\procgen\BasicTerrainDecorator.cs" />
-    <Compile Include="src\procgen\BasicTerrainGenerator.cs" />
+    <Compile Include="src\procgen\Terrain\BasicTerrainGenerator.cs" />
     <Compile Include="src\procgen\BuildingDesigner.cs" />
     <Compile Include="src\procgen\Deity.cs" />
     <Compile Include="src\procgen\IOpalFeatureGenerator.cs" />
@@ -69,12 +69,16 @@
     <Compile Include="src\procgen\GenUtil.cs" />
     <Compile Include="src\procgen\NameGenerator.cs" />
     <Compile Include="src\procgen\Settlement.cs" />
+    <Compile Include="src\procgen\Terrain\BiomeTerrainGenerator.cs" />
+    <Compile Include="src\procgen\Terrain\OceanTerrainGenerator.cs" />
+    <Compile Include="src\procgen\Terrain\GrasslandsTerrainGenerator.cs" />
+    <Compile Include="src\procgen\World.cs" />
     <Compile Include="src\Turn.cs" />
     <Compile Include="src\ui\BookDialog.cs" />
     <Compile Include="src\ui\ColorPalette.cs" />
     <Compile Include="src\ui\ContextMenu.cs" />
     <Compile Include="src\ui\DialogueDialog.cs" />
-    <Compile Include="src\ui\InventoryDialog - Copy.cs" />
+    <Compile Include="src\ui\InventoryDialog.cs" />
     <Compile Include="src\ui\MainGameWindowManager.cs" />
     <Compile Include="src\ui\OkCancelDialog.cs" />
     <Compile Include="src\ui\OpalConsoleWindow.cs" />
@@ -82,6 +86,7 @@
     <Compile Include="src\ui\OpalLogWindow.cs" />
     <Compile Include="src\ui\OpalInfoWindow.cs" />
     <Compile Include="src\ui\RaycastViewport.cs" />
+    <Compile Include="src\ui\ScrollDialog.cs" />
     <Compile Include="src\ui\Viewport.cs" />
     <Compile Include="src\ui\WindowManager.cs" />
     <Compile Include="src\Util.cs" />

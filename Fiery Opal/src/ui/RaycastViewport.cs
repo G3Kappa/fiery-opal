@@ -8,7 +8,7 @@ namespace FieryOpal.src.ui
 {
 
     // Translated to C# from http://lodev.org/cgtutor/raycasting.html ; http://lodev.org/cgtutor/raycasting2.html
-    public class RaycastViewport : Viewport
+    public class RaycastViewport : LocalMapViewport
     {
         public IOpalGameActor Following { get; protected set; }
         public Vector2 DirectionVector { get; set; }
@@ -93,8 +93,8 @@ namespace FieryOpal.src.ui
                 var t = Target.TileAt((int)mapPos.X, (int)mapPos.Y);
                 if (update_fog)
                 {
-                    Fog.See(new Point((int)mapPos.X, (int)mapPos.Y));
-                    Fog.Learn(new Point((int)mapPos.X, (int)mapPos.Y));
+                    Target.Fog.See(new Point((int)mapPos.X, (int)mapPos.Y));
+                    Target.Fog.Learn(new Point((int)mapPos.X, (int)mapPos.Y));
                 }
                 //Check if ray has hit a wall
                 if (t == null || t.Properties.BlocksMovement && !(t is Door && (t as Door).IsOpen))
@@ -110,7 +110,7 @@ namespace FieryOpal.src.ui
             }
         }
 
-        private void DrawWallVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
+        private void DrawWallVLine(SadConsole.Console surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
         {
             //Fog.Clear(new Point((int)mapPos.X, (int)mapPos.Y));
             OpalTile wallTile = Target.TileAt((int)mapPos.X, (int)mapPos.Y);
@@ -164,7 +164,7 @@ namespace FieryOpal.src.ui
                 surface.SetCell(x, y, new Cell(wallColor, wallColor, ' '));
             }
         }
-        private void DrawFloorAndSkyVLine(OpalConsoleWindow surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
+        private void DrawFloorAndSkyVLine(SadConsole.Console surface, Vector2 mapPos, int x, float perpWallDist, float wallX, bool side, Vector2 rayDir, int drawStart, int drawEnd, int lineHeight, int viewportHeight)
         {
             int texWidth = RenderFont.Size.X, texHeight = RenderFont.Size.Y;
 
@@ -247,7 +247,7 @@ namespace FieryOpal.src.ui
             if (viewportHeight - (drawEnd + viewportHeight % 2) - 1 < 0) return;
             surface.SetCell(x, viewportHeight - (drawEnd + viewportHeight % 2) - 1, new Cell(Target.SkyColor, Target.SkyColor, ' '));
         }
-        private void DrawActorSpriteVLines(OpalConsoleWindow surface, float[] zbuffer, int viewportWidth, int viewportHeight)
+        private void DrawActorSpriteVLines(SadConsole.Console surface, float[] zbuffer, int viewportWidth, int viewportHeight)
         {
 
             List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)Position.X, (int)Position.Y, (int)ViewDistance, 0)
@@ -411,10 +411,10 @@ namespace FieryOpal.src.ui
             return CastRay(position, ref mapPos, new Vector2(rayDir.X, rayDir.Y), ref side);
         }
 
-        public override void Print(OpalConsoleWindow surface, Rectangle targetArea)
+        public override void Print(SadConsole.Console surface, Rectangle targetArea)
         {
             if (!Dirty) return;
-            Fog.UnseeEverything();
+            Target.Fog.UnseeEverything();
             Position = new Vector2(Following.LocalPosition.X + .5f, Following.LocalPosition.Y + .5f);
 
             var oldD = DirectionVector;
@@ -431,8 +431,8 @@ namespace FieryOpal.src.ui
                 PlaneVector /= 1.5f;
             }
 
-            Fog.See(Following.LocalPosition);
-            Fog.Learn(Following.LocalPosition);
+            Target.Fog.See(Following.LocalPosition);
+            Target.Fog.Learn(Following.LocalPosition);
             float[] zbuffer = new float[targetArea.Width];
             for (int x = 0; x < targetArea.Width; ++x)
             {

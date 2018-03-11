@@ -108,6 +108,11 @@ namespace FieryOpal.src
 
             return cfg;
         }
+
+        public static bool OOB(int x, int y, int w, int h, int min_x = 0, int min_y = 0)
+        {
+            return (x < min_x || y < min_y || x >= w || y >= h);
+        }
     }
 
     /// <summary>

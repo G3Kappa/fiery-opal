@@ -8,6 +8,72 @@ namespace FieryOpal.src
 {
     public delegate bool OpalLocalMapIterator(OpalLocalMap self, int x, int y, OpalTile t);
 
+    public class ViewportFog
+    {
+        protected HashSet<Point> Seen = new HashSet<Point>();
+        protected HashSet<Point> Known = new HashSet<Point>();
+        protected bool IsDisabled = false;
+
+        public void See(Point p)
+        {
+            if (!Seen.Contains(p)) Seen.Add(p);
+        }
+
+        public void Learn(Point p)
+        {
+            if (!Known.Contains(p)) Known.Add(p);
+        }
+
+        public void Unsee(Point p)
+        {
+            if (Seen.Contains(p)) Seen.Remove(p);
+        }
+
+        public void Forget(Point p)
+        {
+            if (Known.Contains(p)) Known.Remove(p);
+        }
+
+        public void UnseeEverything()
+        {
+            Seen.Clear();
+        }
+
+        public void ForgetEverything()
+        {
+            Known.Clear();
+        }
+
+        public bool CanSee(Point p)
+        {
+            if (IsDisabled) return true;
+            return Seen.Contains(p);
+        }
+
+        public bool KnowsOf(Point p)
+        {
+            if (IsDisabled) return true;
+            return Known.Contains(p);
+        }
+
+        public void Disable()
+        {
+            IsDisabled = true;
+        }
+
+        public void Enable()
+        {
+            IsDisabled = false;
+        }
+
+        public void Toggle()
+        {
+            IsDisabled = !IsDisabled;
+        }
+
+        public bool IsEnabled => !IsDisabled;
+    }
+
     public class OpalLocalMap
     {
         protected OpalTile[,] TerrainGrid { get; private set; }
@@ -18,6 +84,9 @@ namespace FieryOpal.src
 
         public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
+        public ViewportFog Fog { get; set; }
+
+        public WorldTile ParentRegion;
 
         public OpalLocalMap(int width, int height)
         {
@@ -27,6 +96,7 @@ namespace FieryOpal.src
             Height = height;
             SkyColor = Color.DeepSkyBlue;
             FogColor = Color.DarkSlateGray;
+            Fog = new ViewportFog();
         }
 
         public bool AddActor(IOpalGameActor actor)
@@ -327,7 +397,6 @@ namespace FieryOpal.src
                 }
             }
         }
-
         public Point FirstAccessibleTileAround(Point xy)
         {
             int r = 0;

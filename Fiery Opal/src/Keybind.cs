@@ -43,7 +43,10 @@ namespace FieryOpal.src
             public override string ToString()
             {
                 var fmt = "{0}{1}{2}";
-                var s = String.Format(fmt, CtrlDown ? "ctrl+" : "", AltDown ? "alt+" : "", ShiftDown ? MainKey.ToString().ToUpper() : MainKey.ToString().ToLower());
+                char first_char = MainKey.ToString()[0];
+                string shift_mod = ((first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z')) ? MainKey.ToString().ToUpper() : "shift+" + MainKey.ToString().ToLower();
+
+                var s = String.Format(fmt, CtrlDown ? "ctrl+" : "", AltDown ? "alt+" : "", ShiftDown ? shift_mod : MainKey.ToString().ToLower());
 
                 return s;
             }

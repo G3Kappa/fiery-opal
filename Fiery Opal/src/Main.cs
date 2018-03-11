@@ -22,7 +22,7 @@ namespace FieryOpal
         public static Font HDFont;
 
         static void Main(string[] args)
-        {
+      {
             Keybind.PushState();
             SadConsole.Game.Create("Taffer.font", Width, Height);
             
@@ -55,8 +55,9 @@ namespace FieryOpal
             FPFont = Global.LoadFont("Kein.font").GetFont(Font.FontSizes.One);
             HDFont = Global.LoadFont("16x16.font").GetFont(Font.FontSizes.One);
 
-            OpalLocalMap map = new OpalLocalMap(80, 80);
-            OpalGame g = new OpalGame(map);
+            World w = new World(100, 100);
+            w.Generate();
+            OpalGame g = new OpalGame(w);
 
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
             Util.Log("Welcome to Fiery Opal!", false);

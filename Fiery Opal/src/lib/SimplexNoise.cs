@@ -2,6 +2,7 @@
 // Author: Benjamin Ward
 // Originally authored by Heikki Törmälä
 
+using FieryOpal.src;
 using System;
 
 namespace Simplex
@@ -12,11 +13,31 @@ namespace Simplex
     /// </summary>
     public class Noise
     {
+        public static float[,] Calc2D(int x, int y, int width, int height, float scale, int octaves=1, float persistence=1f)
+        {
+            float[,] values = new float[width, height];
+            for (int i = 0; i < width; i++)
+                for (int j = 0; j < height; j++)
+                {
+                    values[i, j] = CalcPixel2D(x + i, y + j, scale);
+                    float tot_div = 1f;
+                    for(int k = 0; k < octaves - 1; ++k)
+                    {
+                        float div = (float)Math.Pow(2, k + 1);
+                        values[i, j] += CalcPixel2D(x + i, y + j, (float)Math.Pow(scale, persistence * 1f / (k+1))) / div;
+                        tot_div += 1/div;
+                    }
+                    values[i, j] /= tot_div;
+                    values[i, j] /= 256;
+                }
+            return values;
+        }
+
         public static float[] Calc1D(int offset, int width, float scale)
         {
             float[] values = new float[width];
             for (int i = 0; i < width; i++)
-                values[i] = Generate((i + offset) * scale) * 128 + 128;
+                values[i] = (Generate((i + offset) * scale) * 128 + 128) / 256;
             return values;
         }
 
@@ -25,7 +46,7 @@ namespace Simplex
             float[,] values = new float[width, height];
             for (int i = 0; i < width; i++)
                 for (int j = 0; j < height; j++)
-                    values[i, j] = Generate((i + x) * scale, (j + y) * scale) * 128 + 128;
+                    values[i, j] = (Generate((i + x) * scale, (j + y) * scale) * 128 + 128) / 256;
             return values;
         }
 
@@ -35,7 +56,7 @@ namespace Simplex
             for (int i = 0; i < width; i++)
                 for (int j = 0; j < height; j++)
                     for (int k = 0; k < length; k++)
-                        values[i, j, k] = Generate((i + x) * scale, (j + y) * scale, (k + z) * scale) * 128 + 128;
+                        values[i, j, k] = (Generate((i + x) * scale, (j + y) * scale, (k + z) * scale) * 128 + 128) / 256;
             return values;
         }
 
