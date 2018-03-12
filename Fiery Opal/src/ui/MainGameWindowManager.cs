@@ -1,15 +1,10 @@
-﻿using FieryOpal.src.actors;
-using FieryOpal.src.procgen;
-using FieryOpal.src.procgen.Terrain;
+﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
-using System;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public class MainGameWindowManager : WindowManager
     {

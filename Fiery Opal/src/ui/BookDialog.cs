@@ -1,13 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SadConsole.Input;
 using Microsoft.Xna.Framework.Input;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public class BookDialog : OpalDialog
     {

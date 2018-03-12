@@ -3,11 +3,9 @@ using Simplex;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static FieryOpal.src.procgen.GenUtil;
+using static FieryOpal.Src.Procedural.GenUtil;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
 
     public class BasicBuildingDesigner : BuildingDesigner
@@ -162,7 +160,7 @@ namespace FieryOpal.src.procgen
                     subpart_overlaps[i, j] = sides[0].Intersection(sides[1]);
                 }
             }
-
+            /*
             Workspace.Iter((s, x, y, t) =>
             {
                 int m_x = (int)(((float)x / s.Width) * 3);
@@ -244,6 +242,8 @@ namespace FieryOpal.src.procgen
                     }
                 }
             }
+            
+            */
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 
-namespace FieryOpal.src.actors
+namespace FieryOpal.Src.Actors
 {
     public class Plant : DecorationBase
     {

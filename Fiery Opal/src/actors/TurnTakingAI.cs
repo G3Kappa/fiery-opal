@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace FieryOpal.src.actors
+namespace FieryOpal.Src.Actors
 {
     public abstract class TurnBasedAI
     {

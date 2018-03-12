@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
     public interface IOpalFeatureGenerator : IDisposable
     {

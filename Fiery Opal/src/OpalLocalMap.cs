@@ -1,10 +1,14 @@
-﻿using FieryOpal.src.procgen;
+﻿using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Xml.Serialization;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public delegate bool OpalLocalMapIterator(OpalLocalMap self, int x, int y, OpalTile t);
 
@@ -74,6 +78,7 @@ namespace FieryOpal.src
         public bool IsEnabled => !IsDisabled;
     }
 
+    [Serializable]
     public class OpalLocalMap
     {
         protected OpalTile[,] TerrainGrid { get; private set; }
@@ -418,49 +423,43 @@ namespace FieryOpal.src
 
             return tiles_in_ring.First().Item2;
         }
+    }
 
-
-        public float[,] CalcDistanceField(Func<Point, Point, float> D, Func<OpalTile, float> f)
+    public static class OpalTileExtensions
+    {
+        public static TileSkeleton[,] GetSkeletons(this OpalTile[,] grid)
         {
-            // TODO: Use proper algorithm
+            int w = grid.GetLength(0);
+            int h = grid.GetLength(1);
+            TileSkeleton[,] ret = new TileSkeleton[w, h];
+            for (int x = 0; x < w; ++x)
+                for (int y = 0; y < h; ++y)
+                    ret[x, y] = grid[x, y]?.Skeleton ?? null;
+            return ret;
+        }
 
-            float[,] distfield = new float[Width, Height];
-            var seeds = TilesWithin(new Rectangle(0, 0, Width, Height)).Where(t => f(t.Item1) == 0);
-            float max_dist = 0;
-            Iter((self, x, y, t) =>
-            {
-                float min_dist = float.MaxValue;
-                float f_val = f(t);
+        public static T[] Flatten<T>(this T[,] grid)
+        {
+            int w = grid.GetLength(0);
+            int h = grid.GetLength(1);
+            T[] ret = new T[w * h];
+            for (int x = 0; x < w; ++x)
+                for (int y = 0; y < h; ++y)
+                    ret[y * w + x] = grid[x, y];
 
-                distfield[x, y] = 1f;
-                return false; // TODO: REENABLE
+            return ret;
+        }
 
-                if (f_val > 0)
-                {
-                    foreach (var s in seeds)
-                    {
-                        float dist = D(s.Item2, new Point(x, y));
-                        if (dist < min_dist)
-                        {
-                            min_dist = dist;
-                        }
-                        if(dist > max_dist)
-                        {
-                            max_dist = dist;
-                        }
-                    }
-                    distfield[x, y] = (min_dist * f_val);
-                }
-                else distfield[x, y] = 0;
-                return false;
-            });
-            Iter((self, x, y, t) =>
-            {
-                distfield[x, y] /= max_dist;
-                return false;
-            });
+        public static T[,] Unflatten<T>(this T[] arr, int w, int h)
+        {
+            if (w * h != arr.Length) throw new ArgumentException();
 
-            return distfield;
+            T[,] ret = new T[w,h];
+            for (int x = 0; x < w; ++x)
+                for (int y = 0; y < h; ++y)
+                    ret[x, y] = arr[y * w + x];
+
+            return ret;
         }
     }
 

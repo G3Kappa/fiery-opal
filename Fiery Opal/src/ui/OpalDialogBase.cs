@@ -1,16 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
 using SadConsole;
-using SadConsole.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SadConsole.Input;
 using SadConsole.Themes;
 using Microsoft.Xna.Framework.Input;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public abstract  class OpalDialog : OpalConsoleWindow
     {

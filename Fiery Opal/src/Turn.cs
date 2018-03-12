@@ -1,12 +1,9 @@
-﻿using FieryOpal.src.ui;
-using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Ui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     /*
         TURN-BASED ACTIONS:

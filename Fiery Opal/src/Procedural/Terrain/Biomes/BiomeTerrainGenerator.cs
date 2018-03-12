@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using System.Reflection;
 
-namespace FieryOpal.src.procgen.Terrain
+namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
     public abstract class BiomeTerrainGenerator : TerrainGeneratorBase
     {

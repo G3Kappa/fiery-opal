@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
 
     public abstract class NameGenerator<T>

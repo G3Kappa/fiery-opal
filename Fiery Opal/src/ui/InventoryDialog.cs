@@ -1,14 +1,12 @@
-﻿using FieryOpal.src.actors;
+﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     class InventoryDialog : OpalDialog
     {

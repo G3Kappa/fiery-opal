@@ -1,12 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static FieryOpal.src.procgen.GenUtil;
 
-namespace FieryOpal.src.procgen.Terrain
+namespace FieryOpal.Src.Procedural.Terrain
 {
     public abstract class TerrainGeneratorBase : IOpalFeatureGenerator
     {
@@ -34,7 +29,7 @@ namespace FieryOpal.src.procgen.Terrain
 
         public OpalTile Get(int x, int y)
         {
-            return (OpalTile)(Tiles.TileAt(x, y)?.Clone() ?? OpalTile.Dirt.Clone()); // Since we don't alter individual tiles, we only need to clone them when requested.
+            return (OpalTile)(Tiles.TileAt(x, y)?.Clone() ?? OpalTile.GetRefTile<DirtSkeleton>().Clone()); // Since we don't alter individual tiles, we only need to clone them when requested.
         }
 
         public IDecoration GetDecoration(int x, int y)

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
     public static class GenUtil
     {

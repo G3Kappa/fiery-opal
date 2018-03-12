@@ -1,10 +1,10 @@
-﻿using FieryOpal.src.actors;
+﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
 
     public class OpalInfoWindow : OpalConsoleWindow

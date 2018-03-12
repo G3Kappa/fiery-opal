@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
-using SadConsole.Input;
-using FieryOpal.src.ui;
+using FieryOpal.Src.Ui;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public delegate void KeybindTriggered(Keybind.KeybindInfo kb);
 

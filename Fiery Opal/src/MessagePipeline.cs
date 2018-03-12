@@ -1,9 +1,9 @@
-﻿using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Ui;
 using SadConsole;
 using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public interface IPipelineSubscriber<T>
     {

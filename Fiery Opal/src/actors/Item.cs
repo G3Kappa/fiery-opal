@@ -1,15 +1,12 @@
-﻿using FieryOpal.src.procgen;
-using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.actors
+namespace FieryOpal.Src.Actors
 {
     public enum ItemCategory
     {
@@ -208,20 +205,22 @@ namespace FieryOpal.src.actors
 
         private void Read(IInventoryHolder holder)
         {
-            var scr = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "");
+            var scroll = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "");
             World world = holder.Map.ParentRegion.ParentWorld;
             WorldMapViewport vwp = new WorldMapViewport(world, new Rectangle(0, 0, world.Width, world.Height));
             vwp.CursorPosition = holder.Map.ParentRegion.WorldPosition;
-            scr.Viewport = vwp;
-            OpalDialog.LendKeyboardFocus(scr);
+            scroll.Viewport = vwp;
+            OpalDialog.LendKeyboardFocus(scroll);
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "World Map: Warp to location"), (i) => 
             {
                 DateTime now = DateTime.Now;
-                holder.ChangeLocalMap(holder.Map.ParentRegion.ParentWorld.RegionAt(vwp.CursorPosition.X, vwp.CursorPosition.Y).LocalMap, new Point(0, 0));
-                Util.Log(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), false);
+                var newMap = holder.Map.ParentRegion.ParentWorld.RegionAt(vwp.CursorPosition.X, vwp.CursorPosition.Y).LocalMap;
+                holder.ChangeLocalMap(newMap, new Point(newMap.Width / 2, newMap.Height / 2));
+                Util.Log(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), true);
+                scroll.Hide();
             });
-            scr.Show();
-            scr.Closed += (e, eh) =>
+            scroll.Show();
+            scroll.Closed += (e, eh) =>
             {
                 Keybind.UnbindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, ""));
             };

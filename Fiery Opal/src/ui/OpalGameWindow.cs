@@ -1,9 +1,7 @@
-﻿using FieryOpal.src.procgen;
-using SadConsole;
+﻿using SadConsole;
 using System;
-using System.Collections.Generic;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public class OpalGameWindow : OpalConsoleWindow
     {

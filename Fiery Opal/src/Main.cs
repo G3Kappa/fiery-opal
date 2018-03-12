@@ -1,11 +1,8 @@
-using System;
-using System.Linq;
 using SadConsole;
 using Microsoft.Xna.Framework;
-using FieryOpal.src.ui;
-using FieryOpal.src;
-using FieryOpal.src.procgen;
-using System.Collections.Generic;
+using FieryOpal.Src.Ui;
+using FieryOpal.Src;
+using FieryOpal.Src.Procedural;
 
 namespace FieryOpal
 {
@@ -22,7 +19,8 @@ namespace FieryOpal
         public static Font HDFont;
 
         static void Main(string[] args)
-      {
+        {
+            CreatePaths();
             Keybind.PushState();
             SadConsole.Game.Create("Taffer.font", Width, Height);
             
@@ -47,6 +45,13 @@ namespace FieryOpal
         {
             mainGameWindowManager.Draw(time);
             OpalDialog.Draw(time);
+        }
+
+        private static void CreatePaths()
+        {
+            System.IO.Directory.CreateDirectory("./save");
+            System.IO.Directory.CreateDirectory("./resources");
+            System.IO.Directory.CreateDirectory("./cfg");
         }
 
         private static void Init()

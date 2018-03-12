@@ -3,11 +3,13 @@ using SadConsole;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using FieryOpal.src.ui;
+using FieryOpal.Src.Ui;
+using FieryOpal.Src.Procedural.Terrain.Biomes;
+using System.Runtime.Serialization;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
-
+    [Serializable]
     public struct OpalTileProperties
     {
         public bool BlocksMovement, IsNatural;
@@ -88,6 +90,29 @@ namespace FieryOpal.src
             return new OpalTile(GetFirstFreeId(), Skeleton, InternalName, Properties, Graphics);
         }
 
+        private static Dictionary<string, OpalTile> ReferenceTileInstances = new Dictionary<string, OpalTile>();
+        public static bool RegisterRefTile(TileSkeleton reference_maker)
+        {
+            var tile = TileFactory.Make(reference_maker.Make);
+            if (ReferenceTileInstances.ContainsKey(tile.InternalName)) return false;
+            ReferenceTileInstances[tile.InternalName] = tile;
+            return true;
+        }
+
+        public static OpalTile GetRefTile<T>()
+            where T : TileSkeleton, new()
+        {
+            var reference_maker = TileSkeleton.Get<T>();
+            if (!ReferenceTileInstances.ContainsKey(reference_maker.DefaultName)) return null;
+            return ReferenceTileInstances[reference_maker.DefaultName];
+        }
+
+        public static OpalTile GetRefTile(TileSkeleton reference_maker)
+        {
+            if (!ReferenceTileInstances.ContainsKey(reference_maker.DefaultName)) return null;
+            return ReferenceTileInstances[reference_maker.DefaultName];
+        }
+
         /* --- NOTES ON TILE HIERARCHY --- 
            * Tiles are defined by TileSkeletons. These expose the default properties used by the Make function.
            * If Make is overridden, the default properties may or may not be used.
@@ -99,17 +124,6 @@ namespace FieryOpal.src
            * Type checking works on only one type of skeleton, and it may be useful when implementing
            * tile-specific logic that shouldn't apply to its descendants.
         */
-        public static OpalTile Dirt = TileFactory.Make(TileSkeleton.Get<DirtSkeleton>().Make);
-        public static OpalTile FertileSoil = TileFactory.Make(TileSkeleton.Get<FertileSoilSkeleton>().Make);
-        public static OpalTile Grass = TileFactory.Make(TileSkeleton.Get<GrassSkeleton>().Make);
-        public static OpalTile Water = TileFactory.Make(TileSkeleton.Get<WaterSkeleton>().Make);
-
-        public static OpalTile RockFloor = TileFactory.Make(TileSkeleton.Get<NaturalFloorSkeleton>().Make);
-        public static OpalTile RockWall = TileFactory.Make(TileSkeleton.Get<NaturalWallSkeleton>().Make);
-
-        public static OpalTile ConstructedFloor = TileFactory.Make(TileSkeleton.Get<ConstructedFloorSkeleton>().Make);
-        public static OpalTile ConstructedWall = TileFactory.Make(TileSkeleton.Get<ConstructedWallSkeleton>().Make);
-        public static OpalTile Door = TileFactory.Make(TileSkeleton.Get<DoorSkeleton>().Make);
     }
 
 
@@ -121,13 +135,16 @@ namespace FieryOpal.src
             return d(OpalTile.GetFirstFreeId());
         }
     }
+
+
+    [Serializable]
     public abstract class TileSkeleton : IDisposable
     {
         protected static Dictionary<Type, TileSkeleton> Instances = new Dictionary<Type, TileSkeleton>();
 
-        public abstract OpalTileProperties DefaultProperties { get; }
-        public abstract string DefaultName { get; }
-        public abstract Cell DefaultGraphics { get; }
+        public virtual OpalTileProperties DefaultProperties { get; private set; }
+        public virtual string DefaultName { get; private set; }
+        public virtual Cell DefaultGraphics { get; private set; }
 
         public virtual OpalTile Make(int id)
         {
@@ -143,6 +160,7 @@ namespace FieryOpal.src
             if (!Instances.ContainsKey(type))
             {
                 Instances[type] = new T();
+                OpalTile.RegisterRefTile(Instances[type]);
             }
             return Instances[type];
         }
@@ -151,7 +169,7 @@ namespace FieryOpal.src
         {
             Instances.Remove(Instances.Where(kp => kp.Key == this.GetType()).First().Key);
         }
-    }
+    }   
 
     public class DebugFloorSkeleton : TileSkeleton
     {
@@ -222,29 +240,6 @@ namespace FieryOpal.src
             );
         public override string DefaultName => "Fertile Soil";
         public override Cell DefaultGraphics => new Cell(Palette.Terrain["SoilForeground"], Palette.Terrain["SoilBackground"], '=');
-    }
-    public class GrassSkeleton : FertileSoilSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
-                is_natural: base.DefaultProperties.IsNatural,
-                movement_penalty: .1f,
-                fertility: .5f
-            );
-        public override string DefaultName => "Grass";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["GrassForeground"], Palette.Terrain["GrassBackground"], ',');
-    }
-
-    public class WaterSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                blocks_movement: false,
-                is_natural: true
-            );
-        public override string DefaultName => "Water";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["WaterForeground"], Palette.Terrain["WaterBackground"], 247);
     }
 
     public class ConstructedWallSkeleton : TileSkeleton

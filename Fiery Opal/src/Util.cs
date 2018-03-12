@@ -1,16 +1,16 @@
-﻿using FieryOpal.src.actors;
-using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using static FieryOpal.src.procgen.GenUtil;
+using static FieryOpal.Src.Procedural.GenUtil;
 using System.Text;
-using SadConsole.Surfaces;
 using Microsoft.Xna.Framework.Input;
+using System.Linq.Expressions;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public static class Util
     {

@@ -3,10 +3,8 @@ using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public class Palette
     {
@@ -62,7 +60,15 @@ namespace FieryOpal.src.ui
 
         public Color this[string c]
         {
-            get => GetOrDefault(c, Color.Magenta);
+            get
+            {
+                Color ret = GetOrDefault(c, Color.Magenta);
+                if (ret == Color.Magenta)
+                {
+                    Util.Log("Palette: Unknown color \"" + c + "\"!", true);
+                }
+                return ret;
+            }
         }
 
         public static Palette Ui = new Palette(new[] {
@@ -101,10 +107,23 @@ namespace FieryOpal.src.ui
             new Tuple<string, Color>("DirtBackground", new Color(128, 92, 70)),
             new Tuple<string, Color>("SoilForeground", Color.Gold),
             new Tuple<string, Color>("SoilBackground", new Color(128, 92, 70)),
+
             new Tuple<string, Color>("GrassForeground", Color.Green),
             new Tuple<string, Color>("GrassBackground", Color.ForestGreen),
+            new Tuple<string, Color>("DryGrassForeground", Color.Gold),
+            new Tuple<string, Color>("DryGrassBackground", Color.SandyBrown),
             new Tuple<string, Color>("WaterForeground", Color.CornflowerBlue),
             new Tuple<string, Color>("WaterBackground", Color.RoyalBlue),
+            new Tuple<string, Color>("SandForeground", Color.Gold),
+            new Tuple<string, Color>("SandBackground", Color.SandyBrown),
+            new Tuple<string, Color>("IceForeground", Color.WhiteSmoke),
+            new Tuple<string, Color>("IceBackground", Color.LightSkyBlue),
+            new Tuple<string, Color>("SnowForeground", Color.LightSkyBlue),
+            new Tuple<string, Color>("SnowBackground", Color.WhiteSmoke),
+            new Tuple<string, Color>("MossForeground", Color.GreenYellow),
+            new Tuple<string, Color>("MossBackground", Color.LawnGreen),
+            new Tuple<string, Color>("DryLeavesForeground", Color.Orange),
+            new Tuple<string, Color>("DryLeavesBackground", new Color(128, 92, 70)),
 
             new Tuple<string, Color>("RockFloorForeground", Color.SlateGray),
             new Tuple<string, Color>("RockFloorBackground", Color.DarkSlateGray),

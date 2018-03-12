@@ -42,21 +42,21 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="src\actors\Furniture.cs" />
-    <Compile Include="src\actors\Humanoid.cs" />
-    <Compile Include="src\actors\Item.cs" />
-    <Compile Include="src\actors\Plant.cs" />
-    <Compile Include="src\actors\PlayerControlledAI.cs" />
-    <Compile Include="src\actors\TurnTakingActor.cs" />
-    <Compile Include="src\actors\TurnTakingAI.cs" />
-    <Compile Include="src\procgen\BasicBuildingDesigner.cs" />
-    <Compile Include="src\procgen\BasicBuildingGenerator.cs" />
-    <Compile Include="src\procgen\BasicRoomDesigner.cs" />
-    <Compile Include="src\procgen\BasicTerrainDecorator.cs" />
-    <Compile Include="src\procgen\Terrain\BasicTerrainGenerator.cs" />
-    <Compile Include="src\procgen\BuildingDesigner.cs" />
-    <Compile Include="src\procgen\Deity.cs" />
-    <Compile Include="src\procgen\IOpalFeatureGenerator.cs" />
+    <Compile Include="src\Actors\Furniture.cs" />
+    <Compile Include="src\Actors\Humanoid.cs" />
+    <Compile Include="src\Actors\Item.cs" />
+    <Compile Include="src\Actors\Plant.cs" />
+    <Compile Include="src\Actors\PlayerControlledAI.cs" />
+    <Compile Include="src\Actors\TurnTakingActor.cs" />
+    <Compile Include="src\Actors\TurnTakingAI.cs" />
+    <Compile Include="src\Procedural\BasicBuildingDesigner.cs" />
+    <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
+    <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
+    <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
+    <Compile Include="src\Procedural\Terrain\BasicTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\BuildingDesigner.cs" />
+    <Compile Include="src\Procedural\Deity.cs" />
+    <Compile Include="src\Procedural\IOpalFeatureGenerator.cs" />
     <Compile Include="src\Keybind.cs" />
     <Compile Include="src\lib\SimplexNoise.cs" />
     <Compile Include="src\Main.cs" />
@@ -66,29 +66,39 @@
     <Compile Include="src\OpalLocalMap.cs" />
     <Compile Include="src\OpalTile.cs" />
     <Compile Include="src\MessagePipeline.cs" />
-    <Compile Include="src\procgen\GenUtil.cs" />
-    <Compile Include="src\procgen\NameGenerator.cs" />
-    <Compile Include="src\procgen\Settlement.cs" />
-    <Compile Include="src\procgen\Terrain\BiomeTerrainGenerator.cs" />
-    <Compile Include="src\procgen\Terrain\OceanTerrainGenerator.cs" />
-    <Compile Include="src\procgen\Terrain\GrasslandsTerrainGenerator.cs" />
-    <Compile Include="src\procgen\World.cs" />
+    <Compile Include="src\Procedural\GenUtil.cs" />
+    <Compile Include="src\Procedural\NameGenerator.cs" />
+    <Compile Include="src\Procedural\Settlement.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\BiomeTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\SeasonalForestTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\BorealForestTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\MountainTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\TundraTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\TemperateRainforestTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\WoodlandTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\IceSheetTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\TropicalRainforestTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\SavannaTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\OceanTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\DesertTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\GrasslandsTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\World.cs" />
     <Compile Include="src\Turn.cs" />
-    <Compile Include="src\ui\BookDialog.cs" />
-    <Compile Include="src\ui\ColorPalette.cs" />
-    <Compile Include="src\ui\ContextMenu.cs" />
-    <Compile Include="src\ui\DialogueDialog.cs" />
-    <Compile Include="src\ui\InventoryDialog.cs" />
-    <Compile Include="src\ui\MainGameWindowManager.cs" />
-    <Compile Include="src\ui\OkCancelDialog.cs" />
-    <Compile Include="src\ui\OpalConsoleWindow.cs" />
-    <Compile Include="src\ui\OpalGameWindow.cs" />
-    <Compile Include="src\ui\OpalLogWindow.cs" />
-    <Compile Include="src\ui\OpalInfoWindow.cs" />
-    <Compile Include="src\ui\RaycastViewport.cs" />
-    <Compile Include="src\ui\ScrollDialog.cs" />
-    <Compile Include="src\ui\Viewport.cs" />
-    <Compile Include="src\ui\WindowManager.cs" />
+    <Compile Include="src\Ui\BookDialog.cs" />
+    <Compile Include="src\Ui\ColorPalette.cs" />
+    <Compile Include="src\Ui\ContextMenu.cs" />
+    <Compile Include="src\Ui\DialogueDialog.cs" />
+    <Compile Include="src\Ui\InventoryDialog.cs" />
+    <Compile Include="src\Ui\MainGameWindowManager.cs" />
+    <Compile Include="src\Ui\OkCancelDialog.cs" />
+    <Compile Include="src\Ui\OpalConsoleWindow.cs" />
+    <Compile Include="src\Ui\OpalGameWindow.cs" />
+    <Compile Include="src\Ui\OpalLogWindow.cs" />
+    <Compile Include="src\Ui\OpalInfoWindow.cs" />
+    <Compile Include="src\Ui\RaycastViewport.cs" />
+    <Compile Include="src\Ui\ScrollDialog.cs" />
+    <Compile Include="src\Ui\Viewport.cs" />
+    <Compile Include="src\Ui\WindowManager.cs" />
     <Compile Include="src\Util.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -177,7 +187,7 @@
     <Content Include="kein.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Compile Include="src\ui\OpalDialogBase.cs" />
+    <Compile Include="src\Ui\OpalDialogBase.cs" />
     <Content Include="taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

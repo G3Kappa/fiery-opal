@@ -1,14 +1,11 @@
-﻿using FieryOpal.src.procgen.Terrain;
-using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Procedural.Terrain.Biomes;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
     public enum BiomeType
     {
@@ -255,19 +252,21 @@ namespace FieryOpal.src.procgen
                 }
             }
 
-            foreach(BiomeType v in Enum.GetValues(typeof(BiomeType)))
-            {
-                switch(v)
-                {
-                    case BiomeType.Sea:
-                    case BiomeType.Ocean:
-                        BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(v);
-                        break;
-                    default:
-                        BiomeTerrainGenerator.RegisterType<GrasslandsTerrainGenerator>(v);
-                        break;
-                }
-            }
+            BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Ocean);
+            BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Sea);
+            BiomeTerrainGenerator.RegisterType<DesertTerrainGenerator>(BiomeType.Desert);
+            BiomeTerrainGenerator.RegisterType<SavannaTerrainGenerator>(BiomeType.Savanna);
+            BiomeTerrainGenerator.RegisterType<TropicalRainforestTerrainGenerator>(BiomeType.TropicalRainforest);
+            BiomeTerrainGenerator.RegisterType<IceSheetTerrainGenerator>(BiomeType.Ice);
+            BiomeTerrainGenerator.RegisterType<WoodlandTerrainGenerator>(BiomeType.Woodland);
+            BiomeTerrainGenerator.RegisterType<TemperateRainforestTerrainGenerator>(BiomeType.TemperateRainforest);
+            BiomeTerrainGenerator.RegisterType<SeasonalForestTerrainGenerator>(BiomeType.SeasonalForest);
+            BiomeTerrainGenerator.RegisterType<BorealForestTerrainGenerator>(BiomeType.BorealForest);
+            BiomeTerrainGenerator.RegisterType<TundraTerrainGenerator>(BiomeType.Tundra);
+            BiomeTerrainGenerator.RegisterType<GrasslandsTerrainGenerator>(BiomeType.Grassland);
+            BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Mountain);
+            BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Peak);
+
         }
 
         private float[,] GenerateTemperatureMap()

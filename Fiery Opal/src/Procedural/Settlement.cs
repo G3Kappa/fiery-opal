@@ -1,11 +1,7 @@
-﻿using FieryOpal.src.actors;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.procgen
+namespace FieryOpal.Src.Procedural
 {
     public interface ISocialCreature { }
 

@@ -2,11 +2,10 @@
 using SadConsole;
 using System;
 using System.Linq;
-using System.Collections.Generic;
-using FieryOpal.src.ui;
-using FieryOpal.src.actors;
+using FieryOpal.Src.Actors;
+using System.Runtime.Serialization;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public struct ActorIdentity
     {
@@ -73,6 +72,7 @@ namespace FieryOpal.src
         PersonalInventory Inventory { get; }
     }
 
+    [Serializable]
     public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor, IInspectable
     {
 

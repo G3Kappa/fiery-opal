@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace FieryOpal.src.ui
+namespace FieryOpal.Src.Ui
 {
     public class OpalLogWindow : OpalConsoleWindow
     {

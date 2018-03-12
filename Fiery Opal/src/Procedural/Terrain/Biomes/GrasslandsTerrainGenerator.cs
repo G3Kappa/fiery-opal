@@ -1,13 +1,23 @@
-﻿using FieryOpal.src.actors;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SadConsole;
 
-namespace FieryOpal.src.procgen.Terrain
+namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
+    public class GrassSkeleton : FertileSoilSkeleton
+    {
+        public override OpalTileProperties DefaultProperties =>
+            new OpalTileProperties(
+                blocks_movement: base.DefaultProperties.BlocksMovement,
+                is_natural: base.DefaultProperties.IsNatural,
+                movement_penalty: .1f,
+                fertility: .5f
+            );
+        public override string DefaultName => "Grass";
+        public override Cell DefaultGraphics => new Cell(Palette.Terrain["GrassForeground"], Palette.Terrain["GrassBackground"], ',');
+    }
+
     class GrasslandsTerrainGenerator : BiomeTerrainGenerator
     {
 
@@ -35,7 +45,7 @@ namespace FieryOpal.src.procgen.Terrain
 
             Tiles.Iter((s, x, y, t) =>
             {
-                s.SetTile(x, y, OpalTile.Grass);
+                s.SetTile(x, y, OpalTile.GetRefTile<GrassSkeleton>());
 
                 if(shrubNoise[x, y] >= .5f)
                     PlaceShrub(s, x, y);

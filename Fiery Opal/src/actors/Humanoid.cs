@@ -1,14 +1,8 @@
-﻿using FieryOpal.src.procgen;
-using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using SadConsole;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.actors
+namespace FieryOpal.Src.Actors
 {
     public class Humanoid : TurnTakingActor, IInteractive, ISocialCreature
     {

@@ -1,10 +1,10 @@
-﻿using FieryOpal.src.actors;
-using FieryOpal.src.procgen;
-using FieryOpal.src.ui;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using System;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     // Here the pipeline is used to control the game remotely and to let it propagate messages to the parent window(s).
     public class OpalGame : IPipelineSubscriber<OpalGame>

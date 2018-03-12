@@ -1,11 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.actors
+namespace FieryOpal.Src.Actors
 {
     public abstract class TurnTakingActor : OpalActorBase, ITurnTaker, IInventoryHolder
     {

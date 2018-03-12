@@ -2,7 +2,6 @@
 // Author: Benjamin Ward
 // Originally authored by Heikki Törmälä
 
-using FieryOpal.src;
 using System;
 
 namespace Simplex
