@@ -1,4 +1,6 @@
 ﻿using FieryOpal.Src;
+using FieryOpal.Src.Actors;
+using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 using System.Collections.Generic;
@@ -9,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static FieryOpal.Src.Keybind;
 
 namespace FieryOpal.src
 {
@@ -202,14 +205,14 @@ namespace FieryOpal.src
 
     public class InitConfigInfo
     {
-        public int ProgramWidth { get; set; }
-        public int ProgramHeight { get; set; }
+        public int ProgramWidth { get; set; } = 180;
+        public int ProgramHeight { get; set; } = 80;
 
-        public int WorldWidth { get; set; }
-        public int WorldHeight { get; set; }
+        public int WorldWidth { get; set; } = 100;
+        public int WorldHeight { get; set; } = 100;
 
-        public string DefaultFontPath { get; set; }
-        public string Locale { get; set; }
+        public string DefaultFontPath { get; set; } = "gfx/Taffer.font";
+        public string Locale { get; set; } = "cfg/locale/en_US.cfg";
     }
 
     public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
@@ -265,6 +268,58 @@ namespace FieryOpal.src
     {
         public LocalizationLoader()
             : base((self, lhs) => lhs)
+        {
+
+        }
+    }
+
+    public class KeybindConfigInfo
+    {
+        public Dictionary<string, KeybindInfo> Player { get; set; } = new Dictionary<string, KeybindInfo>();
+
+        public PlayerActionsKeyConfiguration GetPlayerKeybinds()
+        {
+            var cfg = new PlayerActionsKeyConfiguration();
+            foreach (var kv in Player)
+            {
+                cfg.AssignKey(Util.GetEnumValueFromName<PlayerAction>(kv.Key), kv.Value);
+            }
+            return cfg;
+        }
+
+}
+
+    public class KeybindConfigLoader : RelectionBasedConfigLoader<KeybindConfigInfo>
+    {
+        static Regex KeybindRegex = new Regex("(?:Key:)?\\s*([\\w]+)\\s*,\\s*(?:State:)?\\s*(Press|Down|Release)\\s*,\\s*(?:Help:)?\\s*\"(.*?)\"\\s*,\\s*(?:Ctrl:)?\\s*(true|false)\\s*,\\s*(?:Shift:)?\\s*(true|false)\\s*,\\s*(?:Alt:)?\\s*(true|false)\\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static KeybindInfo? ParseLhs(string lhs)
+        {
+            if (!KeybindRegex.IsMatch(lhs))
+            {
+                Util.Err(String.Format("Unparsed KeybindInfo: \"{0}\"", lhs));
+                return null;
+            }
+
+            var groups = KeybindRegex.Match(lhs).Groups;
+            var ret = new KeybindInfo();
+
+            ret.MainKey = Util.GetEnumValueFromName<Keys>(groups[1].Value);
+            ret.State = Util.GetEnumValueFromName<KeypressState>(groups[2].Value);
+            ret.HelpText = groups[3].Value;
+            ret.CtrlDown = bool.Parse(groups[4].Value);
+            ret.ShiftDown = bool.Parse(groups[5].Value);
+            ret.AltDown = bool.Parse(groups[6].Value);
+
+            if(ret.MainKey == Keys.None)
+            {
+                Util.Err(String.Format("Unknown key: \"{0}\"; HelpText: \"{1}\"", groups[1].Value, ret.HelpText));
+            }
+
+            return ret;
+        }
+
+        public KeybindConfigLoader()
+            : base((self, lhs) => ParseLhs(lhs))
         {
 
         }

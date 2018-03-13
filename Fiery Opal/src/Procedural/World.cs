@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Biomes;
+﻿using FieryOpal.Src.Lib;
+using FieryOpal.Src.Procedural.Terrain.Biomes;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
@@ -271,7 +272,7 @@ namespace FieryOpal.Src.Procedural
 
         private float[,] GenerateTemperatureMap()
         {
-            return Simplex.Noise.Calc2D(
+            return Noise.Calc2D(
                 Util.GlobalRng.Next(1000),
                 Util.GlobalRng.Next(1000),
                 Width,
@@ -283,7 +284,7 @@ namespace FieryOpal.Src.Procedural
 
         private float[,] GenerateHumidityMap()
         {
-            return Simplex.Noise.Calc2D(
+            return Noise.Calc2D(
                 Util.GlobalRng.Next(1000),
                 Util.GlobalRng.Next(1000),
                 Width,
@@ -295,7 +296,7 @@ namespace FieryOpal.Src.Procedural
 
         private float[,] GenerateElevationMap()
         {
-            return Simplex.Noise.Calc2D(
+            return Noise.Calc2D(
                 Util.GlobalRng.Next(1000),
                 Util.GlobalRng.Next(1000),
                 Width,

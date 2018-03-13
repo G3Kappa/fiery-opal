@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     class InventoryDialog : OpalDialog
     {

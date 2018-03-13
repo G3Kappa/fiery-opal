@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Lib;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -32,7 +33,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         {
             base.Generate(m);
 
-            float[,] icebergNoise = Simplex.Noise.Calc2D(
+            float[,] icebergNoise = Noise.Calc2D(
                 WorldPosition.X * m.Width,
                 WorldPosition.Y * m.Height,
                 m.Width,
@@ -42,7 +43,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
                 .8f
             );
 
-            float[,] icebergMaskNoise = Simplex.Noise.Calc2D(
+            float[,] icebergMaskNoise = Noise.Calc2D(
                 WorldPosition.X * m.Width,
                 WorldPosition.Y * m.Height,
                 m.Width,

@@ -2,7 +2,7 @@
 using SadConsole.Controls;
 using System;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     public class OkCancelDialog : OpalDialog
     {

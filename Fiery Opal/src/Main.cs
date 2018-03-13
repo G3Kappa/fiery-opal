@@ -1,46 +1,43 @@
 using SadConsole;
 using Microsoft.Xna.Framework;
-using FieryOpal.Src.Ui;
 using FieryOpal.Src;
 using FieryOpal.Src.Procedural;
 using FieryOpal.src;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using FieryOpal.Src.Ui.Dialogs;
+using FieryOpal.Src.Ui.Windows;
 
 namespace FieryOpal
 {
     class Program
     {
 
-        public static int Width { get; private set; } = 180;
-        public static int Height { get; private set; } = 80;
+        public static int Width { get; private set; }
+        public static int Height { get; private set; }
 
         static MainGameWindowManager mainGameWindowManager;
-        static World world;
 
         public static FontConfigInfo Fonts { get; private set; }
-        public static LocalizationInfo LocalizationInfo { get; private set; }
+        public static LocalizationInfo Locale { get; private set; }
+        public static KeybindConfigInfo Keys { get; private set; }
+
+        private static InitConfigInfo InitInfo { get; set; }
 
         static void Main(string[] args)
         {
             CreatePaths();
-            InitConfigInfo initInfo = Util.LoadDefaultInitConfig();
-            Width = initInfo.ProgramWidth;
-            Height = initInfo.ProgramHeight;
+            InitInfo = Util.LoadDefaultInitConfig();
+            Width = InitInfo.ProgramWidth;
+            Height = InitInfo.ProgramHeight;
 
-            LocalizationInfo = new LocalizationLoader().LoadFile(initInfo.Locale);
-
-            world = new World(initInfo.WorldWidth, initInfo.WorldHeight);
-            world.Generate();
-
-            Keybind.PushState();
-            SadConsole.Game.Create(initInfo.DefaultFontPath, Width, Height);
-            
+            SadConsole.Game.Create(InitInfo.DefaultFontPath, Width, Height);
             SadConsole.Game.OnInitialize = Init;
             SadConsole.Game.OnUpdate = Update;
             SadConsole.Game.OnDraw = Draw;
 
+            Keybind.PushState();
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
             Keybind.PopState();
@@ -65,14 +62,21 @@ namespace FieryOpal
             System.IO.Directory.CreateDirectory("./save");
             System.IO.Directory.CreateDirectory("./cfg");
             System.IO.Directory.CreateDirectory("./cfg/locale");
+            System.IO.Directory.CreateDirectory("./gfx");
+            System.IO.Directory.CreateDirectory("./gfx/extra");
         }
 
         private static void Init()
         {
             Fonts = Util.LoadDefaultFontConfig();
+            Keys = Util.LoadDefaultKeyConfig();
+            Locale = Util.LoadDefaultLocalizationConfig(InitInfo);
 
+            World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
+            world.Generate();
             OpalGame g = new OpalGame(world);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
+
             Util.Log(Util.Localize("WelcomeMessage"), false);
         }
     }

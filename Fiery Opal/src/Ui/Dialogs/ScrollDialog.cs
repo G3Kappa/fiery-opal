@@ -1,9 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Lib;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     public class ScrollDialog : OpalDialog
     {
@@ -66,7 +67,7 @@ namespace FieryOpal.Src.Ui
         private ColoredString MakeBorder(int width)
         {
             ColoredGlyph[] glyphs = new ColoredGlyph[width];
-            var noise = Simplex.Noise.Calc1D(Util.GlobalRng.Next(0, 100), width, .25f);
+            var noise = Noise.Calc1D(Util.GlobalRng.Next(0, 100), width, .25f);
 
             for (int i = 0; i < width; ++i)
             {
@@ -115,64 +116,6 @@ namespace FieryOpal.Src.Ui
         protected override void PrintText(string text)
         {
             WriteableArea?.Print(0, 0, text.ToColoredString(DefaultPalette["ShadeDark"], DefaultPalette["Light"]));
-        }
-    }
-
-
-    public class ViewportScrollDialog<T> : ScrollDialog
-        where T : Viewport
-    {
-        public T Viewport;
-
-        public ViewportScrollDialog() : base()
-        {
-
-        }
-
-        private void ScrollViewArea(int x, int y)
-        {
-            Point p = new Point(x, y);
-            Rectangle area = new Rectangle(Viewport.ViewArea.Location + p, Viewport.ViewArea.Size);
-
-            if (area.X < 0 || area.Y < 0 || area.X + area.Width >= Viewport.TargetWidth + 1 || area.Y + area.Height >= Viewport.TargetHeight + 1) return;
-            Viewport.ViewArea = area;
-        }
-
-        protected override void BindKeys()
-        {
-            base.BindKeys();
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Map: Scroll up"), (i) => { ScrollViewArea(0, -1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press, "Map: Scroll left"), (i) => { ScrollViewArea(-1, 0); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press, "Map: Scroll down"), (i) => { ScrollViewArea(0, 1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press, "Map: Scroll right"), (i) => { ScrollViewArea(1, 0); });
-        }
-
-        public override void Draw(TimeSpan delta)
-        {
-            base.Draw(delta);
-            Viewport.ViewArea = new Rectangle(Viewport.ViewArea.Location, new Point(WriteableArea.Width, WriteableArea.Height));
-            Viewport?.Print(WriteableArea, new Rectangle(new Point(0), new Point(WriteableArea.Width, WriteableArea.Height)));
-        }
-    }
-
-    public class WorldMapScrollDialog : ViewportScrollDialog<WorldMapViewport>
-    {
-        private void MoveCursor(int x, int y)
-        {
-            Point p = Viewport.CursorPosition + new Point(x, y);
-            if (p.X < 0 || p.Y < 0) return;
-            if (p.X >= Viewport.TargetWidth || p.Y >= Viewport.TargetHeight) return;
-
-            Viewport.CursorPosition = p;
-        }
-
-        protected override void BindKeys()
-        {
-            base.BindKeys();
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Up, Keybind.KeypressState.Press, "Map: Move cursor up"), (i) => { MoveCursor(0, -1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Left, Keybind.KeypressState.Press, "Map: Move cursor left"), (i) => { MoveCursor(-1, 0); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Down, Keybind.KeypressState.Press, "Map: Move cursor down"), (i) => { MoveCursor(0, 1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Right, Keybind.KeypressState.Press, "Map: Move cursor right"), (i) => { MoveCursor(1, 0); });
         }
     }
 }

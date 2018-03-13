@@ -1,6 +1,7 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using System;
 

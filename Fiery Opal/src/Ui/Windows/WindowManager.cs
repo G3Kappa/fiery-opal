@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Windows
 {
     public class WindowManager
     {

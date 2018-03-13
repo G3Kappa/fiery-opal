@@ -9,7 +9,6 @@ using System.Runtime.Serialization;
 
 namespace FieryOpal.Src
 {
-    [Serializable]
     public struct OpalTileProperties
     {
         public bool BlocksMovement, IsNatural;

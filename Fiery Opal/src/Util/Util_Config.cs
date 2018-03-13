@@ -11,23 +11,9 @@ namespace FieryOpal.Src
 {
     public static partial class Util
     {
-        public static PlayerActionsKeyConfiguration LoadDefaultKeyconfig()
+        public static KeybindConfigInfo LoadDefaultKeyConfig()
         {
-            var cfg = new PlayerActionsKeyConfiguration();
-            cfg.AssignKey(PlayerAction.Wait, new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Player: Wait"));
-
-            cfg.AssignKey(PlayerAction.MoveU, new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Player: Walk forwards"));
-            cfg.AssignKey(PlayerAction.MoveD, new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press, "Player: Walk backwards"));
-            cfg.AssignKey(PlayerAction.MoveL, new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press, "Player: Strafe left"));
-            cfg.AssignKey(PlayerAction.MoveR, new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press, "Player: Strafe right"));
-
-            cfg.AssignKey(PlayerAction.TurnL, new Keybind.KeybindInfo(Keys.Q, Keybind.KeypressState.Press, "Player: Turn left"));
-            cfg.AssignKey(PlayerAction.TurnR, new Keybind.KeybindInfo(Keys.E, Keybind.KeypressState.Press, "Player: Turn right"));
-
-            cfg.AssignKey(PlayerAction.Interact, new Keybind.KeybindInfo(Keys.Space, Keybind.KeypressState.Press, "Player: Interact"));
-            cfg.AssignKey(PlayerAction.OpenInventory, new Keybind.KeybindInfo(Keys.I, Keybind.KeypressState.Press, "Player: Open inventory"));
-
-            return cfg;
+            return new KeybindConfigLoader().LoadFile("cfg/keys.cfg");
         }
 
         public static FontConfigInfo LoadDefaultFontConfig()
@@ -38,6 +24,11 @@ namespace FieryOpal.Src
         public static InitConfigInfo LoadDefaultInitConfig()
         {
             return new InitConfigLoader().LoadFile("cfg/init.cfg");
+        }
+
+        public static LocalizationInfo LoadDefaultLocalizationConfig(InitConfigInfo init)
+        {
+            return new LocalizationLoader().LoadFile(init.Locale);
         }
     }
 

@@ -4,7 +4,7 @@ using SadConsole;
 using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Windows
 {
 
     public class OpalInfoWindow : OpalConsoleWindow

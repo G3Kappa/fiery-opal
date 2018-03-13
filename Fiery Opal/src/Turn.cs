@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;

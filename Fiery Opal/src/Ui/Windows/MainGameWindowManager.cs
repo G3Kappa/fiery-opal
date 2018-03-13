@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System.Text.RegularExpressions;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Windows
 {
     public class MainGameWindowManager : WindowManager
     {
@@ -18,9 +18,6 @@ namespace FieryOpal.Src.Ui
         {
             
             Game = g;
-            Game.Player.Brain = new PlayerControlledAI(Game.Player, Util.LoadDefaultKeyconfig());
-            (Game.Player.Brain as PlayerControlledAI).InternalMessagePipeline.Subscribe(Game);
-            (Game.Player.Brain as PlayerControlledAI).BindKeys();
 
             FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player, Program.Fonts.Spritesheets["Terrain"]), Program.Fonts.FirstPersonViewportFont);
 
@@ -44,6 +41,10 @@ namespace FieryOpal.Src.Ui
             FirstPersonWindow.Show();
             RegisterWindow(TopDownWindow);
             TopDownWindow.Show();
+
+            Game.Player.Brain = new PlayerControlledAI(Game.Player, Program.Keys.GetPlayerKeybinds());
+            (Game.Player.Brain as PlayerControlledAI).InternalMessagePipeline.Subscribe(Game);
+            (Game.Player.Brain as PlayerControlledAI).BindKeys();
 
             // CTRL+F1: Log window toggles debug mode. If compiling a debug assembly, DBG: messages can be hidden and shown at will.
             // Under release mode, DBG: messages will not be logged at all. It is still possible to enable debug logging, but it will

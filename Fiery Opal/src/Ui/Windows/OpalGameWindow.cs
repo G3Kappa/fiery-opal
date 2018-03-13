@@ -1,7 +1,7 @@
 ﻿using SadConsole;
 using System;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Windows
 {
     public class OpalGameWindow : OpalConsoleWindow
     {

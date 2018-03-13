@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using SadConsole.Controls;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     class DialogueDialog : OpalDialog
     {

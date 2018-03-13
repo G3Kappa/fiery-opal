@@ -1,5 +1,6 @@
 ﻿using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -37,6 +38,7 @@ namespace FieryOpal.Src.Actors
         private void DropFrom(IInventoryHolder holder)
         {
             holder.Inventory.Retrieve(this);
+            ChangeLocalMap(holder.Map, holder.Map.FirstAccessibleTileAround(holder.LocalPosition));
         }
 
         public Item(ColoredString name, ItemCategory category = ItemCategory.Miscellaneous)

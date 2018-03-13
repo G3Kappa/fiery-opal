@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework.Input;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     public class BookDialog : OpalDialog
     {

@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -71,7 +72,8 @@ namespace FieryOpal.Src.Actors
         {
             if(!keyconfig?.IsValid() ?? true)
             {
-                throw new ArgumentException("Invalid key configuration.");
+                Util.Err("Invalid player key configuration. Check cfg/keys.cfg.");
+                throw new ArgumentException("Invalid player key configuration.");
             }
             KeyConfig = keyconfig;
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
@@ -79,8 +81,8 @@ namespace FieryOpal.Src.Actors
             Body.Inventory.Store(new Journal());
             Body.Inventory.Store(new WorldMap());
 
-            Body.Inventory.ItemStored += (item) => Util.Log("Got ".ToColoredString() + item.ItemInfo.Name, false);
-            Body.Inventory.ItemRetrieved += (item) => Util.Log("Dropped ".ToColoredString() + item.ItemInfo.Name, false);
+            Body.Inventory.ItemStored += (item) => Util.Log(Util.Localize("Player_ItemPickedUp", item.ItemInfo.Name), false);
+            Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Localize("Player_ItemDropped", item.ItemInfo.Name), false);
         }
 
         public void BindKeys()

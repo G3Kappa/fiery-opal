@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework.Input;
 using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Dialogs;
 
 namespace FieryOpal.Src
 {
@@ -70,6 +71,8 @@ namespace FieryOpal.Src
 
                 return info.Value.GetHashCode() == GetHashCode();
             }
+
+            public static KeybindInfo Invalid = new KeybindInfo(Keys.None, KeypressState.Release, "");
         }
 
         protected static Stack<Dictionary<KeybindInfo, KeybindTriggered>> Delegates = new Stack<Dictionary<KeybindInfo, KeybindTriggered>>();

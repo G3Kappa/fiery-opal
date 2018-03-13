@@ -5,7 +5,7 @@ using SadConsole.Shapes;
 using SadConsole.Surfaces;
 using System;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Windows
 {
     public class OpalConsoleWindow : SadConsole.Window, IPipelineSubscriber<OpalConsoleWindow>
     {

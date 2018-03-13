@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Lib;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
@@ -33,7 +34,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         {
             base.Generate(m);
 
-            float[,] shrubNoise = Simplex.Noise.Calc2D(
+            float[,] shrubNoise = Noise.Calc2D(
                 WorldPosition.X * m.Width, 
                 WorldPosition.Y * m.Height,
                 m.Width,

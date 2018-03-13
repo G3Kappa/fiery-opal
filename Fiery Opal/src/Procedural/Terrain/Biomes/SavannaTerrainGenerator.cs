@@ -1,4 +1,4 @@
-﻿using FieryOpal.src.lib;
+﻿using FieryOpal.Src.Lib;
 using FieryOpal.Src.Actors;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;

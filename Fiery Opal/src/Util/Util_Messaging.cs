@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Ui;
+using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -51,9 +52,9 @@ namespace FieryOpal.Src
             GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
         }
 
-        public static string Localize(string s)
+        public static string Localize(string s, params object[] args)
         {
-            return Program.LocalizationInfo.Translation[s];
+            return String.Format(Program.Locale.Translation[s], args);
         }
     }
 

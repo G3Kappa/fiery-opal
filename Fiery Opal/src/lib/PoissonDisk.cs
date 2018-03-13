@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FieryOpal.src.lib
+namespace FieryOpal.Src.Lib
 {// Adapated from java source by Herman Tulleken
     // http://www.luma.co.za/labs/2008/02/27/poisson-disk-sampling/
 

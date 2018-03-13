@@ -48,6 +48,17 @@ namespace FieryOpal.Src
         {
             return (x < min_x || y < min_y || x >= w || y >= h);
         }
+
+        public static T GetEnumValueFromName<T>(string s)
+            where T : struct, IConvertible
+        {
+            if (!typeof(T).IsEnum) return default(T);
+            foreach (var val in Enum.GetValues(typeof(T)))
+            {
+                if (Enum.GetName(typeof(T), val).ToLower().Equals(s.ToLower())) return (T)val;
+            }
+            return default(T);
+        }
     }
 
     public static partial class Extensions

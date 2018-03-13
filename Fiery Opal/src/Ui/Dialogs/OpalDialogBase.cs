@@ -6,8 +6,9 @@ using System.Linq;
 using SadConsole.Input;
 using SadConsole.Themes;
 using Microsoft.Xna.Framework.Input;
+using FieryOpal.Src.Ui.Windows;
 
-namespace FieryOpal.Src.Ui
+namespace FieryOpal.Src.Ui.Dialogs
 {
     public abstract  class OpalDialog : OpalConsoleWindow
     {

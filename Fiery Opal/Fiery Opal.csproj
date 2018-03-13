@@ -86,22 +86,24 @@
     <Compile Include="src\Procedural\Terrain\Biomes\GrasslandsTerrainGenerator.cs" />
     <Compile Include="src\Procedural\World.cs" />
     <Compile Include="src\Turn.cs" />
-    <Compile Include="src\Ui\BookDialog.cs" />
-    <Compile Include="src\Ui\ColorPalette.cs" />
-    <Compile Include="src\Ui\ContextMenu.cs" />
-    <Compile Include="src\Ui\DialogueDialog.cs" />
+    <Compile Include="src\Ui\Dialogs\BookDialog.cs" />
+    <Compile Include="src\Ui\Palette.cs" />
+    <Compile Include="src\Ui\Dialogs\ContextMenu.cs" />
+    <Compile Include="src\Ui\Dialogs\DialogueDialog.cs" />
+    <Compile Include="src\Ui\Dialogs\ViewportScrollDialog.cs" />
+    <Compile Include="src\Ui\Dialogs\WorldMapScrollDialog.cs" />
     <Compile Include="src\Ui\FontTextureCache.cs" />
-    <Compile Include="src\Ui\InventoryDialog.cs" />
-    <Compile Include="src\Ui\MainGameWindowManager.cs" />
-    <Compile Include="src\Ui\OkCancelDialog.cs" />
-    <Compile Include="src\Ui\OpalConsoleWindow.cs" />
-    <Compile Include="src\Ui\OpalGameWindow.cs" />
-    <Compile Include="src\Ui\OpalLogWindow.cs" />
-    <Compile Include="src\Ui\OpalInfoWindow.cs" />
+    <Compile Include="src\Ui\Dialogs\InventoryDialog.cs" />
+    <Compile Include="src\Ui\Windows\MainGameWindowManager.cs" />
+    <Compile Include="src\Ui\Dialogs\OkCancelDialog.cs" />
+    <Compile Include="src\Ui\Windows\OpalConsoleWindow.cs" />
+    <Compile Include="src\Ui\Windows\OpalGameWindow.cs" />
+    <Compile Include="src\Ui\Windows\OpalLogWindow.cs" />
+    <Compile Include="src\Ui\Windows\OpalInfoWindow.cs" />
     <Compile Include="src\Ui\RaycastViewport.cs" />
-    <Compile Include="src\Ui\ScrollDialog.cs" />
+    <Compile Include="src\Ui\Dialogs\ScrollDialog.cs" />
     <Compile Include="src\Ui\Viewport.cs" />
-    <Compile Include="src\Ui\WindowManager.cs" />
+    <Compile Include="src\Ui\Windows\WindowManager.cs" />
     <Compile Include="src\Util\Util_Config.cs" />
     <Compile Include="src\Util\Util.cs" />
     <Compile Include="src\Util\Util_Physics.cs" />
@@ -168,6 +170,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="app.manifest" />
+    <None Include="cfg\keys.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="cfg\locale\IT.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="cfg\locale\en_US.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -206,7 +214,7 @@
     <Content Include="gfx\taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Compile Include="src\Ui\OpalDialogBase.cs" />
+    <Compile Include="src\Ui\Dialogs\OpalDialogBase.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
