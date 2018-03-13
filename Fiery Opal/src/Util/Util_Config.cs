@@ -30,6 +30,12 @@ namespace FieryOpal.Src
         {
             return new LocalizationLoader().LoadFile(init.Locale);
         }
+
+        public static PaletteConfigInfo LoadDefaultPaletteConfig()
+        {
+            var ret = new PaletteConfigLoader().LoadFile("cfg/palettes.cfg");
+            return ret;
+        }
     }
 
     public static partial class Extensions

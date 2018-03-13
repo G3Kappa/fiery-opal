@@ -1,5 +1,6 @@
 ﻿using FieryOpal.Src;
 using FieryOpal.Src.Actors;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
@@ -12,6 +13,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static FieryOpal.Src.Keybind;
+using FieryOpal.src;
+using FieryOpal.Src.Ui;
 
 namespace FieryOpal.src
 {
@@ -143,7 +146,8 @@ namespace FieryOpal.src
             }
 
             var matches = AssignmentRegex.Matches(s);
-            return new Tuple<string, string>(matches[0].Groups[1].Value, matches[0].Groups[2].Value);
+            var lhs_rhs = new Tuple<string, string>(matches[0].Groups[1].Value, matches[0].Groups[2].Value);
+            return lhs_rhs;
         }
     }
 
@@ -161,8 +165,26 @@ namespace FieryOpal.src
         protected override T BuildRepresentation(Tuple<string, string>[] tokens)
         {
             T ret = new T();
-            foreach (var t in tokens)
+            Stack<Tuple<string, string>> token_stack = new Stack<Tuple<string, string>>(tokens);
+            var cur_dir = Parser.CurrentDirectory;
+            while(token_stack.Count > 0)
             {
+                var t = token_stack.Pop();
+                if(t.Item1 == "INCLUDE")
+                {
+                    var rev = Parser.Parse(Path.Combine(cur_dir, t.Item2)).Reverse();
+                    if(rev.Count() == 0)
+                    {
+                        Util.Err(String.Format("INCLUDE not found: \"{0}\".", t.Item2));
+                        continue;
+                    }
+                    foreach (var p in rev)
+                    {
+                        token_stack.Push(p);
+                    }
+                    continue;
+                }
+
                 object rhs = DelegatedConversion(this, t.Item2);
                 if(rhs == null)
                 {
@@ -197,7 +219,7 @@ namespace FieryOpal.src
     public class FontConfigLoader : RelectionBasedConfigLoader<FontConfigInfo>
     {
         public FontConfigLoader()
-            : base((self, lhs) => Global.LoadFont(lhs).GetFont(Font.FontSizes.One))
+            : base((self, rhs) => Global.LoadFont(rhs).GetFont(Font.FontSizes.One))
         {
 
         }
@@ -218,7 +240,7 @@ namespace FieryOpal.src
     public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
     {
         public InitConfigLoader()
-            : base((self, lhs) => lhs)
+            : base((self, rhs) => rhs)
         {
 
         }
@@ -267,7 +289,7 @@ namespace FieryOpal.src
     public class LocalizationLoader : RelectionBasedConfigLoader<LocalizationInfo>
     {
         public LocalizationLoader()
-            : base((self, lhs) => lhs)
+            : base((self, rhs) => rhs)
         {
 
         }
@@ -292,15 +314,15 @@ namespace FieryOpal.src
     public class KeybindConfigLoader : RelectionBasedConfigLoader<KeybindConfigInfo>
     {
         static Regex KeybindRegex = new Regex("(?:Key:)?\\s*([\\w]+)\\s*,\\s*(?:State:)?\\s*(Press|Down|Release)\\s*,\\s*(?:Help:)?\\s*\"(.*?)\"\\s*,\\s*(?:Ctrl:)?\\s*(true|false)\\s*,\\s*(?:Shift:)?\\s*(true|false)\\s*,\\s*(?:Alt:)?\\s*(true|false)\\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static KeybindInfo? ParseLhs(string lhs)
+        private static KeybindInfo? ParseRhs(string rhs)
         {
-            if (!KeybindRegex.IsMatch(lhs))
+            if (!KeybindRegex.IsMatch(rhs))
             {
-                Util.Err(String.Format("Unparsed KeybindInfo: \"{0}\"", lhs));
+                Util.Err(String.Format("Unparsed KeybindInfo: \"{0}\"", rhs));
                 return null;
             }
 
-            var groups = KeybindRegex.Match(lhs).Groups;
+            var groups = KeybindRegex.Match(rhs).Groups;
             var ret = new KeybindInfo();
 
             ret.MainKey = Util.GetEnumValueFromName<Keys>(groups[1].Value);
@@ -319,9 +341,47 @@ namespace FieryOpal.src
         }
 
         public KeybindConfigLoader()
-            : base((self, lhs) => ParseLhs(lhs))
+            : base((self, lhs) => ParseRhs(lhs))
         {
 
+        }
+    }
+
+    public class PaletteConfigInfo
+    {
+        public Dictionary<string, Color> Ui { get; set; } = new Dictionary<string, Color>();
+        public Dictionary<string, Color> Terrain { get; set; } = new Dictionary<string, Color>();
+        public Dictionary<string, Color> Vegetation { get; set; } = new Dictionary<string, Color>();
+        public Dictionary<string, Color> Creatures { get; set; } = new Dictionary<string, Color>();
+    }
+
+    public class PaletteConfigLoader : RelectionBasedConfigLoader<PaletteConfigInfo>
+    {
+        static Regex RGBValueRegex = new Regex("(?:([\\d]{1,3}),?\\s*)", RegexOptions.Compiled);
+        static Regex RGBAParserRegex = new Regex(RGBValueRegex.ToString().Repeat(4) + "?", RegexOptions.Compiled);
+
+        private static Color ParseRhs(string rhs)
+        {
+            if(RGBAParserRegex.IsMatch(rhs))
+            {
+                var m = RGBAParserRegex.Match(rhs);
+                int R = 0, G = 0, B = 0, A = 255;
+                R = int.Parse(m.Groups[1].Value);
+                G = int.Parse(m.Groups[2].Value);
+                B = int.Parse(m.Groups[3].Value);
+                if(m.Groups.Count == 5 && m.Groups[4].Value.Length > 0)
+                {
+                    A = int.Parse(m.Groups[4].Value);
+                }
+                return new Color(R, G, B, A);
+            }
+
+            return Color.Magenta;
+        }
+
+        public PaletteConfigLoader()
+            : base((self, lhs) => ParseRhs(lhs))
+        {
         }
     }
 }

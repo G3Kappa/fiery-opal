@@ -8,6 +8,7 @@ using System.Linq;
 using System;
 using FieryOpal.Src.Ui.Dialogs;
 using FieryOpal.Src.Ui.Windows;
+using FieryOpal.Src.Ui;
 
 namespace FieryOpal
 {
@@ -22,6 +23,7 @@ namespace FieryOpal
         public static FontConfigInfo Fonts { get; private set; }
         public static LocalizationInfo Locale { get; private set; }
         public static KeybindConfigInfo Keys { get; private set; }
+        public static PaletteConfigInfo PaletteInfo { get; private set; }
 
         private static InitConfigInfo InitInfo { get; set; }
 
@@ -71,6 +73,8 @@ namespace FieryOpal
             Fonts = Util.LoadDefaultFontConfig();
             Keys = Util.LoadDefaultKeyConfig();
             Locale = Util.LoadDefaultLocalizationConfig(InitInfo);
+            PaletteInfo = Util.LoadDefaultPaletteConfig();
+            Palette.LoadDefaults(PaletteInfo);
 
             World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
             world.Generate();
