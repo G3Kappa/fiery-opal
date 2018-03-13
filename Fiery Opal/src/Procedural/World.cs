@@ -107,8 +107,8 @@ namespace FieryOpal.Src.Procedural
 
     public class WorldTile
     {
-        public const int REGION_WIDTH = 40;
-        public const int REGION_HEIGHT = 40;
+        public const int REGION_WIDTH = 60;
+        public const int REGION_HEIGHT = 60;
 
         public static Palette BiomePalette = new Palette(new[] {
             new Tuple<string, Color>(BiomeType.Ice.ToString(), new Color(255, 255, 255)),

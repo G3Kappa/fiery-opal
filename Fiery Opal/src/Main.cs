@@ -3,6 +3,10 @@ using Microsoft.Xna.Framework;
 using FieryOpal.Src.Ui;
 using FieryOpal.Src;
 using FieryOpal.Src.Procedural;
+using FieryOpal.src;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace FieryOpal
 {
@@ -14,15 +18,14 @@ namespace FieryOpal
 
         static MainGameWindowManager mainGameWindowManager;
 
-        public static Font Font;
-        public static Font FPFont;
-        public static Font HDFont;
+        public static FontConfigInfo Fonts;
 
         static void Main(string[] args)
         {
             CreatePaths();
+
             Keybind.PushState();
-            SadConsole.Game.Create("Taffer.font", Width, Height);
+            SadConsole.Game.Create("gfx/Taffer.font", Width, Height);
             
             SadConsole.Game.OnInitialize = Init;
             SadConsole.Game.OnUpdate = Update;
@@ -50,15 +53,12 @@ namespace FieryOpal
         private static void CreatePaths()
         {
             System.IO.Directory.CreateDirectory("./save");
-            System.IO.Directory.CreateDirectory("./resources");
             System.IO.Directory.CreateDirectory("./cfg");
         }
 
         private static void Init()
         {
-            Font = Global.LoadFont("Taffer.font").GetFont(Font.FontSizes.One);
-            FPFont = Global.LoadFont("Kein.font").GetFont(Font.FontSizes.One);
-            HDFont = Global.LoadFont("16x16.font").GetFont(Font.FontSizes.One);
+            Fonts = Util.LoadDefaultFontConfig();
 
             World w = new World(100, 100);
             w.Generate();

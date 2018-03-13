@@ -49,6 +49,8 @@
     <Compile Include="src\Actors\PlayerControlledAI.cs" />
     <Compile Include="src\Actors\TurnTakingActor.cs" />
     <Compile Include="src\Actors\TurnTakingAI.cs" />
+    <Compile Include="src\ConfigParser.cs" />
+    <Compile Include="src\lib\PoissonDisk.cs" />
     <Compile Include="src\Procedural\BasicBuildingDesigner.cs" />
     <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
@@ -88,6 +90,7 @@
     <Compile Include="src\Ui\ColorPalette.cs" />
     <Compile Include="src\Ui\ContextMenu.cs" />
     <Compile Include="src\Ui\DialogueDialog.cs" />
+    <Compile Include="src\Ui\FontTextureCache.cs" />
     <Compile Include="src\Ui\InventoryDialog.cs" />
     <Compile Include="src\Ui\MainGameWindowManager.cs" />
     <Compile Include="src\Ui\OkCancelDialog.cs" />
@@ -99,7 +102,10 @@
     <Compile Include="src\Ui\ScrollDialog.cs" />
     <Compile Include="src\Ui\Viewport.cs" />
     <Compile Include="src\Ui\WindowManager.cs" />
-    <Compile Include="src\Util.cs" />
+    <Compile Include="src\Util\Util_Config.cs" />
+    <Compile Include="src\Util\Util.cs" />
+    <Compile Include="src\Util\Util_Physics.cs" />
+    <Compile Include="src\Util\Util_Messaging.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">
@@ -162,35 +168,42 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="app.manifest" />
-    <None Include="16x16.font">
+    <None Include="cfg\init.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="HD.font">
+    <None Include="gfx\16x16.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\fonts.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\HD.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\Kein.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\Taffer.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="Kein.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Philosophy.md" />
-    <None Include="Taffer.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="16x16.png">
+    <Content Include="gfx\16x16.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="HD.png">
+    <Content Include="gfx\extra\16x16-reference.png" />
+    <Content Include="gfx\HD.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="kein.png">
+    <Content Include="gfx\kein.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="gfx\taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Compile Include="src\Ui\OpalDialogBase.cs" />
-    <Content Include="taffer.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

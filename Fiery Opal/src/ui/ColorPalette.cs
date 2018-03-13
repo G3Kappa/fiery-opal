@@ -100,6 +100,8 @@ namespace FieryOpal.Src.Ui
             new Tuple<string, Color>("Flower3", new Color(255, 180, 100)),
             new Tuple<string, Color>("Flower4", new Color(255, 255, 210)),
             new Tuple<string, Color>("Flower5", new Color(180, 100, 255)),
+
+            new Tuple<string, Color>("ShortDryGrass", new Color(255, 228, 145   )),
         });
 
         public static Palette Terrain = new Palette(new[] {
@@ -110,8 +112,8 @@ namespace FieryOpal.Src.Ui
 
             new Tuple<string, Color>("GrassForeground", Color.Green),
             new Tuple<string, Color>("GrassBackground", Color.ForestGreen),
-            new Tuple<string, Color>("DryGrassForeground", Color.Gold),
-            new Tuple<string, Color>("DryGrassBackground", Color.SandyBrown),
+            new Tuple<string, Color>("DryGrassForeground", new Color(215, 156, 76)),
+            new Tuple<string, Color>("DryGrassBackground", new Color(255, 209, 111)),
             new Tuple<string, Color>("WaterForeground", Color.CornflowerBlue),
             new Tuple<string, Color>("WaterBackground", Color.RoyalBlue),
             new Tuple<string, Color>("SandForeground", Color.Gold),

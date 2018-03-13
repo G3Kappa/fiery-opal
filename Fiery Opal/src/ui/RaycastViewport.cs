@@ -20,7 +20,7 @@ namespace FieryOpal.Src.Ui
 
         public RaycastViewport(OpalLocalMap target, Rectangle view_area, IOpalGameActor following, Font f = null) : base(target, view_area)
         {
-            RenderFont = f ?? Program.Font;
+            RenderFont = f ?? Program.Fonts.MainFont;
             Following = following;
             DirectionVector = new Vector2(0, 1);
             PlaneVector = new Vector2(-1, 0);
@@ -279,7 +279,7 @@ namespace FieryOpal.Src.Ui
 
                 if (distance_scaled > .4f)
                 {
-                    RenderFont = Program.Font;
+                    RenderFont = Program.Fonts.MainFont;
                 }
                 int spriteScreenX = (int)((viewportWidth / 2) * (1 + spriteProjection.X / spriteProjection.Y));
                 int spriteHeight = (int)(Math.Abs((int)(viewportHeight / spriteProjection.Y)) / actor.FirstPersonScale.Y); //using "transformY" instead of the real distance prevents fisheye
@@ -305,7 +305,7 @@ namespace FieryOpal.Src.Ui
                 {
                     if (distance_scaled > .4f)
                     {
-                        RenderFont = Program.HDFont;
+                        RenderFont = Program.Fonts.Spritesheets["Terrain"];
                     }
                     continue;
                 }
@@ -352,7 +352,7 @@ namespace FieryOpal.Src.Ui
 
                 if (distance_scaled > .4f)
                 {
-                    RenderFont = Program.HDFont;
+                    RenderFont = Program.Fonts.Spritesheets["Terrain"];
                 }
             }
         }
@@ -481,12 +481,12 @@ namespace FieryOpal.Src.Ui
                 DrawFloorAndSkyVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
                 if (perpWallDist > ViewDistance / 4)
                 {
-                    RenderFont = Program.Font;
+                    RenderFont = Program.Fonts.MainFont;
                 }
                 DrawWallVLine(surface, mapPos, x, perpWallDist, wallX, side, rayDir, drawStart, drawEnd, lineHeight, targetArea.Height);
                 if (perpWallDist > ViewDistance / 4)
                 {
-                    RenderFont = Program.HDFont;
+                    RenderFont = Program.Fonts.Spritesheets["Terrain"];
                 }
             }
             DrawActorSpriteVLines(surface, zbuffer, targetArea.Width, targetArea.Height);

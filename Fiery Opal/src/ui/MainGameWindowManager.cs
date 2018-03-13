@@ -22,7 +22,7 @@ namespace FieryOpal.Src.Ui
             (Game.Player.Brain as PlayerControlledAI).InternalMessagePipeline.Subscribe(Game);
             (Game.Player.Brain as PlayerControlledAI).BindKeys();
 
-            FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player, Program.HDFont), Program.FPFont);
+            FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player, Program.Fonts.Spritesheets["Terrain"]), Program.Fonts.FirstPersonViewportFont);
 
             TopDownWindow = new OpalGameWindow((w) / 3, h - h / 4, g, new LocalMapViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4)));
             TopDownWindow.Position = new Point((w) / 2, 0);
