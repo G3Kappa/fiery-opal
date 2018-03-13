@@ -36,6 +36,25 @@ namespace FieryOpal.Src
 
             GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
         }
+
+        public static void Warn(String msg, bool debug = false)
+        {
+            Color fore = Palette.Ui["WarningMessage"];
+            Color back = Palette.Ui["DefaultBackground"];
+
+            if (!debug)
+            {
+                ColoredString header = new ColoredString("WARN: ", fore, back);
+                msg = header + msg;
+            }
+
+            GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
+        }
+
+        public static string Localize(string s)
+        {
+            return Program.LocalizationInfo.Translation[s];
+        }
     }
 
     public static partial class Extensions

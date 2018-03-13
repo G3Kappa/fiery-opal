@@ -80,6 +80,7 @@ namespace FieryOpal.Src.Ui
 
             new Tuple<string, Color>("DebugMessage",      Color.RoyalBlue),
             new Tuple<string, Color>("ErrorMessage",      Color.IndianRed),
+            new Tuple<string, Color>("WarningMessage",       Color.Gold),
             new Tuple<string, Color>("InfoMessage",       Color.Gold),
             new Tuple<string, Color>("BoringMessage",     Color.DarkGray),
         });

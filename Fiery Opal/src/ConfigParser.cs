@@ -128,7 +128,7 @@ namespace FieryOpal.src
     public class ConfigParserBase : ConfigParser<Tuple<string, string>>
     {
         protected static Regex CommentRegex = new Regex(@"^\s*\/\/");
-        protected static Regex AssignmentRegex = new Regex(@"^\s*(.*?)=(.*)\s*$");
+        protected static Regex AssignmentRegex = new Regex(@"^\s*(.*?)\s*=\s*(.*)\s*$");
 
         protected override Tuple<string, string> ParseLine(string s)
         {
@@ -194,7 +194,7 @@ namespace FieryOpal.src
     public class FontConfigLoader : RelectionBasedConfigLoader<FontConfigInfo>
     {
         public FontConfigLoader()
-            : base((self, lhs) => Global.LoadFont(Path.Combine(self.Parser.CurrentDirectory, lhs)).GetFont(Font.FontSizes.One))
+            : base((self, lhs) => Global.LoadFont(lhs).GetFont(Font.FontSizes.One))
         {
 
         }
@@ -208,13 +208,62 @@ namespace FieryOpal.src
         public int WorldWidth { get; set; }
         public int WorldHeight { get; set; }
 
-        public Dictionary<string, int> TestInt { get; set; } = new Dictionary<string, int>();
-        public Dictionary<int, bool> TestBool { get; set; } = new Dictionary<int, bool>();
+        public string DefaultFontPath { get; set; }
+        public string Locale { get; set; }
     }
 
-    internal class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
+    public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
     {
         public InitConfigLoader()
+            : base((self, lhs) => lhs)
+        {
+
+        }
+    }
+
+    public class DefaultDictionary<T, K> : Dictionary<T, K>
+        where K : class
+    {
+        protected Func<T, K> DefaultValueDelegate;
+
+        public DefaultDictionary(Func<T, K> defaultDelegate) : base()
+        {
+            DefaultValueDelegate = defaultDelegate;
+        }
+
+        public new K this[T key]
+        {
+            get
+            {
+                if(ContainsKey(key))
+                {
+                    K value;
+                    TryGetValue(key, out value);
+                    return value;
+                }
+                return DefaultValueDelegate(key);
+            }
+            set
+            {
+                Add(key, value);
+            }
+        }
+    }
+
+    public class LocalizationInfo
+    {
+        public static string GetDefaultString(string key)
+        {
+            Util.Warn(String.Format("Locale> No localization string provided for '{0}'.", key), true);
+            return key;
+        }
+
+        public DefaultDictionary<string, string> Translation { get; set; } = new DefaultDictionary<string, string>(GetDefaultString);
+    }
+
+    public class LocalizationLoader : RelectionBasedConfigLoader<LocalizationInfo>
+    {
+        public LocalizationLoader()
             : base((self, lhs) => lhs)
         {
 

@@ -13,19 +13,29 @@ namespace FieryOpal
     class Program
     {
 
-        public const int Width = 180;
-        public const int Height = 80;
+        public static int Width { get; private set; } = 180;
+        public static int Height { get; private set; } = 80;
 
         static MainGameWindowManager mainGameWindowManager;
+        static World world;
 
-        public static FontConfigInfo Fonts;
+        public static FontConfigInfo Fonts { get; private set; }
+        public static LocalizationInfo LocalizationInfo { get; private set; }
 
         static void Main(string[] args)
         {
             CreatePaths();
+            InitConfigInfo initInfo = Util.LoadDefaultInitConfig();
+            Width = initInfo.ProgramWidth;
+            Height = initInfo.ProgramHeight;
+
+            LocalizationInfo = new LocalizationLoader().LoadFile(initInfo.Locale);
+
+            world = new World(initInfo.WorldWidth, initInfo.WorldHeight);
+            world.Generate();
 
             Keybind.PushState();
-            SadConsole.Game.Create("gfx/Taffer.font", Width, Height);
+            SadConsole.Game.Create(initInfo.DefaultFontPath, Width, Height);
             
             SadConsole.Game.OnInitialize = Init;
             SadConsole.Game.OnUpdate = Update;
@@ -54,18 +64,16 @@ namespace FieryOpal
         {
             System.IO.Directory.CreateDirectory("./save");
             System.IO.Directory.CreateDirectory("./cfg");
+            System.IO.Directory.CreateDirectory("./cfg/locale");
         }
 
         private static void Init()
         {
             Fonts = Util.LoadDefaultFontConfig();
 
-            World w = new World(100, 100);
-            w.Generate();
-            OpalGame g = new OpalGame(w);
-
+            OpalGame g = new OpalGame(world);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
-            Util.Log("Welcome to Fiery Opal!", false);
+            Util.Log(Util.Localize("WelcomeMessage"), false);
         }
     }
 }

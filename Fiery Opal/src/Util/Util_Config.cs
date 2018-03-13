@@ -32,7 +32,12 @@ namespace FieryOpal.Src
 
         public static FontConfigInfo LoadDefaultFontConfig()
         {
-            return new FontConfigLoader().LoadFile("gfx/fonts.cfg");
+            return new FontConfigLoader().LoadFile("cfg/fonts.cfg");
+        }
+
+        public static InitConfigInfo LoadDefaultInitConfig()
+        {
+            return new InitConfigLoader().LoadFile("cfg/init.cfg");
         }
     }
 
