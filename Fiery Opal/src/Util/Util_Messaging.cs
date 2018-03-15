@@ -3,6 +3,7 @@ using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace FieryOpal.Src
@@ -15,6 +16,7 @@ namespace FieryOpal.Src
         {
             GlobalLogPipeline.BroadcastLogMessage(null, msg, debug);
         }
+
 
         public static void Log(String msg, bool debug, Color? fg = null, Color? bg = null)
         {

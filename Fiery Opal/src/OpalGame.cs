@@ -40,6 +40,8 @@ namespace FieryOpal.Src
                         return "FlagRaycastViewportForRedraw";
                     }
                     ));
+
+                old_map?.Dispose();
             };
             Player.ChangeLocalMap(World.RegionAt(0, 0).LocalMap, new Point(0, 0));
         }
@@ -63,7 +65,7 @@ namespace FieryOpal.Src
                                                             w.Width, 
                                                             w.Height);
                     }
-                    w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)));
+                    w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)), Player.Brain.TileMemory);
                     return "ViewportRefresh";
                 }
                 ));

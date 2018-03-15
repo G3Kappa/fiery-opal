@@ -33,7 +33,9 @@ namespace FieryOpal.Src
     {
         protected Dictionary<Guid, IPipelineSubscriber<T>> Subscribers { get; }
         protected static readonly Dictionary<Guid, MessagePipeline<T>> Pipelines = new Dictionary<Guid, MessagePipeline<T>>();
-        public event MessageSentDelegate<T> OnMessageSent; 
+        public event MessageSentDelegate<T> OnMessageSent;
+
+        public int SubscriberCount => Subscribers.Count;
 
         public Guid Handle { get; }
 
@@ -134,9 +136,25 @@ namespace FieryOpal.Src
 
     public static class MessagePipelineExtensions
     {
+        static Queue<Tuple<ColoredString, bool>> logQueue = new Queue<Tuple<ColoredString, bool>>();
         public static void BroadcastLogMessage(this MessagePipeline<OpalConsoleWindow> self, OpalConsoleWindow sender, ColoredString msg, bool debug)
         {
-            self.Broadcast(sender, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(msg, debug); }; return "BroadcastLogMessage"; }));
+            if(self.SubscriberCount > 0)
+            {
+                while (logQueue.Count > 0)
+                {
+                    var deq = logQueue.Dequeue();
+                    // No palette was loaded at this time, so let's at least make it legible
+                    deq = new Tuple<ColoredString, bool>(deq.Item1.ToString().ToColoredString(), deq.Item2);
+                    self.Broadcast(sender, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(deq.Item1, deq.Item2); }; return "BackedUpLogMessage"; }));
+                }
+
+                self.Broadcast(sender, new Func<OpalConsoleWindow, string>(ocw => { if (ocw is OpalLogWindow) { (ocw as OpalLogWindow).Log(msg, debug); }; return "BroadcastLogMessage"; }));
+            }
+            else
+            {
+                logQueue.Enqueue(new Tuple<ColoredString, bool>(msg, debug));
+            }
         }
     }
 }

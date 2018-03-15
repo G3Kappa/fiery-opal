@@ -23,7 +23,7 @@ namespace FieryOpal.Src
         }
     }
 
-    public class OpalTile : IDisposable, ICloneable
+    public class OpalTile : IDisposable, ICloneable, ICustomSpritesheet
     {
         private static Dictionary<int, OpalTile> InstantiatedTiles = new Dictionary<int, OpalTile>();
 
@@ -41,6 +41,7 @@ namespace FieryOpal.Src
         public readonly string InternalName;
         public readonly int Id;
         public readonly TileSkeleton Skeleton;
+        public Font Spritesheet => Program.Fonts.Spritesheets["Terrain"];
 
         public OpalTile(int id, TileSkeleton skeleton, string name = "Untitled", OpalTileProperties properties = new OpalTileProperties(), Cell graphics = null)
         {
@@ -90,6 +91,7 @@ namespace FieryOpal.Src
         }
 
         private static Dictionary<string, OpalTile> ReferenceTileInstances = new Dictionary<string, OpalTile>();
+
         public static bool RegisterRefTile(TileSkeleton reference_maker)
         {
             var tile = TileFactory.Make(reference_maker.Make);

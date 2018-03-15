@@ -30,16 +30,11 @@ namespace FieryOpal.Src.Ui.Windows
                     InternalMessagePipeline.BroadcastForward<OpalConsoleWindow>(pipeline_handle, sender_handle, new Func<OpalGame, string>(g => { return performed_action; }));
                     break;
                 case "FlagRaycastViewportForRedraw":
-                    if (!(Viewport is RaycastViewport)) break;
-                    (Viewport as RaycastViewport).FlagForRedraw();
+                    (Viewport as RaycastViewport)?.FlagForRedraw();
                     Invalidate();
                     break;
                 case "UpdateRaycastWindowRotation":
-                    if (!(Viewport is RaycastViewport)) break;
-                    var v = (Viewport as RaycastViewport);
-                    v.DirectionVector = Game.Player.LookingAt;
-                    v.PlaneVector = Game.Player.LookingAt.Orthogonal();
-                    v.FlagForRedraw();
+                    (Viewport as RaycastViewport)?.FlagForRedraw();
                     break;
                 default:
                     break;

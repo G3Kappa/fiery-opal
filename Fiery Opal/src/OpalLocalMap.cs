@@ -12,7 +12,7 @@ namespace FieryOpal.Src
 {
     public delegate bool OpalLocalMapIterator(OpalLocalMap self, int x, int y, OpalTile t);
 
-    public class ViewportFog
+    public class TileMemory
     {
         protected HashSet<Point> Seen = new HashSet<Point>();
         protected HashSet<Point> Known = new HashSet<Point>();
@@ -79,7 +79,7 @@ namespace FieryOpal.Src
     }
 
     [Serializable]
-    public class OpalLocalMap
+    public class OpalLocalMap : IDisposable
     {
         protected OpalTile[,] TerrainGrid { get; private set; }
         protected List<IOpalGameActor> Actors { get; private set; }
@@ -89,7 +89,6 @@ namespace FieryOpal.Src
 
         public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
-        public ViewportFog Fog { get; set; }
 
         public WorldTile ParentRegion;
 
@@ -101,7 +100,6 @@ namespace FieryOpal.Src
             Height = height;
             SkyColor = Color.DeepSkyBlue;
             FogColor = Color.DarkSlateGray;
-            Fog = new ViewportFog();
         }
 
         public bool AddActor(IOpalGameActor actor)
@@ -273,6 +271,11 @@ namespace FieryOpal.Src
             return TerrainGrid[x, y];
         }
 
+        public OpalTile TileAt(Point p)
+        {
+            return TileAt(p.X, p.Y);
+        }
+
         public bool SetTile(int x, int y, OpalTile t)
         {
             if (x < 0 || y < 0 || x >= Width || y >= Height)
@@ -422,6 +425,15 @@ namespace FieryOpal.Src
             while (tiles_in_ring.Count() == 0);
 
             return tiles_in_ring.First().Item2;
+        }
+
+        public void Dispose()
+        {
+            Iter((s, x, y, t) =>
+            {
+                t.Dispose();
+                return false;
+            });
         }
     }
 

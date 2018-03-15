@@ -19,7 +19,7 @@ namespace FieryOpal.Src.Ui.Windows
             
             Game = g;
 
-            FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player, Program.Fonts.Spritesheets["Terrain"]), Program.Fonts.FirstPersonViewportFont);
+            FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player), Program.Fonts.FirstPersonViewportFont);
 
             TopDownWindow = new OpalGameWindow((w) / 3, h - h / 4, g, new LocalMapViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4)));
             TopDownWindow.Position = new Point((w) / 2, 0);
@@ -62,7 +62,7 @@ namespace FieryOpal.Src.Ui.Windows
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, "Debug: Toggle fog", ctrl: true), (info) => {
                 SeeEverything();
                 LogWindow.Log(
-                    new ColoredString("--" + (Game.CurrentMap.Fog.IsEnabled ? "Enabled " : "Disabled") + " fog.",
+                    new ColoredString("--" + (Game.Player.Brain.TileMemory.IsEnabled ? "Enabled " : "Disabled") + " fog.",
                         Palette.Ui["DebugMessage"],
                         Palette.Ui["DefaultBackground"]),
                     false);
@@ -71,6 +71,7 @@ namespace FieryOpal.Src.Ui.Windows
             // Add suppression rules for unneeded messages when debugging.
             LogWindow.AddSuppressionRule(new Regex("FontGC: .*?"));
             LogWindow.AddSuppressionRule(new Regex("MatrixReplacement.*?"));
+            LogWindow.AddSuppressionRule(new Regex("INCLUDED: .*?"));
 #endif
         }
 
@@ -82,7 +83,7 @@ namespace FieryOpal.Src.Ui.Windows
 
         private void SeeEverything()
         {
-            Game.CurrentMap.Fog.Toggle();
+            Game.Player.Brain.TileMemory.Toggle();
         }
 
         public override void Draw(GameTime gameTime)

@@ -6,6 +6,8 @@ namespace FieryOpal.Src.Actors
 {
     public class Plant : DecorationBase
     {
+        public override Font Spritesheet => Program.Fonts.Spritesheets["Vegetation"];
+
         public override bool BlocksMovement => true;
         protected static Color[] PossibleColors;
         protected static int[] PossibleGlyphs;
@@ -54,7 +56,6 @@ namespace FieryOpal.Src.Actors
                 Palette.Vegetation["GenericPlant3"],
             };
 
-            float random_variance = (.5f - (float)Util.GlobalRng.NextDouble()) * 2; // -1 to 1
             FirstPersonVerticalOffset = 2;
             FirstPersonScale = new Vector2(1.5f, 3f);
 

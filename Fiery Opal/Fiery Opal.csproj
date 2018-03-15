@@ -104,6 +104,7 @@
     <Compile Include="src\Ui\Dialogs\ScrollDialog.cs" />
     <Compile Include="src\Ui\Viewport.cs" />
     <Compile Include="src\Ui\Windows\WindowManager.cs" />
+    <Compile Include="src\Util\Raycaster.cs" />
     <Compile Include="src\Util\Util_Config.cs" />
     <Compile Include="src\Util\Util.cs" />
     <Compile Include="src\Util\Util_Physics.cs" />
@@ -183,6 +184,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="cfg\init.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="cfg\palettes\COLORDEFS.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="cfg\palettes\dialogs\scroll.cfg">

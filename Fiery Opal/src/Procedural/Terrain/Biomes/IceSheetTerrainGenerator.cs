@@ -12,7 +12,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     public class IceSkeleton : NaturalFloorSkeleton
     {
         public override string DefaultName => "Ice Ground";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], '/');
+        public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], '.');
     }
 
     public class IceWallSkeleton : NaturalWallSkeleton

@@ -12,7 +12,14 @@ namespace FieryOpal.Src.Actors
         public Vector2 LookingAt { get; set; } = new Vector2(0, 1);
         public PersonalInventory Inventory { get; protected set; }
 
-        public TurnTakingActor() : base() { }
+        public TurnTakingActor() : base()
+        {
+            MapChanged += (me, old_map) =>
+            {
+                Brain.TileMemory.ForgetEverything();
+                Brain.TileMemory.UnseeEverything();
+            };
+        }
 
         public virtual IEnumerable<TurnBasedAction> ProcessTurn(int turn, float energy)
         {

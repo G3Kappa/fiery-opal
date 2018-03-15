@@ -14,10 +14,11 @@ namespace FieryOpal.Src.Ui.Dialogs
         where T : Viewport
     {
         public T Viewport;
+        private TileMemory GodFog = new TileMemory();
 
         public ViewportScrollDialog() : base()
         {
-
+            GodFog.Toggle();
         }
 
         private void ScrollViewArea(int x, int y)
@@ -42,7 +43,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         {
             base.Draw(delta);
             Viewport.ViewArea = new Rectangle(Viewport.ViewArea.Location, new Point(WriteableArea.Width, WriteableArea.Height));
-            Viewport?.Print(WriteableArea, new Rectangle(new Point(0), new Point(WriteableArea.Width, WriteableArea.Height)));
+            Viewport?.Print(WriteableArea, new Rectangle(new Point(0), new Point(WriteableArea.Width, WriteableArea.Height)), GodFog);
         }
     }
 

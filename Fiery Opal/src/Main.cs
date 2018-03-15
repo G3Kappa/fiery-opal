@@ -2,7 +2,6 @@ using SadConsole;
 using Microsoft.Xna.Framework;
 using FieryOpal.Src;
 using FieryOpal.Src.Procedural;
-using FieryOpal.src;
 using System.Collections.Generic;
 using System.Linq;
 using System;

@@ -1,15 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 
 namespace FieryOpal.Src.Actors
 {
     public abstract class TurnBasedAI
     {
         protected TurnTakingActor Body;
+        public TileMemory TileMemory { get; }
+
         public TurnBasedAI(TurnTakingActor actor)
         {
             Body = actor;
+            TileMemory = new TileMemory();
         }
+
         public abstract IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy);
+        public virtual void Update(GameTime gt)
+        {
+
+        }
     }
 
     public class BrainDummy : TurnBasedAI

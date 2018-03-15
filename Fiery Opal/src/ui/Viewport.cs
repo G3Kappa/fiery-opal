@@ -11,7 +11,7 @@ namespace FieryOpal.Src.Ui
         public abstract int TargetWidth { get; }
         public abstract int TargetHeight { get; }
 
-        public abstract void Print(SadConsole.Console surface, Rectangle targetArea);
+        public abstract void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog);
     }
 
     public class LocalMapViewport : Viewport
@@ -32,7 +32,7 @@ namespace FieryOpal.Src.Ui
             surface.SetCell(p.X, p.Y, new Cell(Target.FogColor, Target.FogColor, ' '));
         }
 
-        public override void Print(SadConsole.Console surface, Rectangle targetArea)
+        public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
@@ -44,12 +44,12 @@ namespace FieryOpal.Src.Ui
                 {
                     continue;
                 }
-                if (!Target.Fog.KnowsOf(tuple.Item2))
+                if (!fog.KnowsOf(tuple.Item2))
                 {
                     PrintFog(surface, pos + targetArea.Location);
                     continue;
                 }
-                else if (!Target.Fog.CanSee(tuple.Item2))
+                else if (!fog.CanSee(tuple.Item2))
                 {
                     surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph));
                 }
@@ -68,11 +68,11 @@ namespace FieryOpal.Src.Ui
                 {
                     continue;
                 }
-                if (!Target.Fog.KnowsOf(act.LocalPosition))
+                if (!fog.KnowsOf(act.LocalPosition))
                 {
                     continue;
                 }
-                else if(act is DecorationBase && !Target.Fog.CanSee(act.LocalPosition))
+                else if(act is DecorationBase && !fog.CanSee(act.LocalPosition))
                 {
                     surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Glyph);
                 }
@@ -100,7 +100,7 @@ namespace FieryOpal.Src.Ui
             Target = target;
         }
 
-        public override void Print(SadConsole.Console surface, Rectangle targetArea)
+        public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
             surface.Clear();
             var regions = Target.RegionsWithin(ViewArea);

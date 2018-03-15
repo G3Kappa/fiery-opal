@@ -5,7 +5,6 @@ using System.Linq;
 using System.Collections.Generic;
 using static FieryOpal.Src.Procedural.GenUtil;
 using Microsoft.Xna.Framework.Input;
-using FieryOpal.src;
 
 namespace FieryOpal.Src
 {

@@ -1,5 +1,4 @@
-﻿using FieryOpal.src;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
@@ -67,7 +66,8 @@ namespace FieryOpal.Src.Ui
                 Color ret = GetOrDefault(c, Color.Magenta);
                 if (ret == Color.Magenta)
                 {
-                    //Util.Log("Palette: Unknown color \"" + c + "\"!", true);
+                    if (c.Contains("Foreground")) return Color.Magenta;
+                    else if (c.Contains("Background")) return Color.DarkMagenta;
                 }
                 return ret;
             }

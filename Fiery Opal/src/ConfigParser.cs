@@ -9,14 +9,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using static FieryOpal.Src.Keybind;
-using FieryOpal.src;
-using FieryOpal.Src.Ui;
 
-namespace FieryOpal.src
+namespace FieryOpal.Src
 {
     public abstract class ConfigParser<T>
     {
@@ -162,48 +158,80 @@ namespace FieryOpal.src
             DelegatedConversion = convert_rhs;
         }
 
+        private IEnumerable<Tuple<string, string>> Include(string path)
+        {
+            var tokens = Parser.Parse(path);
+            if (tokens.Count() == 0)
+            {
+                Util.Err(String.Format("INCLUDE not found or empty: \"{0}\".", path));
+                yield break;
+            }
+            foreach (var p in tokens)
+            {
+                yield return p;
+            }
+            Util.Log(String.Format("INCLUDED: \"{0}\".", path), true);
+        }
+
         protected override T BuildRepresentation(Tuple<string, string>[] tokens)
         {
             T ret = new T();
-            Stack<Tuple<string, string>> token_stack = new Stack<Tuple<string, string>>(tokens);
+            Dictionary<string, string> Macros = new Dictionary<string, string>();
+            List<Tuple<string, string>> token_list = new List<Tuple<string, string>>(tokens);
             var cur_dir = Parser.CurrentDirectory;
-            while(token_stack.Count > 0)
+            while(token_list.Count > 0)
             {
-                var t = token_stack.Pop();
-                if(t.Item1 == "INCLUDE")
+                // Grab first token
+                var t = token_list.First();
+                token_list.RemoveAt(0);
+                // Divide it into left hand side and right hand side
+                string lhs = t.Item1, rhs = t.Item2;
+                // If the LHS is an INCLUDE directive
+                if (lhs == "INCLUDE")
                 {
-                    var rev = Parser.Parse(Path.Combine(cur_dir, t.Item2)).Reverse();
-                    if(rev.Count() == 0)
-                    {
-                        Util.Err(String.Format("INCLUDE not found: \"{0}\".", t.Item2));
-                        continue;
-                    }
-                    foreach (var p in rev)
-                    {
-                        token_stack.Push(p);
-                    }
+                    // Tokenize the included file
+                    var include = Include(Path.Combine(cur_dir, rhs));
+                    // Put the generated tokens on the list with high priority
+                    token_list.InsertRange(0, include);
+                    continue;
+                }
+                // Otherwise, if the LHS is a macro
+                else if(lhs.StartsWith("#"))
+                {
+                    // Add its expansion to Macros
+                    Macros[lhs] = rhs;
                     continue;
                 }
 
-                object rhs = DelegatedConversion(this, t.Item2);
-                if(rhs == null)
+                // For each defined macro
+                foreach(var define in Macros.Where(d => rhs.Contains(d.Key)))
                 {
+                    // Try to apply it to the rhs
+                    rhs = t.Item2.Replace(define.Key, define.Value);
+                }
+
+                // Try to cast the rsh (a string) to an object of the correct type by calling DelegatedConversion.
+                object rhs_obj = DelegatedConversion(this, rhs);
+                if(rhs_obj == null)
+                {
+                    Util.Err(String.Format("Invalid right-hand side expression: \"{0}\" for type {1}", rhs, typeof(T).ToString()));
                     continue;
                 }
 
+                // Identifiers can be dictionary accesses or simple values
                 bool property_set = false;
                 if (t.Item1.Contains("[")) // It's a dictionary entry
                 {
-                    var dict_name = t.Item1.Substring(0, t.Item1.IndexOf('['));
-                    var dict_index = t.Item1.Substring(t.Item1.IndexOf('[') + 1, t.Item1.IndexOf(']') - t.Item1.IndexOf('[') - 1);
+                    var dict_name = t.Item1.Substring(0, lhs.IndexOf('['));
+                    var dict_index = t.Item1.Substring(lhs.IndexOf('[') + 1, lhs.IndexOf(']') - lhs.IndexOf('[') - 1);
 
-                    property_set = TrySetProperty(ret, dict_name, rhs, dict_index);
+                    property_set = TrySetProperty(ret, dict_name, rhs_obj, dict_index);
                 }
                 else
                 {
-                    property_set = TrySetProperty(ret, t.Item1, rhs, null);
+                    property_set = TrySetProperty(ret, lhs, rhs_obj, null);
                 }
-                if(!property_set) Util.Err(String.Format("Unknown property: \"{0}\" for type {1}", t.Item1, typeof(T).ToString()));
+                if(!property_set) Util.Err(String.Format("Unknown property: \"{0}\" for type {1}", lhs, typeof(T).ToString()));
             }
             return ret;
         }

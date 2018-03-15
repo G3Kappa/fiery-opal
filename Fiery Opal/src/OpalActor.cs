@@ -17,7 +17,12 @@ namespace FieryOpal.Src
         }
     }
 
-    public interface IOpalGameActor
+    public interface ICustomSpritesheet
+    {
+        Font Spritesheet { get; }
+    }
+
+    public interface IOpalGameActor : ICustomSpritesheet
     {
         Guid Handle { get; }
         Point LocalPosition { get; }
@@ -103,7 +108,7 @@ namespace FieryOpal.Src
         public bool CanMove => can_move && held_by == null;
 
         public Guid Handle { get; }
-        
+        public virtual Font Spritesheet => Program.Fonts.Spritesheets["Creatures"];
 
         public OpalActorBase()
         {

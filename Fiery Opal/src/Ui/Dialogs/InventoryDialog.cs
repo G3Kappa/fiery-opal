@@ -36,7 +36,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         protected ContextMenu<Item> MakeContextMenu()
         {
-            var context_menu = Make<ContextMenu<Item>>("What would you like to do?", "", new Point(Width / 2, Height / 4));
+            var context_menu = Make<ContextMenu<Item>>("Use Item", "", new Point(Width / 2, Height / 4));
             context_menu.Position = Position + new Point(Width / 4 + 1, Height / 3);
 
             var groups = GroupAndSortInventory();
@@ -127,8 +127,8 @@ namespace FieryOpal.Src.Ui.Dialogs
         // ---
         const int HEADER_HEIGHT = 2;
 
-        const float COL1_WIDTH = .1f;
-        const float COL2_WIDTH = .6f;
+        const float COL1_WIDTH = .2f;
+        const float COL2_WIDTH = .5f;
         const float COL3_WIDTH = .3f;
 
         private int Col1Width => (int)((Width - 2) * COL1_WIDTH);
@@ -273,15 +273,15 @@ namespace FieryOpal.Src.Ui.Dialogs
                 var name = group.Key;
                 var items = group.ToArray();
 
-                if (SelectedIndex == index)
-                {
-                    Print(1, 5 + 2 * j, ((char)26).ToString().ToColoredString());
-                }
-
                 Print(Col1Width / 2 - items.Length.ToString().Length / 2, 5 + 2 * j, items.Length.ToString().PadLeft(2, '0').ToColoredString(textStyle));
                 SetCell(Col1Width + 3, 5 + 2 * j, items.First().Graphics);
                 Print(Col1Width + 5, 5 + 2 * j, items.First().ItemInfo.Name);
                 Print(Col1Width + Col2Width + 3, 5 + 2 * j, items.First().ItemInfo.Category.ToString().ToColoredString(textStyle));
+
+                if (SelectedIndex == index)
+                {
+                    Print(1, 5 + 2 * j, ((char)26).ToString().ToColoredString());
+                }
             }
 
             PrintScrollbar(grouped_items.Count());
