@@ -31,7 +31,19 @@ namespace FieryOpal.Src.Ui
         public TurnTakingActor Following { get; set; }
 
         private float AspectRatio = 0.5f;
-        public Vector2 DirectionVector => Following.LookingAt.ToUnit().ChangeXY((x) => x / (AspectRatio), (y) => y / (AspectRatio)); 
+
+        public Vector2 DirectionVector
+        {
+            get
+            {
+                var look = Following.LookingAt.ToUnit();
+                if(Vector2.DistanceSquared(look, new Vector2(0, 0)) == 2)
+                {
+                    return look / 3 * AspectRatio;
+                }
+                return look / 2 * AspectRatio;
+            }
+        }
         public Vector2 PlaneVector => DirectionVector.Orthogonal();
 
         public RaycastViewport(OpalLocalMap target, Rectangle view_area, TurnTakingActor following) : base(target, view_area)
@@ -282,6 +294,9 @@ namespace FieryOpal.Src.Ui
             // Move the ray at the center of the square instead of at the TL corner
             Vector2 startPos = Following.LocalPosition.ToVector2() + new Vector2(.5f);
             AspectRatio = tArea.Width / (float)tArea.Height;
+
+            Util.Log("W/H={0}".Format(AspectRatio), true);
+            Util.Log("PV ={0}".Format(PlaneVector), true);
 
             float[] zbuffer = new float[tArea.Width];
             for (int x = 0; x < tArea.Width; ++x)

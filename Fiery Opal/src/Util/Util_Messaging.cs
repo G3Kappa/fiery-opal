@@ -23,7 +23,7 @@ namespace FieryOpal.Src
             Color fore = fg.HasValue ? fg.Value : (debug ? Palette.Ui["BoringMessage"] : Palette.Ui["DefaultForeground"]);
             Color back = bg.HasValue ? bg.Value : Palette.Ui["DefaultBackground"];
 
-            GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
+            Log(new ColoredString(msg, fore, back), debug);
         }
 
         public static void Err(String msg, bool debug = false)

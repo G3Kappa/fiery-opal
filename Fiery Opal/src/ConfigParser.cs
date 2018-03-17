@@ -263,6 +263,8 @@ namespace FieryOpal.Src
 
         public string DefaultFontPath { get; set; } = "gfx/Taffer.font";
         public string Locale { get; set; } = "cfg/locale/en_US.cfg";
+
+        public Dictionary<string, string> Suppress { get; set; } = new Dictionary<string, string>();
     }
 
     public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>

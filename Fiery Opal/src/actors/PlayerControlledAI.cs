@@ -1,6 +1,7 @@
 ﻿using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,6 +100,17 @@ namespace FieryOpal.Src.Actors
 
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Interact), (info) => { Interact(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
+
+#if DEBUG
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, "Debug: Toggle fog", ctrl: true), (info) => {
+                TileMemory.Toggle();
+                Util.Log(
+                    ("-- " + (TileMemory.IsEnabled ? "Enabled " : "Disabled") + " fog.").ToColoredString(Palette.Ui["DebugMessage"]),
+                    false
+                );
+            });
+#endif
+
         }
 
         public override IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy)

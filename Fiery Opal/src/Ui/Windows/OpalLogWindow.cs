@@ -72,6 +72,13 @@ namespace FieryOpal.Src.Ui.Windows
             }
         }
 
+        public void LoadSuppressionRules(InitConfigInfo init)
+        {
+            foreach (var exp in init.Suppress.Values)
+                AddSuppressionRule(new Regex(exp, RegexOptions.Compiled));
+        }
+
+
         public override void Draw(TimeSpan delta)
         {
             Clear();
@@ -98,7 +105,6 @@ namespace FieryOpal.Src.Ui.Windows
                     i--;
                 }
             }
-
             base.Draw(delta);
         }
     }

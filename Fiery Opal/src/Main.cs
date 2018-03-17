@@ -24,7 +24,7 @@ namespace FieryOpal
         public static KeybindConfigInfo Keys { get; private set; }
         public static PaletteConfigInfo PaletteInfo { get; private set; }
 
-        private static InitConfigInfo InitInfo { get; set; }
+        public static InitConfigInfo InitInfo { get; set; }
 
         static void Main(string[] args)
         {

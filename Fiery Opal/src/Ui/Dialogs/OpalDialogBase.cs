@@ -112,7 +112,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             _MakeCaption = caption;
             T dialog = new T()
             {
-                Position = new Point(1, 1)
+                Position = new Point(Program.Width / 2 - size.X / 2, Program.Height / 2 - size.Y / 2)
             };
             dialog.PrintText(text);
             return dialog;

@@ -63,6 +63,11 @@ namespace FieryOpal.Src
 
     public static partial class Extensions
     {
+        public static string Format(this string s, params object[] args)
+        {
+            return String.Format(s, args);
+        }
+
         public static void DeepClone<T>(this T[,] c, ref T[,] other)
         {
             if(c.GetLength(0) != other.GetLength(0) || c.GetLength(1) != other.GetLength(1))

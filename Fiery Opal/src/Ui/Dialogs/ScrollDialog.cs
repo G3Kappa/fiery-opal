@@ -22,13 +22,11 @@ namespace FieryOpal.Src.Ui.Dialogs
         public ScrollDialog() : base()
         {
             Borderless = true;
-            WriteableArea = new SadConsole.Console(Width - 12, Height - 8);
+            WriteableArea = new SadConsole.Console(Width - 10, Height - 6);
 
             textSurface.DefaultBackground =
                 Theme.FillStyle.Background = Color.Transparent;
             Clear();
-
-            WriteableArea.Position = Position + new Point(8, 6);
         }
 
         protected override void BindKeys()
@@ -38,6 +36,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         public override void Draw(TimeSpan delta)
         {
+            WriteableArea.Position = Position + new Point(6, 4);
             base.Draw(delta);
             PrintRoll(0, 0);
             PrintRoll(Width - 5, 0);
