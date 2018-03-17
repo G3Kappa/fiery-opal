@@ -19,16 +19,32 @@ namespace FieryOpal.Src.Ui.Windows
             
             Game = g;
 
-            FirstPersonWindow = new OpalGameWindow(w, h * 2 - h / 2, g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4), g.Player), Program.Fonts.FirstPersonViewportFont);
+            Vector2 font_ratio = Program.Fonts.MainFont.Size.ToVector2() / Program.Fonts.FirstPersonViewportFont.Size.ToVector2();
 
-            TopDownWindow = new OpalGameWindow((w) / 3, h - h / 4, g, new LocalMapViewport(g.CurrentMap, new Rectangle(0, 0, w - w / 4, h - h / 4)));
-            TopDownWindow.Position = new Point((w) / 2, 0);
+            Vector2 tdPos = new Vector2(0, .8f);
+            Vector2 tdSize = new Vector2(.4f, .8f);
 
-            InfoWindow = new OpalInfoWindow(w / 6, h - h / 4);
-            InfoWindow.Position = new Point(w / 2 + w / 3, 0);
+            Vector2 fpPos = new Vector2(.0f, 0) * font_ratio;
+            Vector2 fpSize = new Vector2(1f, .8f) * font_ratio;
 
-            LogWindow = new OpalLogWindow(w, h / 4);
-            LogWindow.Position = new Point(0, h - h / 4);
+            Vector2 infoPos = new Vector2(.0f, 0);
+            Vector2 infoSize = new Vector2(.2f, .8f);
+
+            Vector2 logPos = new Vector2(0f, .8f);
+            Vector2 logSize = new Vector2(1f, .2f);
+
+
+            FirstPersonWindow = new OpalGameWindow((int)(fpSize.X * w), (int)(fpSize.Y * h), g, new RaycastViewport(g.CurrentMap, new Rectangle(0, 0, (int)(fpSize.X * w), (int)(fpSize.Y * h)), g.Player), Program.Fonts.FirstPersonViewportFont);
+            FirstPersonWindow.Position = new Point((int)(fpPos.X * w), (int)(fpPos.Y * h));
+
+            TopDownWindow = new OpalGameWindow((int)(tdSize.X * w), (int)(tdSize.Y * h), g, new LocalMapViewport(g.CurrentMap, new Rectangle(0, 0, (int)(tdSize.X * w), (int)(tdSize.Y * h))));
+            TopDownWindow.Position = new Point((int)(tdPos.X * w), (int)(tdPos.Y * h));
+
+            InfoWindow = new OpalInfoWindow((int)(infoSize.X * w), (int)(infoSize.Y * h));
+            InfoWindow.Position = new Point((int)(infoPos.X * w), (int)(infoPos.Y * h));
+
+            LogWindow = new OpalLogWindow((int)(logSize.X * w), (int)(logSize.Y * h));
+            LogWindow.Position = new Point((int)(logPos.X * w), (int)(logPos.Y * h));
 
             RegisterWindow(InfoWindow);
             InfoWindow.Show();

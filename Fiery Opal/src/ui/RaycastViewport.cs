@@ -30,8 +30,9 @@ namespace FieryOpal.Src.Ui
         public float ViewDistance { get; set; }
         public TurnTakingActor Following { get; set; }
 
-        public Vector2 DirectionVector => Following.LookingAt;
-        public Vector2 PlaneVector => Following.LookingAt.Orthogonal();
+        private float AspectRatio = 0.5f;
+        public Vector2 DirectionVector => Following.LookingAt.ToUnit().ChangeXY((x) => x / (AspectRatio), (y) => y / (AspectRatio)); 
+        public Vector2 PlaneVector => DirectionVector.Orthogonal();
 
         public RaycastViewport(OpalLocalMap target, Rectangle view_area, TurnTakingActor following) : base(target, view_area)
         {
@@ -163,7 +164,6 @@ namespace FieryOpal.Src.Ui
                     );
 
                 Color floorColor = Color.Lerp(floorPixels[floorTex.X, floorTex.Y], Target.SkyColor, (float)Math.Pow(((info.ViewportHeight) / 2f) / y, ViewDistance / 2));
-
                 // Floor
                 surface.SetCell(info.Column, y, new Cell(floorColor, floorColor, ' '));
                 // Ceiling
@@ -268,7 +268,7 @@ namespace FieryOpal.Src.Ui
             }
         }
 
-        public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
+        public override void Print(SadConsole.Console surf, Rectangle tArea, TileMemory fog = null)
         {
             // Don't waste precious cycles
             if (!Dirty) return;
@@ -277,18 +277,19 @@ namespace FieryOpal.Src.Ui
             fog.UnseeEverything();
             // Fill with SkyColor to cover up any off-by-one errors
             // Also to make the wall drawing code lighter
-            surface.Fill(Target.SkyColor, Target.SkyColor, ' ');
+            surf.Fill(Target.SkyColor, Target.SkyColor, ' ');
 
             // Move the ray at the center of the square instead of at the TL corner
             Vector2 startPos = Following.LocalPosition.ToVector2() + new Vector2(.5f);
+            AspectRatio = tArea.Width / (float)tArea.Height;
 
-            float[] zbuffer = new float[targetArea.Width];
-            for (int x = 0; x < targetArea.Width; ++x)
+            float[] zbuffer = new float[tArea.Width];
+            for (int x = 0; x < tArea.Width; ++x)
             {
                 // x-coordinate in camera space
                 // A small floating point value is added to X to prevent integers
                 // from messing up floating point maths. Go figure.
-                float cameraX = 2 * (x + .001f) / (float)targetArea.Width - 1;
+                float cameraX = 2 * (x + .001f) / (float)tArea.Width - 1;
 
                 // Direction of this ray
                 Vector2 rayDir = new Vector2(DirectionVector.X + PlaneVector.X * cameraX, DirectionVector.Y + PlaneVector.Y * cameraX);
@@ -299,11 +300,11 @@ namespace FieryOpal.Src.Ui
                 float perpWallDist = zbuffer[x] = Raycaster.CastRay(Target, startPos, ref mapPos, rayDir, ref side, fog);
 
                 // Calculate height of line to draw on screen
-                int lineHeight = (int)(targetArea.Height / perpWallDist);
+                int lineHeight = (int)(tArea.Height / perpWallDist);
 
                 // Calculate lowest and highest pixel to fill in current stripe
-                int drawStart = (int)(Math.Max(-lineHeight / 2f + targetArea.Height / 2f, 0));
-                int drawEnd = (int)(Math.Min(lineHeight / 2f + targetArea.Height / 2f, targetArea.Height - 1));
+                int drawStart = (int)(Math.Max(-lineHeight / 2f + tArea.Height / 2f, 0));
+                int drawEnd = (int)(Math.Min(lineHeight / 2f + tArea.Height / 2f, tArea.Height - 1));
 
                 // Calculate value of wallX (where exactly the wall was hit)
                 float wallX = side
@@ -323,18 +324,18 @@ namespace FieryOpal.Src.Ui
                     RayDir = rayDir,
                     RayPos = mapPos.ToPoint(),
                     StartPos = startPos,
-                    ViewportHeight = targetArea.Height
+                    ViewportHeight = tArea.Height
                 };
 
-                DrawFloorAndSkyVLine(surface, rcpInfo);
-                DrawWallVLine(surface, rcpInfo);
+                DrawFloorAndSkyVLine(surf, rcpInfo);
+                DrawWallVLine(surf, rcpInfo);
             }
 
             DrawActorSpriteVLines(
-                surface,
+                surf,
                 zbuffer,
-                targetArea.Width,
-                targetArea.Height,
+                tArea.Width,
+                tArea.Height,
                 startPos
             );
 

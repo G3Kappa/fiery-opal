@@ -63,6 +63,7 @@ namespace FieryOpal.Src.Ui
             public Color[] FontImagePixels;
             public Dictionary<byte, Color[,]> GlyphPixels;
             public Dictionary<Tuple<byte, uint, uint>, RecoloredGlyph> RecoloredGlyphPixels;
+            public List<byte> LumaSortedGlyphs;
 
             public CachedFont(Font f, Color[] fontImagePixels)
             {
@@ -70,6 +71,7 @@ namespace FieryOpal.Src.Ui
                 FontImagePixels = fontImagePixels;
                 GlyphPixels = new Dictionary<byte, Color[,]>();
                 RecoloredGlyphPixels = new Dictionary<Tuple<byte, uint, uint>, RecoloredGlyph>();
+                LumaSortedGlyphs = new List<byte>(255);
             }
         }
 
@@ -96,13 +98,43 @@ namespace FieryOpal.Src.Ui
             return pixels2d;
         }
 
+        private static float CalcLuma(Color[,] pixels)
+        {
+            int w = pixels.GetLength(0);
+            int h = pixels.GetLength(1);
+
+            float sum = 0;
+            for (int x = 0; x < w; x++)
+            {
+                for (int y = 0; y < h; y++)
+                {
+                    sum += pixels[x, y].GetLuma() / 255f;
+                }
+            }
+            sum /= w * h;
+            return sum;
+        }
+
+        private static List<byte> SortGlyphs(Font f)
+        {
+            List<Tuple<float, byte>> list = new List<Tuple<float, byte>>();
+            for (byte i = 0; i < 255; ++i)
+            {
+                var pixels = GetRecoloredPixels(f, i, Color.White, Color.Black);
+                list.Add(new Tuple<float, byte>(CalcLuma(pixels), i));
+            }
+            return list.OrderBy(e => e.Item1).Select(e => e.Item2).ToList();
+        }
+
         public static void GetPixels(Font f, byte glyph, ref Color[,] pixels)
         {
             if (!CachedFonts.ContainsKey(f.Name))
             {
                 Color[] data = new Color[f.FontImage.Width * f.FontImage.Height];
                 f.FontImage.GetData(data);
-                CachedFonts[f.Name] = new CachedFont(f, data);
+                var cached_font = new CachedFont(f, data);
+                CachedFonts[f.Name] = cached_font;
+                cached_font.LumaSortedGlyphs.AddRange(SortGlyphs(f));
             }
 
             if (!CachedFonts[f.Name].GlyphPixels.ContainsKey(glyph))
@@ -111,6 +143,20 @@ namespace FieryOpal.Src.Ui
             }
 
             CachedFonts[f.Name].GlyphPixels[glyph].DeepClone(ref pixels);
+        }
+
+        public static byte GetGlyphByBrightness(Font f, float brightness)
+        {
+            if (brightness < 0 || brightness >= 1)
+            {
+                return (byte)' ';
+            }
+            if(!CachedFonts.ContainsKey(f.Name))
+            {
+                GetRecoloredPixels(f, 0, Color.White, Color.Black);
+            }
+
+            return CachedFonts[f.Name].LumaSortedGlyphs[(int)(brightness * CachedFonts[f.Name].LumaSortedGlyphs.Count)];
         }
 
         public static Color[,] GetRecoloredPixels(Font f, byte glyph, Color newForeground, Color newBackground)

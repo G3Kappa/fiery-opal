@@ -45,6 +45,36 @@ namespace FieryOpal.Src
             );
         }
 
+        public static Vector2 ToUnit(this Vector2 v)
+        {
+            return new Vector2(UnitX(v), UnitY(v));
+        }
+
+        public static Vector2 ChangeXY(this Vector2 v, Func<float, float> new_x, Func<float, float> new_y)
+        {
+            return new Vector2(new_x(v.X), new_y(v.Y));
+        }
+
+        public static Vector2 ChangeX(this Vector2 v, Func<float, float> new_x)
+        {
+            return ChangeXY(v, new_x, (y) => y);
+        }
+
+        public static Vector2 ChangeY(this Vector2 v, Func<float, float> new_y)
+        {
+            return ChangeXY(v, (x) => x, new_y);
+        }
+
+        public static int UnitX(this Vector2 v)
+        {
+            return v.X < 0 ? -1 : v.X > 0 ? 1 : 0;
+        }
+
+        public static int UnitY(this Vector2 v)
+        {
+            return v.Y < 0 ? -1 : v.Y > 0 ? 1 : 0;
+        }
+
         public static double Dist(this Vector2 v, Vector2 w)
         {
             return Math.Sqrt(Math.Pow(w.X - v.X, 2) + Math.Pow(w.Y - v.Y, 2));
