@@ -1,6 +1,6 @@
 ﻿namespace FieryOpal.Src.Procedural
 {
-    public class BasicTerrainDecorator : IOpalFeatureGenerator
+    public class BasicTerrainDecorator : ILocalFeatureGenerator
     {
         private OpalLocalMap CurrentMap;
 

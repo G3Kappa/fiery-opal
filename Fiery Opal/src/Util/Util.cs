@@ -59,6 +59,24 @@ namespace FieryOpal.Src
             }
             return default(T);
         }
+
+        // Rounds f to the nearest fraction of the form 1/n up to n_steps
+        public static float Step(float f, int n_steps)
+        {
+            Tuple<float, int> best_delta = new Tuple<float, int>(1000000f, 0);
+            for(int i = 2; i <= n_steps; ++i)
+            {
+                float n = 1f / i;
+                var delta = Math.Max(f, n) - Math.Min(n, f);
+                if (delta <= best_delta.Item1)
+                {
+                    best_delta = new Tuple<float, int>(delta, i);
+                }
+                else break;
+            }
+
+            return 1f / best_delta.Item2;
+        }
     }
 
     public static partial class Extensions
@@ -100,6 +118,18 @@ namespace FieryOpal.Src
                     }
                 }
             }
+        }
+
+        public static T MaxBy<T>(this IEnumerable<T> list, Func<T, float> selector)
+        {
+            var max = list.Max(selector);
+            return list.First(x => selector(x) == max);
+        }
+
+        public static T MinBy<T>(this IEnumerable<T> list, Func<T, float> selector)
+        {
+            var min = list.Min(selector);
+            return list.First(x => selector(x) == min);
         }
     }
 }

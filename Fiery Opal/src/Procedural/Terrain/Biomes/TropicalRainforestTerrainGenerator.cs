@@ -14,7 +14,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class TropicalRainforestTerrainGenerator : BiomeTerrainGenerator
     {
-        protected TropicalRainforestTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected TropicalRainforestTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

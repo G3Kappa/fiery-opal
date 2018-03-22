@@ -2,7 +2,7 @@
 
 namespace FieryOpal.Src.Procedural
 {
-    public class BasicBuildingGenerator : IOpalFeatureGenerator
+    public class BasicBuildingGenerator : ILocalFeatureGenerator
     {
         protected OpalLocalMap Tiles;
 
@@ -17,7 +17,7 @@ namespace FieryOpal.Src.Procedural
 
         public void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height);
+            Tiles = new OpalLocalMap(m.Width, m.Height, null);
         }
 
         public OpalTile Get(int x, int y)

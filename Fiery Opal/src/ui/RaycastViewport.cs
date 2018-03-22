@@ -73,7 +73,7 @@ namespace FieryOpal.Src.Ui
             OpalTile wallTile = Target.TileAt(info.RayPos.X, info.RayPos.Y);
             Font spritesheet = null;
             // If there's no wall tile
-            if (!wallTile?.Properties.BlocksMovement ?? true)
+            if (!wallTile?.Properties.IsBlock ?? true)
             {
                 // We might still find a decoration that wants to display as a wall
                 var decos = Target.ActorsAt(info.RayPos.X, info.RayPos.Y)
@@ -157,9 +157,10 @@ namespace FieryOpal.Src.Ui
                 Vector2 currentFloor = new Vector2();
                 currentFloor.X = weight * floorWall.X + (1.0f - weight) * info.StartPos.X;
                 currentFloor.Y = weight * floorWall.Y + (1.0f - weight) * info.StartPos.Y;
+
                 OpalTile floorTile = Target.TileAt(currentFloor.ToPoint());
                 // Don't waste cycles
-                if (floorTile?.Properties.BlocksMovement ?? true) continue;
+                if (floorTile?.Properties.IsBlock ?? true) continue;
                 Font spritesheet = floorTile.Spritesheet;
 
                 Point floorTex;
@@ -294,9 +295,6 @@ namespace FieryOpal.Src.Ui
             // Move the ray at the center of the square instead of at the TL corner
             Vector2 startPos = Following.LocalPosition.ToVector2() + new Vector2(.5f);
             AspectRatio = tArea.Width / (float)tArea.Height;
-
-            Util.Log("W/H={0}".Format(AspectRatio), true);
-            Util.Log("PV ={0}".Format(PlaneVector), true);
 
             float[] zbuffer = new float[tArea.Width];
             for (int x = 0; x < tArea.Width; ++x)

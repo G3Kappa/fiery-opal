@@ -17,7 +17,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class DesertTerrainGenerator : BiomeTerrainGenerator
     {
-        protected DesertTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected DesertTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

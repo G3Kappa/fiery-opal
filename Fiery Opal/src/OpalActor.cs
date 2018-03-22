@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using FieryOpal.Src.Actors;
 using System.Runtime.Serialization;
+using FieryOpal.Src.Ui;
 
 namespace FieryOpal.Src
 {
@@ -104,11 +105,12 @@ namespace FieryOpal.Src
         public bool IsDead => is_dead;
 
         private bool can_move = true;
-        private IOpalGameActor held_by = null;
-        public bool CanMove => can_move && held_by == null;
+        public bool CanMove => can_move;
 
         public Guid Handle { get; }
         public virtual Font Spritesheet => Program.Fonts.Spritesheets["Creatures"];
+
+        public bool IsPlayer => (this as TurnTakingActor)?.Brain is PlayerControlledAI;
 
         public OpalActorBase()
         {
@@ -127,19 +129,6 @@ namespace FieryOpal.Src
             if (Map == null) return;
         }
 
-        public bool BlockMovement(IOpalGameActor holder)
-        {
-            if (holder == null) return false;
-            held_by = holder;
-            return true;
-        }
-
-        public bool ReleaseMovement(IOpalGameActor holder)
-        {
-            if (held_by != holder) return false;
-            held_by = null;
-            return true;
-        }
 
         public bool MoveTo(Point p, bool absolute = false)
         {
@@ -151,10 +140,8 @@ namespace FieryOpal.Src
                 localPosition = newPos;
                 map.NotifyActorMoved(this, oldPos);
             }
-            else if(!absolute)
+            else if(!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
             {
-                if (!Util.OOB(newPos.X, newPos.Y, map.Width, map.Height)) return ret;
-
                 var curRegion = map.ParentRegion;
                 var world = curRegion.ParentWorld;
                 Point new_region_pos = curRegion.WorldPosition + p;
@@ -181,9 +168,23 @@ namespace FieryOpal.Src
                         new_spawn.Y = 0;
                     }
 
-                    ChangeLocalMap(new_region.LocalMap, new_spawn);
+                    var t = new_region.LocalMap.TileAt(new_spawn);
+                    if (!t.Properties.BlocksMovement)
+                        ChangeLocalMap(new_region.LocalMap, new_spawn);
+                    else if(IsPlayer)
+                        Util.Log(Util.Localize("Actor_CannotChangeRegion", t.InternalName).ToColoredString(Palette.Ui["BoringMessage"]), false);
                 }
+                else if (IsPlayer)
+                    Util.Log(Util.Localize("Actor_CannotChangeRegion", "the edge of the world").ToColoredString(Palette.Ui["BoringMessage"]), false);
             }
+
+            if(!ret && IsPlayer)
+            {
+                var t = Map.TileAt(LocalPosition + p);
+                if(t?.Properties.IsBlock ?? false) 
+                    Util.Log(Util.Localize("Actor_BumpInto", t.InternalName).ToColoredString(Palette.Ui["BoringMessage"]), false);
+            }
+
             return ret;
         }
 
@@ -211,7 +212,7 @@ namespace FieryOpal.Src
             }
 
             var tile = Map.TileAt(new_p.X, new_p.Y);
-            if (tile == null) return false; //TODO: ChangeLocalMap?
+            if (tile == null) return false;
             bool ret = !tile.Properties.BlocksMovement;
             if (ret)
             {
@@ -241,7 +242,7 @@ namespace FieryOpal.Src
             }
 
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
-            bool ret = tile == null || !tile.Properties.BlocksMovement;
+            bool ret = tile == null || !tile.Properties.IsBlock;
 
             if(!ret) new_spawn = new_map.FirstAccessibleTileAround(new_spawn);
 

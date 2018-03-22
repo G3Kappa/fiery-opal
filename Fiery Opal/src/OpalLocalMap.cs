@@ -92,7 +92,7 @@ namespace FieryOpal.Src
 
         public WorldTile ParentRegion;
 
-        public OpalLocalMap(int width, int height)
+        public OpalLocalMap(int width, int height, WorldTile parent)
         {
             TerrainGrid = new OpalTile[width, height];
             Actors = new List<IOpalGameActor>();
@@ -100,6 +100,7 @@ namespace FieryOpal.Src
             Height = height;
             SkyColor = Color.DeepSkyBlue;
             FogColor = Color.DarkSlateGray;
+            ParentRegion = parent;
         }
 
         public bool AddActor(IOpalGameActor actor)
@@ -142,7 +143,7 @@ namespace FieryOpal.Src
             }
         }
 
-        public virtual void Generate(params IOpalFeatureGenerator[] generators)
+        public virtual void Generate(params ILocalFeatureGenerator[] generators)
         {
             Iter((self, x, y, t) =>
             {
@@ -180,6 +181,12 @@ namespace FieryOpal.Src
                 // getFirstFreeId() of OpalLocalTile will take longer
                 // and longer as new maps are generated.
                 gen.Dispose();
+            }
+
+            if (ParentRegion == null) return;
+            foreach (var gen in ParentRegion.FeatureGenerators)
+            {
+                gen.GenerateLocal(this);
             }
         }
 
@@ -223,34 +230,11 @@ namespace FieryOpal.Src
             while (true);
         }
 
-        public IEnumerable<Point> DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1)
+        public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1)
         {
-            var original_start = new Point(start.X, start.Y);
-
-            int dx = Math.Abs(end.X - start.X), sx = start.X < end.X ? 1 : -1;
-            int dy = Math.Abs(end.Y - start.Y), sy = start.Y < end.Y ? 1 : -1;
-            int err = (dx > dy ? dx : -dy) / 2, e2;
-            while(true)
+            foreach(var p in Util.BresenhamLine(start, end, thickness))
             {
-                SetTile(start.X, start.Y, newTile);
-                yield return start;
-                if (start.X == end.X && start.Y == end.Y) break;
-                e2 = err;
-                if (e2 > -dx) { err -= dy; start.X += sx; }
-                if (e2 < dy) { err += dx; start.Y += sy; }
-            }
-            if(thickness > 1)
-            {
-                if (dx > dy)
-                {
-                    foreach (var p in DrawLine(original_start + new Point(0, 1), end + new Point(0, 1), newTile, thickness - 1))
-                        yield return p;
-                }
-                else
-                {
-                    foreach (var p in DrawLine(original_start + new Point(1, 0), end + new Point(1, 0), newTile, thickness - 1))
-                        yield return p;
-                }
+                SetTile(p.X, p.Y, newTile);
             }
         }
 
@@ -414,7 +398,7 @@ namespace FieryOpal.Src
             {
                 tiles_in_ring = TilesWithinRing(xy.X, xy.Y, ++r, r - 1)
                     .Where(
-                    t => !t.Item1.Properties.BlocksMovement
+                    t => !t.Item1.Properties.IsBlock
                          && !ActorsAt(t.Item2.X, t.Item2.Y)
                          .Any(
                          a => !(a is IDecoration) || (a as IDecoration).BlocksMovement

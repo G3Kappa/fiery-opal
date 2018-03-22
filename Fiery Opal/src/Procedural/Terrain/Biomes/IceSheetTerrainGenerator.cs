@@ -2,13 +2,9 @@
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
-using System;
-using System.Runtime.Serialization;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    // Terrain types: moss, mud, rock, grass
-
     public class IceSkeleton : NaturalFloorSkeleton
     {
         public override string DefaultName => "Ice Ground";
@@ -25,17 +21,35 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], '/');
     }
 
+    /*
+        ICE SHEET
+        FEATURES: Vast expanses of ice, slightly hilly terrain,
+                  Frozen rivers, forzen lakes, river deltas,
+                  Points of contact with the sea where the ice cracks
+                  ICE CAVES
+
+        ICE CAVES
+        FEATURES: Can find ancient fossils, deep down lies a passage
+                  that brings you to the CENTER OF THE WORLD. Around
+                  this height, "subterranean race" outposts may be found.
+
+        CENTER OF THE WORLD
+        FEATURES: The link between north pole and south pole, but also
+                  a secret place inhabited by mysterious creatures.
+
+    */
+
     public class IceSheetTerrainGenerator : BiomeTerrainGenerator
     {
-        protected IceSheetTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected IceSheetTerrainGenerator(WorldTile region) : base(region) { }
 
         public override void Generate(OpalLocalMap m)
         {
             base.Generate(m);
 
             float[,] icebergNoise = Noise.Calc2D(
-                WorldPosition.X * m.Width,
-                WorldPosition.Y * m.Height,
+                Region.WorldPosition.X * m.Width,
+                Region.WorldPosition.Y * m.Height,
                 m.Width,
                 m.Height,
                 .023f,
@@ -44,8 +58,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             );
 
             float[,] icebergMaskNoise = Noise.Calc2D(
-                WorldPosition.X * m.Width,
-                WorldPosition.Y * m.Height,
+                Region.WorldPosition.X * m.Width,
+                Region.WorldPosition.Y * m.Height,
                 m.Width,
                 m.Height,
                 .006f,
@@ -55,7 +69,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
             Tiles.Iter((s, x, y, t) =>
             {
-                if(icebergNoise[x, y] * icebergMaskNoise[x, y] < .5f)
+                if (icebergNoise[x, y] * icebergMaskNoise[x, y] < .5f)
                 {
                     s.SetTile(x, y, OpalTile.GetRefTile<IceSkeleton>());
                 }

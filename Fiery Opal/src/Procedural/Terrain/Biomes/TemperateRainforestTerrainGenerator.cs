@@ -6,7 +6,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
     public class TemperateRainforestTerrainGenerator : BiomeTerrainGenerator
     {
-        protected TemperateRainforestTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected TemperateRainforestTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

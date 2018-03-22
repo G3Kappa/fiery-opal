@@ -6,7 +6,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
     public class BorealForestTerrainGenerator : BiomeTerrainGenerator
     {
-        protected BorealForestTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected BorealForestTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

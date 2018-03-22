@@ -1,5 +1,6 @@
 ﻿using FieryOpal.Src.Lib;
 using FieryOpal.Src.Procedural.Terrain.Biomes;
+using FieryOpal.Src.Procedural.Worldgen;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
@@ -104,6 +105,35 @@ namespace FieryOpal.Src.Procedural
             AverageTemperature = heat;
             Elevation = elev;
         }
+
+        private string _Name<T>(T t)
+            where T : struct, IConvertible
+        {
+            return Enum.GetName(typeof(T), t);
+        }
+
+        public override string ToString()
+        {
+            string fmt = "BIOME: {0} | HEAT: {1} | MOISTURE: {2} | ELEVATION: {3}";
+            return String.Format(fmt, 
+                _Name(Type), _Name(AverageTemperature),
+                _Name(AverageHumidity), _Name(Elevation)
+            );
+        }
+    }
+
+    public struct WorldGenInfo
+    {
+        public float Elevation { get; }
+        public float Temperature { get; }
+        public float Moisture { get; }
+
+        public WorldGenInfo(float temp, float moist, float elev)
+        {
+            Elevation = elev;
+            Temperature = temp;
+            Moisture = moist;
+        }
     }
 
     public class WorldTile
@@ -123,8 +153,8 @@ namespace FieryOpal.Src.Procedural
             new Tuple<string, Color>(BiomeType.BorealForest.ToString(), new Color(94, 116, 53)),
             new Tuple<string, Color>(BiomeType.Woodland.ToString(), new Color(139, 176, 79)),
 
-            new Tuple<string, Color>(BiomeType.Sea.ToString(), new Color(15, 40, 90)),
-            new Tuple<string, Color>(BiomeType.Ocean.ToString(), new Color(15, 30, 80)),
+            new Tuple<string, Color>(BiomeType.Sea.ToString(), new Color(25, 120, 200)),
+            new Tuple<string, Color>(BiomeType.Ocean.ToString(), new Color(40, 100, 150)),
             new Tuple<string, Color>(BiomeType.Mountain.ToString(), new Color(140, 145, 150)),
             new Tuple<string, Color>(BiomeType.Peak.ToString(), new Color(170, 175, 180)),
         });
@@ -152,9 +182,8 @@ namespace FieryOpal.Src.Procedural
                 case BiomeType.Woodland:
                     return (char)24;
                 case BiomeType.Sea:
-                    return (char)247;
                 case BiomeType.Ocean:
-                    return (char)126;
+                    return (char)247;
                 case BiomeType.Mountain:
                     return (char)127;
                 case BiomeType.Peak:
@@ -165,7 +194,6 @@ namespace FieryOpal.Src.Procedural
                     return (char)219;
             }
         }
-
 
         private OpalLocalMap localMap = null;
         public OpalLocalMap LocalMap
@@ -178,21 +206,38 @@ namespace FieryOpal.Src.Procedural
 
         private OpalLocalMap GenerateLocalMap()
         {
-            var map = new OpalLocalMap(REGION_WIDTH, REGION_HEIGHT);
-            map.Generate(BiomeTerrainGenerator.Make(Biome.Type, WorldPosition));
-            map.ParentRegion = this;
+            var map = new OpalLocalMap(REGION_WIDTH, REGION_HEIGHT, this);
+            map.Generate(BiomeTerrainGenerator.Make(Biome.Type, this));
             return map;
         }
 
-        public Cell Graphics => new Cell(BiomePalette[Biome.Type.ToString()], Color.Lerp(new Color(222, 221, 195), Color.Lerp(BiomePalette[Biome.Type.ToString()], Color.Black, 0.5f), .75f), GetGlyph(Biome.Type));
+        public Cell DefaultGraphics
+        {
+            get => new Cell(BiomePalette[Biome.Type.ToString()], Color.Lerp(new Color(222, 221, 195), Color.Lerp(BiomePalette[Biome.Type.ToString()], Color.Black, 0.5f), .75f), GetGlyph(Biome.Type));
+        }
+
+        private Cell _graphics = null;
+        public Cell Graphics {
+            get { return _graphics ?? DefaultGraphics; }
+            set { _graphics = value; }
+        }
         public BiomeInfo Biome { get; set; }
         public World ParentWorld { get; }
         public Point WorldPosition { get; }
+        public WorldGenInfo GenInfo { get; set; }
+
+        public List<WorldFeatureGenerator> FeatureGenerators;
 
         public WorldTile(World parent, Point position)
         {
             ParentWorld = parent;
             WorldPosition = position;
+            FeatureGenerators = new List<WorldFeatureGenerator>();
+        }
+
+        public override string ToString()
+        {
+            return String.Format("BIOME: {0}", Biome.ToString());
         }
     }
 
@@ -236,22 +281,25 @@ namespace FieryOpal.Src.Procedural
             Height = h;
         }
 
+        private IEnumerable<WorldFeatureGenerator> GetWFGs()
+        {
+            int n_rivers = Util.GlobalRng.Next((int)(Width * Height * .006f));
+            for (int i = 0; i < n_rivers; ++i)
+                yield return new RiverGenerator();
+        }
+
         public void Generate()
         {
-            var heightmap = GenerateElevationMap();
+            var fElevMap = GenerateElevationMap();
+            Apply(ref fElevMap, (x, y, f) => f);
+            var fTempMap = GenerateTemperatureMap();
+            Apply(ref fTempMap, (x, y, f) => .25f * f + .75f * (.99f - Math.Abs(y - .5f) * 2));
+            var fRainMap = GenerateHumidityMap();
+            Apply(ref fRainMap, (x, y, f) => .6f * f + .4f * (1 - fElevMap[(int)(x * fElevMap.GetLength(0)), (int)(y * fElevMap.GetLength(1))]));
 
-            var tempMap = CastMap<BiomeHeatType>(GenerateTemperatureMap(), (x, y, f) => .25f * f + .75f * (.99f - Math.Abs(y - .5f) * 2));
-            var rainMap = CastMap<BiomeMoistureType>(GenerateHumidityMap(), (x, y, f) => .6f * f + .4f * (1 - heightmap[(int)(x * heightmap.GetLength(0)), (int)(y * heightmap.GetLength(1))]));
-            var elevMap = CastMap<BiomeElevationType>(heightmap, (x, y, f) => (1-(float)new Vector2(x, y).Dist(new Vector2(.5f, .5f))) * ((float)Math.Pow(f, .5f) -.1f));
-
-            for (int x = 0; x < Width; ++x)
-            {
-                for(int y = 0; y < Height; ++y)
-                {
-                    var tile = Regions[x, y] = new WorldTile(this, new Point(x, y));
-                    tile.Biome = new BiomeInfo(tempMap[x, y], rainMap[x, y], elevMap[x, y]);
-                }
-            }
+            var tempMap = CastMap<BiomeHeatType>(fTempMap, (x, y, f) => f);
+            var rainMap = CastMap<BiomeMoistureType>(fRainMap, (x, y, f) => f);
+            var elevMap = CastMap<BiomeElevationType>(fElevMap, (x, y, f) => Math.Max(0, f - f * f * .33f));
 
             BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Ocean);
             BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Sea);
@@ -268,6 +316,28 @@ namespace FieryOpal.Src.Procedural
             BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Mountain);
             BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Peak);
 
+            for (int x = 0; x < Width; ++x)
+            {
+                for(int y = 0; y < Height; ++y)
+                {
+                    var tile = Regions[x, y] = new WorldTile(this, new Point(x, y));
+                    tile.Biome = new BiomeInfo(tempMap[x, y], rainMap[x, y], elevMap[x, y]);
+                    tile.GenInfo = new WorldGenInfo(fTempMap[x, y], fRainMap[x, y], fElevMap[x, y]);
+                }
+            }
+            // WFG here
+            List<WorldFeatureGenerator> gens = new List<WorldFeatureGenerator>();
+            gens.AddRange(GetWFGs());
+            foreach (var g in gens)
+            {
+                foreach(var t in g.GetMarkedRegions(this))
+                {
+                    var r = RegionAt(t.X, t.Y);
+
+                    r.FeatureGenerators.Add(g);
+                    r.Graphics = g.OverrideGraphics(r) ?? r.Graphics;
+                }
+            }
         }
 
         private float[,] GenerateTemperatureMap()
@@ -302,8 +372,17 @@ namespace FieryOpal.Src.Procedural
                 Width,
                 Height,
                 .05f,
-                2,
-                1);
+                3,
+                1f);
+        }
+
+        private void Apply(ref float[,] map, Func<float, float, float, float> f)
+        {
+            int w = map.GetLength(0);
+            int h = map.GetLength(1);
+            for (int i = 0; i < w; ++i)
+                for (int j = 0; j < h; ++j)
+                    map[i, j] = f(i / (float)w, j / (float)h, map[i, j]);
         }
 
         private T[,] CastMap<T>(float[,] map, Func<float, float, float, float> normalize)

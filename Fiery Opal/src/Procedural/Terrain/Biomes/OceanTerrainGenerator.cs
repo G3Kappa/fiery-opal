@@ -10,7 +10,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
                 blocks_movement: false,
-                is_natural: true
+                is_natural: true,
+                movement_penalty: 1.0f
             );
         public override string DefaultName => "Water";
         public override Cell DefaultGraphics => new Cell(Palette.Terrain["WaterForeground"], Palette.Terrain["WaterBackground"], 247);
@@ -18,7 +19,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class OceanTerrainGenerator : BiomeTerrainGenerator
     {
-        protected OceanTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected OceanTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

@@ -11,12 +11,14 @@ namespace FieryOpal.Src
 {
     public struct OpalTileProperties
     {
-        public bool BlocksMovement, IsNatural;
+        public bool IsBlock, IsNatural;
         public float MovementPenalty, Fertility;
+
+        public bool BlocksMovement => IsBlock || MovementPenalty >= 1.0f;
 
         public OpalTileProperties(bool blocks_movement = false, bool is_natural = true, float movement_penalty = 0f, float fertility = 0f)
         {
-            BlocksMovement = blocks_movement;
+            IsBlock = blocks_movement;
             IsNatural = is_natural;
             MovementPenalty = movement_penalty;
             Fertility = fertility;
@@ -222,7 +224,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
+                blocks_movement: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: .1f,
                 fertility: .2f
@@ -234,7 +236,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
+                blocks_movement: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: 0f,
                 fertility: 1f
@@ -282,7 +284,7 @@ namespace FieryOpal.Src
         public void Toggle()
         {
             isOpen = !isOpen;
-            Properties.BlocksMovement = !isOpen;
+            Properties.IsBlock = !isOpen;
         }
 
         public override object Clone()

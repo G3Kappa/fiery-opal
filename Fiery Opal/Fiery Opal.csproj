@@ -54,14 +54,17 @@
     <Compile Include="src\Actors\TurnTakingAI.cs" />
     <Compile Include="src\ConfigParser.cs" />
     <Compile Include="src\lib\PoissonDisk.cs" />
+    <Compile Include="src\lib\Voronoi.cs" />
     <Compile Include="src\Procedural\BasicBuildingDesigner.cs" />
     <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
     <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
+    <Compile Include="src\Procedural\Terrain\Worldgen\RiverGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Worldgen\WorldFeatureGenerator.cs" />
     <Compile Include="src\Procedural\Terrain\BasicTerrainGenerator.cs" />
     <Compile Include="src\Procedural\BuildingDesigner.cs" />
     <Compile Include="src\Procedural\Deity.cs" />
-    <Compile Include="src\Procedural\IOpalFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\ILocalFeatureGenerator.cs" />
     <Compile Include="src\Keybind.cs" />
     <Compile Include="src\lib\SimplexNoise.cs" />
     <Compile Include="src\Main.cs" />
@@ -222,6 +225,12 @@
     <None Include="cfg\fonts.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="gfx\3x3.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\4x4.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="gfx\HD.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -242,6 +251,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="gfx\2x2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="gfx\3x3.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="gfx\4x4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="gfx\extra\16x16-reference.png" />

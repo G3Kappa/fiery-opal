@@ -63,7 +63,23 @@ namespace FieryOpal.Src.Ui.Windows
             ColoredString debug_header = new ColoredString(debug ? "DBG:" : "", debug_background, debug_foreground);
             if (debug) debug_header += new ColoredString(" ", debug_background, debug_background);
 
-            LastShownMessages.Add(new Tuple<ColoredString, bool>(debug_header + msg, debug));
+            var tup = new Tuple<ColoredString, bool>(debug_header + msg, debug);
+            if(LastShownMessages.Count > 0 && LastShownMessages[LastShownMessages.Count - 1].Item1.String.StartsWith(tup.Item1.String))
+            {
+                var last = LastShownMessages[LastShownMessages.Count - 1];
+                int count = 2;
+
+                var re = new Regex(@"x([\d]+)$");
+                if (re.IsMatch(last.Item1.String))
+                {
+                    count = int.Parse(re.Match(last.Item1.String).Groups[1].Value) + 1;
+                }
+
+                tup = new Tuple<ColoredString, bool>(debug_header + msg + " x{0}".Format(count).ToColoredString(Palette.Ui["BoringMessage"]), debug);
+                LastShownMessages.RemoveAt(LastShownMessages.Count - 1);
+            }
+            LastShownMessages.Add(tup);
+
             if (LastShownMessages.Count >= LastShownMessagesCap)
             {
                 // TODO: Dump `LastShownMessagesDumpAmount` messages to disk.

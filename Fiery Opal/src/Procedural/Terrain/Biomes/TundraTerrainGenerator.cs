@@ -12,7 +12,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class TundraTerrainGenerator : BiomeTerrainGenerator
     {
-        protected TundraTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected TundraTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

@@ -14,7 +14,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class WoodlandTerrainGenerator : BiomeTerrainGenerator
     {
-        protected WoodlandTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected WoodlandTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

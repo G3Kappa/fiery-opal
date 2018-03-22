@@ -19,6 +19,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             if (p.X >= Viewport.TargetWidth || p.Y >= Viewport.TargetHeight) return;
 
             Viewport.CursorPosition = p;
+            Util.Log(Viewport.Target.RegionAt(p.X, p.Y).ToString(), true);
         }
 
         protected override void BindKeys()

@@ -210,7 +210,7 @@ namespace FieryOpal.Src.Procedural
                                 enclosed_areas[j].Item2 + new Point(Util.GlobalRng.Next(-radius / 4, radius / 4), Util.GlobalRng.Next(-radius / 4, radius / 4))
                             );
                             remaining_connections--;
-                            tiles.DrawLine(p1, p2, pathTile, thickness: Util.GlobalRng.Next(minThickness, maxThickness)).ToList(); // Actually calls the enumerator
+                            tiles.DrawLine(p1, p2, pathTile, thickness: Util.GlobalRng.Next(minThickness, maxThickness));
                         }
                     }
                 }

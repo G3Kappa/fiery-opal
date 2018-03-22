@@ -10,7 +10,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.BlocksMovement,
+                blocks_movement: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: .1f,
                 fertility: .5f
@@ -22,7 +22,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     class GrasslandsTerrainGenerator : BiomeTerrainGenerator
     {
 
-        protected GrasslandsTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected GrasslandsTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         private void PlaceShrub(OpalLocalMap m, int x, int y)
         {
@@ -35,8 +35,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             base.Generate(m);
 
             float[,] shrubNoise = Noise.Calc2D(
-                WorldPosition.X * m.Width, 
-                WorldPosition.Y * m.Height,
+                Region.WorldPosition.X * m.Width, 
+                Region.WorldPosition.Y * m.Height,
                 m.Width,
                 m.Height,
                 .023f,

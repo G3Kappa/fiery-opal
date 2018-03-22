@@ -2,7 +2,7 @@
 
 namespace FieryOpal.Src.Procedural
 {
-    public interface IOpalFeatureGenerator : IDisposable
+    public interface ILocalFeatureGenerator : IDisposable
     {
         /// <summary>
         /// Yield the generated tile at coordinates X, Y.

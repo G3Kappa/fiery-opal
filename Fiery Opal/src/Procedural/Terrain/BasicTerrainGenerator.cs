@@ -3,14 +3,14 @@ using System.Linq;
 
 namespace FieryOpal.Src.Procedural.Terrain
 {
-    public abstract class TerrainGeneratorBase : IOpalFeatureGenerator
+    public abstract class TerrainGeneratorBase : ILocalFeatureGenerator
     {
         protected OpalLocalMap Tiles; 
-        protected Point WorldPosition;
+        protected WorldTile Region;
         
-        public TerrainGeneratorBase(Point worldPosition)
+        public TerrainGeneratorBase(WorldTile region)
         {
-            WorldPosition = worldPosition;
+            Region = region;
         }
 
         public void Dispose()
@@ -24,7 +24,7 @@ namespace FieryOpal.Src.Procedural.Terrain
 
         public virtual void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height);
+            Tiles = new OpalLocalMap(m.Width, m.Height, Region);
         }
 
         public OpalTile Get(int x, int y)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace FieryOpal.Src
 {
@@ -30,7 +31,38 @@ namespace FieryOpal.Src
             return NormalizedStep(new Vector2(p.X, p.Y));
         }
 
+        public static IEnumerable<Point> BresenhamLine(Point start, Point end, int thickness = 1)
+        {
+            var original_start = new Point(start.X, start.Y);
+
+            int dx = Math.Abs(end.X - start.X), sx = start.X < end.X ? 1 : -1;
+            int dy = Math.Abs(end.Y - start.Y), sy = start.Y < end.Y ? 1 : -1;
+            int err = (dx > dy ? dx : -dy) / 2, e2;
+            while (true)
+            {
+                yield return start;
+                if (start.X == end.X && start.Y == end.Y) break;
+                e2 = err;
+                if (e2 > -dx) { err -= dy; start.X += sx; }
+                if (e2 < dy) { err += dx; start.Y += sy; }
+            }
+            if (thickness > 1)
+            {
+                if (dx > dy)
+                {
+                    foreach (var p in BresenhamLine(original_start + new Point(0, 1), end + new Point(0, 1), thickness - 1))
+                        yield return p;
+                }
+                else
+                {
+                    foreach (var p in BresenhamLine(original_start + new Point(1, 0), end + new Point(1, 0), thickness - 1))
+                        yield return p;
+                }
+            }
+        }
+
     }
+}
 
     public static partial class Extensions
     {
@@ -104,5 +136,5 @@ namespace FieryOpal.Src
         {
             return (q - p) * (q - p);
         }
-    }
+
 }

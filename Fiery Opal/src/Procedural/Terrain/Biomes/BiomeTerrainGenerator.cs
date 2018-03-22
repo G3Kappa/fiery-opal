@@ -9,7 +9,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     {
         protected static Dictionary<BiomeType, List<Type>> GeneratorTypes = new Dictionary<BiomeType, List<Type>>();
 
-        protected BiomeTerrainGenerator(Point worldPosition) : base(worldPosition)
+        protected BiomeTerrainGenerator(WorldTile region) : base(region)
         {
         }
 
@@ -20,12 +20,12 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             GeneratorTypes[biome].Add(typeof(T));
         }
 
-        public static BiomeTerrainGenerator Make(BiomeType biome, Point worldPos)
+        public static BiomeTerrainGenerator Make(BiomeType biome, WorldTile region)
         {
             if (!GeneratorTypes.ContainsKey(biome)) return null;
             Type T = Util.Choose(GeneratorTypes[biome]);
-            var ctor = T.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(Point) }, null);
-            return ctor.Invoke(new object[] { worldPos }) as BiomeTerrainGenerator;
+            var ctor = T.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(WorldTile) }, null);
+            return ctor.Invoke(new object[] { region }) as BiomeTerrainGenerator;
         }
     }
 }

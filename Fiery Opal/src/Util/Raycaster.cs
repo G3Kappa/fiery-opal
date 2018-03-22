@@ -60,7 +60,7 @@ namespace FieryOpal.Src
                     fog.Learn(new Point((int)mapPos.X, (int)mapPos.Y));
                 }
                 //Check if ray has hit a wall
-                if (t == null || t.Properties.BlocksMovement && !(t is Door && (t as Door).IsOpen))
+                if (t == null || t.Properties.IsBlock && !(t is Door && (t as Door).IsOpen))
                 {
                     return side;
                 }

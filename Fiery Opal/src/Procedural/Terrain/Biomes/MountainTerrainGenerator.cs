@@ -6,7 +6,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
     public class MountainTerrainGenerator : BiomeTerrainGenerator
     {
-        protected MountainTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected MountainTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {

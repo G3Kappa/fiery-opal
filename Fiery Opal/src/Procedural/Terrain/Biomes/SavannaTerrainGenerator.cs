@@ -54,7 +54,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class SavannaTerrainGenerator : BiomeTerrainGenerator
     {
-        protected SavannaTerrainGenerator(Point worldPos) : base(worldPos) { }
+        protected SavannaTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
 
         public override void Generate(OpalLocalMap m)
         {
