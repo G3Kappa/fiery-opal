@@ -16,9 +16,9 @@ namespace FieryOpal.Src
 
         public bool BlocksMovement => IsBlock || MovementPenalty >= 1.0f;
 
-        public OpalTileProperties(bool blocks_movement = false, bool is_natural = true, float movement_penalty = 0f, float fertility = 0f)
+        public OpalTileProperties(bool is_block = false, bool is_natural = true, float movement_penalty = 0f, float fertility = 0f)
         {
-            IsBlock = blocks_movement;
+            IsBlock = is_block;
             IsNatural = is_natural;
             MovementPenalty = movement_penalty;
             Fertility = fertility;
@@ -178,7 +178,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: false,
+                is_block: false,
                 is_natural: false,
                 movement_penalty: 0f,
                 fertility: 0f
@@ -198,7 +198,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: false,
+                is_block: false,
                 is_natural: true,
                 movement_penalty: 0f,
                 fertility: 0f
@@ -211,7 +211,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: true,
+                is_block: true,
                 is_natural: true,
                 movement_penalty: 0f,
                 fertility: 0f
@@ -224,7 +224,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.IsBlock,
+                is_block: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: .1f,
                 fertility: .2f
@@ -236,7 +236,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.IsBlock,
+                is_block: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: 0f,
                 fertility: 1f
@@ -249,7 +249,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: true,
+                is_block: true,
                 is_natural: false,
                 movement_penalty: 0f // Unneeded since it blocks movement
             );
@@ -261,7 +261,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: true,
+                is_block: true,
                 is_natural: false,
                 movement_penalty: 0f
             );
@@ -297,7 +297,7 @@ namespace FieryOpal.Src
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: false,
+                is_block: false,
                 is_natural: false,
                 movement_penalty: -.1f // Slightly favor constructed flooring over natural terrain
             );

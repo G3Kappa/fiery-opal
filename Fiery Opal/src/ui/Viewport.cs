@@ -104,16 +104,15 @@ namespace FieryOpal.Src.Ui
         {
             surface.Clear();
             var regions = Target.RegionsWithin(ViewArea);
-            foreach(var tuple in regions)
+            foreach(var t in regions)
             {
-                WorldTile t = tuple.Item1;
                 if (t == null) continue;
 
-                Point pos = tuple.Item2 - ViewArea.Location;
+                Point pos = t.WorldPosition - ViewArea.Location;
                 if (targetArea.X + pos.X >= targetArea.Width || targetArea.Y + pos.Y >= targetArea.Height) continue;
 
                 surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, t.Graphics);
-                if(tuple.Item2 == CursorPosition)
+                if(t.WorldPosition == CursorPosition)
                 {
                     surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Foreground);
                     surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Glyph);

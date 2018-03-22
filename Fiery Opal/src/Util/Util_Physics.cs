@@ -34,9 +34,9 @@ namespace FieryOpal.Src
         public static IEnumerable<Point> BresenhamLine(Point start, Point end, int thickness = 1)
         {
             var original_start = new Point(start.X, start.Y);
-
             int dx = Math.Abs(end.X - start.X), sx = start.X < end.X ? 1 : -1;
             int dy = Math.Abs(end.Y - start.Y), sy = start.Y < end.Y ? 1 : -1;
+
             int err = (dx > dy ? dx : -dy) / 2, e2;
             while (true)
             {
@@ -58,6 +58,43 @@ namespace FieryOpal.Src
                     foreach (var p in BresenhamLine(original_start + new Point(1, 0), end + new Point(1, 0), thickness - 1))
                         yield return p;
                 }
+            }
+        }
+
+        public static IEnumerable<Point> CubicBezier(Point p1, Point p2, Point p3, Point p4, int thickness = 1, int n = 20)
+        {
+            List<Point> pts = new List<Point>();
+            for(int i = 0; i <= n; ++i)
+            {
+                double t = (double)i / n;
+                double a = Math.Pow(1 - t, 3);
+                double b = 3 * t * Math.Pow(1 - t, 2);
+                double c = 3 * Math.Pow(t, 2) * (1 - t);
+                double d = Math.Pow(t, 3);
+
+                Point p = new Point(
+                    (int)(a * p1.X + b * p2.X + c * p3.X + d * p4.X),
+                    (int)(a * p1.Y + b * p2.Y + c * p3.Y + d * p4.Y)
+                );
+                pts.Add(p);
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                foreach(Point p in BresenhamLine(pts[i], pts[i+1], thickness))
+                    yield return p;
+            }
+
+            if (thickness > 1)
+            {
+                int dx = Math.Abs(p4.X - p1.X);
+                int dy = Math.Abs(p4.Y - p1.Y);
+
+                Point q = new Point(1, 0);
+                if (dx > dy)
+                    q = new Point(0, 1);
+
+                foreach (Point p in CubicBezier(p1 + q, p2 + q, p3 + q, p4 + q, thickness - 1, n))
+                    yield return p;
             }
         }
 

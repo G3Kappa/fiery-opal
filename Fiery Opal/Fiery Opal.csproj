@@ -59,7 +59,7 @@
     <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
     <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
-    <Compile Include="src\Procedural\Terrain\Worldgen\RiverGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Worldgen\RiverFeatureGenerator.cs" />
     <Compile Include="src\Procedural\Terrain\Worldgen\WorldFeatureGenerator.cs" />
     <Compile Include="src\Procedural\Terrain\BasicTerrainGenerator.cs" />
     <Compile Include="src\Procedural\BuildingDesigner.cs" />

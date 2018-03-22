@@ -249,7 +249,7 @@ namespace FieryOpal.Src.Procedural
             if (x < 0 || y < 0 || x >= Width || y >= Height) return null;
             return Regions[x, y];
         }
-        public IEnumerable<Tuple<WorldTile, Point>> RegionsWithin(Rectangle? R, bool yield_null = false)
+        public IEnumerable<WorldTile> RegionsWithin(Rectangle? R, bool yield_null = false)
         {
             Rectangle r;
             if (!R.HasValue)
@@ -265,7 +265,7 @@ namespace FieryOpal.Src.Procedural
                     WorldTile t = RegionAt(x, y);
                     if ((!yield_null && t != null) || yield_null)
                     {
-                        yield return new Tuple<WorldTile, Point>(t, new Point(x, y));
+                        yield return t;
                     }
                 }
             }
@@ -285,7 +285,11 @@ namespace FieryOpal.Src.Procedural
         {
             int n_rivers = Util.GlobalRng.Next((int)(Width * Height * .006f));
             for (int i = 0; i < n_rivers; ++i)
-                yield return new RiverGenerator();
+                yield return new RiverFeatureGenerator(
+                    (b) => b.AverageTemperature >= BiomeHeatType.Cold 
+                    ? OpalTile.GetRefTile<WaterSkeleton>()
+                    : OpalTile.GetRefTile<FrozenWaterSkeleton>()
+                );
         }
 
         public void Generate()

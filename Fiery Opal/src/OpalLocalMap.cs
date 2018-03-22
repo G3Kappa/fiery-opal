@@ -238,6 +238,14 @@ namespace FieryOpal.Src
             }
         }
 
+        public void DrawCurve(Point p1, Point p2, Point p3, Point p4, OpalTile newTile, int thickness = 1, int n = 5)
+        {
+            foreach (var p in Util.CubicBezier(p1, p2, p3, p4, thickness: thickness, n: n))
+            {
+                SetTile(p.X, p.Y, newTile);
+            }
+        }
+
         public void Update(TimeSpan delta)
         {
             foreach (var actor in Actors)
@@ -398,10 +406,10 @@ namespace FieryOpal.Src
             {
                 tiles_in_ring = TilesWithinRing(xy.X, xy.Y, ++r, r - 1)
                     .Where(
-                    t => !t.Item1.Properties.IsBlock
+                    t => !t.Item1.Properties.BlocksMovement
                          && !ActorsAt(t.Item2.X, t.Item2.Y)
                          .Any(
-                         a => !(a is IDecoration) || (a as IDecoration).BlocksMovement
+                            a => !(a is IDecoration) || (a as IDecoration).BlocksMovement
                          )
                     );
             }

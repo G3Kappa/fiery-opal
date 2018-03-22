@@ -10,7 +10,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: base.DefaultProperties.IsBlock,
+                is_block: base.DefaultProperties.IsBlock,
                 is_natural: base.DefaultProperties.IsNatural,
                 movement_penalty: .1f,
                 fertility: .5f

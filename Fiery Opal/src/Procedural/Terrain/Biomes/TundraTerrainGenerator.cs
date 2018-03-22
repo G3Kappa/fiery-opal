@@ -4,7 +4,7 @@ using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    public class SnowSkeleton : WaterSkeleton
+    public class SnowSkeleton : DirtSkeleton
     {
         public override string DefaultName => "Snow Ground";
         public override Cell DefaultGraphics => new Cell(Palette.Terrain["SnowForeground"], Palette.Terrain["SnowBackground"], '.');

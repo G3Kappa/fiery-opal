@@ -8,7 +8,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
-                blocks_movement: false,
+                is_block: false,
                 is_natural: true
             );
         public override string DefaultName => "Sand";
