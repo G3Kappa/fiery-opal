@@ -68,7 +68,7 @@ namespace FieryOpal.Src
         float LightRadius { get; }
     }
 
-    public interface IInteractive : IOpalGameActor
+    public interface IInteractive
     {
         bool InteractWith(OpalActorBase actor);
     }
@@ -144,6 +144,15 @@ namespace FieryOpal.Src
             {
                 var curRegion = map.ParentRegion;
                 var world = curRegion.ParentWorld;
+                if(world == null)
+                {
+                    if(IsPlayer)
+                    {
+                        Util.Log("The void lies there.", false);
+                    }
+                    return false;
+                }
+
                 Point new_region_pos = curRegion.WorldPosition + p;
                 var new_region = world.RegionAt(new_region_pos.X, new_region_pos.Y);
 
@@ -220,8 +229,8 @@ namespace FieryOpal.Src
                 if (Math.Abs(p.X) + Math.Abs(p.Y) == 2)
                 {
                     // Check that you're not trying to squeeze through two walls
-                    if ((Map.TileAt(new_p.X - p.X, new_p.Y)?.Properties.BlocksMovement ?? true)
-                        && (Map.TileAt(new_p.X, new_p.Y - p.Y)?.Properties.BlocksMovement ?? true))
+                    if ((Map.TileAt(new_p.X - p.X, new_p.Y)?.Properties.IsBlock ?? true)
+                        && (Map.TileAt(new_p.X, new_p.Y - p.Y)?.Properties.IsBlock ?? true))
                     {
                         return false;
                     }
@@ -233,11 +242,14 @@ namespace FieryOpal.Src
         public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn)
         {
             var old_map = map;
+            var old_pos = LocalPosition;
+             
             if (new_map == null)
             {
                 if (map != null) map.RemoveActor(this);
                 map = null;
                 MapChanged?.Invoke(this, map);
+                old_map?.NotifyActorMoved(this, old_pos);
                 return true;
             }
 
@@ -250,6 +262,7 @@ namespace FieryOpal.Src
             localPosition = new_spawn;
             map.AddActor(this);
             MapChanged?.Invoke(this, map);
+            old_map?.NotifyActorMoved(this, old_pos);
             return true;
         }
 

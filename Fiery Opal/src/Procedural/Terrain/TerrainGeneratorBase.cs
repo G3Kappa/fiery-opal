@@ -24,7 +24,7 @@ namespace FieryOpal.Src.Procedural.Terrain
 
         public virtual void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height, Region);
+            Tiles = new OpalLocalMap(m.Width, m.Height, Region, "TerrainGeneratorBase Workspace");
         }
 
         public OpalTile Get(int x, int y)
@@ -35,6 +35,24 @@ namespace FieryOpal.Src.Procedural.Terrain
         public IDecoration GetDecoration(int x, int y)
         {
             return Tiles.ActorsAt(x, y).Where(a => a is IDecoration).FirstOrDefault() as IDecoration;
+        }
+    }
+
+    public class SimpleTerrainGenerator : TerrainGeneratorBase
+    {
+        public SimpleTerrainGenerator(WorldTile region) : base(region)
+        {
+        }
+
+        public override void Generate(OpalLocalMap m)
+        {
+            base.Generate(m);
+            var tref = OpalTile.GetRefTile<DirtSkeleton>();
+            m.Iter((s, x, y, t) =>
+            {
+                s.SetTile(x, y, tref);
+                return false;
+            });
         }
     }
 }

@@ -33,10 +33,10 @@ namespace FieryOpal.Src.Ui.Dialogs
         protected override void BindKeys()
         {
             base.BindKeys();
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Map: Scroll up"), (i) => { ScrollViewArea(0, -1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press, "Map: Scroll left"), (i) => { ScrollViewArea(-1, 0); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press, "Map: Scroll down"), (i) => { ScrollViewArea(0, 1); });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press, "Map: Scroll right"), (i) => { ScrollViewArea(1, 0); });
+            //Keybind.BindKey(new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Map: Scroll up"), (i) => { ScrollViewArea(0, -1); });
+            //Keybind.BindKey(new Keybind.KeybindInfo(Keys.A, Keybind.KeypressState.Press, "Map: Scroll left"), (i) => { ScrollViewArea(-1, 0); });
+            //Keybind.BindKey(new Keybind.KeybindInfo(Keys.S, Keybind.KeypressState.Press, "Map: Scroll down"), (i) => { ScrollViewArea(0, 1); });
+            //Keybind.BindKey(new Keybind.KeybindInfo(Keys.D, Keybind.KeypressState.Press, "Map: Scroll right"), (i) => { ScrollViewArea(1, 0); });
         }
 
         public override void Draw(TimeSpan delta)

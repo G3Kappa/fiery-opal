@@ -1,12 +1,4 @@
-﻿using FieryOpal.Src.Actors;
-using Microsoft.Xna.Framework;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using static FieryOpal.Src.Procedural.GenUtil;
-using Microsoft.Xna.Framework.Input;
-
-namespace FieryOpal.Src
+﻿namespace FieryOpal.Src
 {
     public static partial class Util
     {

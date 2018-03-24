@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Procedural.Worldgen;
+using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -20,7 +21,7 @@ namespace FieryOpal.Src.Actors
         TurnR = 6,
 
         Interact = 7,
-        OpenInventory = 8
+        OpenInventory = 8,
     }
 
     public class PlayerActionsKeyConfiguration
@@ -74,7 +75,9 @@ namespace FieryOpal.Src.Actors
             if(!keyconfig?.IsValid() ?? true)
             {
                 Util.Err("Invalid player key configuration. Check cfg/keys.cfg.");
+#if DEBUG
                 throw new ArgumentException("Invalid player key configuration.");
+#endif
             }
             KeyConfig = keyconfig;
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
@@ -100,7 +103,6 @@ namespace FieryOpal.Src.Actors
 
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Interact), (info) => { Interact(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
-
 #if DEBUG
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, "Debug: Toggle fog", ctrl: true), (info) => {
                 TileMemory.Toggle();
@@ -134,7 +136,14 @@ namespace FieryOpal.Src.Actors
         {
             var pos = Body.LocalPosition + Util.NormalizedStep(Body.LookingAt);
 
-            var interactive = Body.Map.ActorsAt(pos.X, pos.Y).FirstOrDefault(a => a is IInteractive);
+            var tile = Body.Map.TileAt(Body.LocalPosition.X, Body.LocalPosition.Y);
+            IInteractive interactive;
+            if (tile is IInteractive)
+            {
+                interactive = tile as IInteractive;
+            }
+            else interactive = Body.Map.ActorsAt(pos.X, pos.Y).FirstOrDefault(a => a is IInteractive) as IInteractive;
+
             if (interactive == null) return;
             Body.EnqueuedActions.Enqueue(() =>
             {

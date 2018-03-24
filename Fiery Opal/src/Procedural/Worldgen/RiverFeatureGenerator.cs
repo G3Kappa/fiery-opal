@@ -10,8 +10,8 @@ namespace FieryOpal.Src.Procedural.Worldgen
 {
     public class RiverFeatureGenerator : WorldFeatureGenerator
     {
-        private Cell BaseGraphics = new Cell(Palette.Terrain["World_RiverForeground"], Color.Transparent, '~');
-        public int Thickness { get; }
+        protected virtual Cell BaseGraphics => new Cell(Palette.Terrain["World_RiverForeground"], Color.Transparent, 247);
+        public int Thickness { get; protected set; }
 
         protected Func<BiomeInfo, OpalTile> TileSelector;
 
@@ -23,7 +23,47 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         public override Cell OverrideGraphics(WorldTile region)
         {
-            return new Cell(BaseGraphics.Foreground, region.Graphics.Background, BaseGraphics.Glyph);
+            var edges = GetEdges(region).ToList();
+
+            int glyph = BaseGraphics.Glyph;
+            if(edges.Count == 1)
+            {
+                if      (edges[0].X < 0) glyph = 181;
+                else if (edges[0].X > 0) glyph = 198;
+                else if (edges[0].Y < 0) glyph = 208;
+                else if (edges[0].Y > 0) glyph = 210;
+            }
+            else if (edges.Count == 2)
+            {
+                var p1 = edges[0].X != 0 ? edges[0] : edges[1];
+                var p2 = p1 == edges[0] ? edges[1]  : edges[0];
+
+                // -1, 0; 0, -1 ╝
+                if (p1.X < 0 && p2.Y < 0) glyph = 188;
+                // -1, 0; 0, 1 ╗
+                else if (p1.X < 0 && p2.Y > 0) glyph = 187;
+                // 1, 0; 0, -1 ╚
+                else if (p1.X > 0 && p2.Y < 0) glyph = 200;
+                // 1, 0; 0, 1 ╔
+                else if (p1.X > 0 && p2.Y > 0) glyph = 201;
+                // Vertical
+                else if (p1.X == p2.X) glyph = 186;
+                // Horizontal
+                else if (p1.Y == p2.Y) glyph = 205;
+            }
+            else if(edges.Count == 3)
+            {
+                if      (!edges.Contains(new Point(-1, 0))) glyph = 204;
+                else if (!edges.Contains(new Point(1, 0)))  glyph = 185;
+                else if (!edges.Contains(new Point(0, -1))) glyph = 203;
+                else if (!edges.Contains(new Point(0, 1)))  glyph = 202;
+            }
+            else if (edges.Count == 4)
+            {
+                glyph = 206;
+            }
+
+            return new Cell(BaseGraphics.Foreground, region.Graphics.Background, glyph);
         }
 
         private bool ValidRegion(WorldTile t)
@@ -37,10 +77,10 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         private bool HasRiver(WorldTile t)
         {
-            return t.FeatureGenerators.Any(y => y.GetType() == typeof(RiverFeatureGenerator));
+            return t.FeatureGenerators.Any(y => y.GetType() == this.GetType());
         }
 
-        protected override IEnumerable<Point> MarkRegions(World w)
+        private IEnumerable<Point> Descend(World w)
         {
             Point p, q = new Point();
             int start_tries = 100;
@@ -49,7 +89,12 @@ namespace FieryOpal.Src.Procedural.Worldgen
             {
                 p = new Point(Util.GlobalRng.Next(0, w.Width), Util.GlobalRng.Next(0, w.Height));
             }
-            while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .75f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
+            while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .6f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
+            if (start_tries < 0)
+            {
+                Util.Log("WorldFeatureGenerator: Could not place river.", true);
+                yield break;
+            }
             yield return p;
 
             // Find the local minima of the elevation map from the starting point
@@ -64,12 +109,23 @@ namespace FieryOpal.Src.Procedural.Worldgen
                     break;
                 }
 
-                q = regions.MinBy(x => x.GenInfo.Elevation + (ValidRegion(x) ? 0 : 1f)).WorldPosition;
+                q = regions.MinBy(x => x.GenInfo.Elevation + x.WorldPosition.X / 1000f + (ValidRegion(x) ? 0 : 1f)).WorldPosition;
                 if (q == p || !ValidRegion(w.RegionAt(q.X, q.Y))) break;
                 yield return q;
                 p = q;
             }
             while (true);
+        }
+
+        protected override IEnumerable<Point> MarkRegions(World w)
+        {
+            var points = Descend(w).ToList();
+            var unique = points.Where(p => points.Count(q => q == p) == 1);
+            if(unique.Count() > 3)
+            {
+                foreach (var p in unique) yield return p;
+            }
+            yield break;
         }
 
         private Point NormalizeEdge(Point edge, OpalLocalMap m)
@@ -86,7 +142,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             return norm;
         }
 
-        protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
+        private IEnumerable<Point> GetEdges(WorldTile parent)
         {
             var p = parent.WorldPosition;
             var edges = parent.ParentWorld.RegionsWithin(
@@ -102,7 +158,13 @@ namespace FieryOpal.Src.Procedural.Worldgen
             )
             .Select(
                 r => r.WorldPosition - p
-            ).ToList();
+            );
+            return edges;
+        }
+
+        protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
+        {
+            var edges = GetEdges(parent).ToList();
 
             var tileref = TileSelector(parent.Biome);
             Point center = new Point(
@@ -116,7 +178,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
                 Point p2 = NormalizeEdge(edges[1], m);
                 m.DrawCurve(p1, center, center, p2, tileref, Thickness, 100);
             }
-            else
+            else if(edges.Count > 0)
             {
                 foreach (var edge in edges)
                 {

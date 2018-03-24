@@ -75,7 +75,7 @@ namespace FieryOpal.Src.Ui.Windows
                     count = int.Parse(re.Match(last.Item1.String).Groups[1].Value) + 1;
                 }
 
-                tup = new Tuple<ColoredString, bool>(debug_header + msg + " x{0}".Format(count).ToColoredString(Palette.Ui["BoringMessage"]), debug);
+                tup = new Tuple<ColoredString, bool>(debug_header + msg + " x{0}".Fmt(count).ToColoredString(Palette.Ui["BoringMessage"]), debug);
                 LastShownMessages.RemoveAt(LastShownMessages.Count - 1);
             }
             LastShownMessages.Add(tup);

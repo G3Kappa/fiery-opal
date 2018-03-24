@@ -102,7 +102,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         public static T Make<T>(string caption, string text)
             where T : OpalDialog, new()
         {
-            return Make<T>(caption, text, new Point(Program.Width / 2 - 2, Program.Height - Program.Height / 4 - 2));
+            return Make<T>(caption, text, new Point((int)(Program.Width / 1.5f) - 2, Program.Height - Program.Height / 6 - 2));
         }
 
         public static T Make<T>(string caption, string text, Point size)

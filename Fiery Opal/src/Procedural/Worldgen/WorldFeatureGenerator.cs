@@ -40,7 +40,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
         public void GenerateLocal(OpalLocalMap m)
         {
             if ((m?.ParentRegion ?? null) == null) return;
-            if (!MarkedRegions.Contains(m.ParentRegion.WorldPosition)) return;
+            //if (!MarkedRegions.Contains(m.ParentRegion.WorldPosition)) return;
             GenerateLocal(m, m.ParentRegion);
         }
 

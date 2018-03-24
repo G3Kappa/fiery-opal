@@ -1,4 +1,6 @@
-﻿using FieryOpal.Src.Lib;
+﻿using FieryOpal.src.Procedural.Terrain.Dungeons;
+using FieryOpal.Src.Lib;
+using FieryOpal.Src.Procedural.Terrain;
 using FieryOpal.Src.Procedural.Terrain.Biomes;
 using FieryOpal.Src.Procedural.Worldgen;
 using FieryOpal.Src.Ui;
@@ -68,11 +70,11 @@ namespace FieryOpal.Src.Procedural
         static BiomeType[,] BiomeTable = new BiomeType[6, 6] {   
         //COLDEST        //COLDER          //COLD                  //HOT                          //HOTTER                       //HOTTEST
         { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,              BiomeType.Desert },              //DRYEST
-        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,              BiomeType.Desert },              //DRYER
-        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Woodland,     BiomeType.Woodland,            BiomeType.Savanna,             BiomeType.Savanna },             //DRY
-        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.Woodland,            BiomeType.Savanna,             BiomeType.Savanna },             //WET
-        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.SeasonalForest,      BiomeType.TropicalRainforest,  BiomeType.TropicalRainforest },  //WETTER
-        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.TemperateRainforest, BiomeType.TropicalRainforest,  BiomeType.TropicalRainforest }   //WETTEST
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Woodland,            BiomeType.Savanna,              BiomeType.Desert },              //DRYER
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Woodland,            BiomeType.Savanna,             BiomeType.Desert },             //DRY
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.SeasonalForest, BiomeType.Grassland,      BiomeType.TemperateRainforest,        BiomeType.Savanna },             //WET
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.SeasonalForest,      BiomeType.TropicalRainforest, BiomeType.TropicalRainforest },  //WETTER
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.TemperateRainforest,      BiomeType.TropicalRainforest,  BiomeType.TropicalRainforest }   //WETTEST
         };
 
         private BiomeType GetBiomeType()
@@ -141,24 +143,6 @@ namespace FieryOpal.Src.Procedural
         public const int REGION_WIDTH = 60;
         public const int REGION_HEIGHT = 60;
 
-        public static Palette BiomePalette = new Palette(new[] {
-            new Tuple<string, Color>(BiomeType.Ice.ToString(), new Color(255, 255, 255)),
-            new Tuple<string, Color>(BiomeType.Desert.ToString(), new Color(238, 219, 116)),
-            new Tuple<string, Color>(BiomeType.Savanna.ToString(), new Color(178, 209, 92)),
-            new Tuple<string, Color>(BiomeType.TropicalRainforest.ToString(), new Color(67, 124, 0)),
-            new Tuple<string, Color>(BiomeType.Tundra.ToString(), new Color(96, 131, 109)),
-            new Tuple<string, Color>(BiomeType.TemperateRainforest.ToString(), new Color(32, 72, 35)),
-            new Tuple<string, Color>(BiomeType.Grassland.ToString(), new Color(165, 225, 70)),
-            new Tuple<string, Color>(BiomeType.SeasonalForest.ToString(), new Color(78, 99, 22)),
-            new Tuple<string, Color>(BiomeType.BorealForest.ToString(), new Color(94, 116, 53)),
-            new Tuple<string, Color>(BiomeType.Woodland.ToString(), new Color(139, 176, 79)),
-
-            new Tuple<string, Color>(BiomeType.Sea.ToString(), new Color(25, 120, 200)),
-            new Tuple<string, Color>(BiomeType.Ocean.ToString(), new Color(40, 100, 150)),
-            new Tuple<string, Color>(BiomeType.Mountain.ToString(), new Color(140, 145, 150)),
-            new Tuple<string, Color>(BiomeType.Peak.ToString(), new Color(170, 175, 180)),
-        });
-
         private static char GetGlyph(BiomeType biome)
         {
             switch(biome)
@@ -166,21 +150,21 @@ namespace FieryOpal.Src.Procedural
                 case BiomeType.Desert:
                     return (char)239;
                 case BiomeType.Savanna:
-                    return (char)226;
+                    return (char)231;
                 case BiomeType.TropicalRainforest:
                     return (char)157;
                 case BiomeType.Tundra:
-                    return (char)178;
+                    return (char)177;
                 case BiomeType.TemperateRainforest:
                     return (char)244;
                 case BiomeType.Grassland:
-                    return (char)231;
+                    return '"';
                 case BiomeType.SeasonalForest:
                     return (char)5;
                 case BiomeType.BorealForest:
-                    return (char)6;
-                case BiomeType.Woodland:
                     return (char)24;
+                case BiomeType.Woodland:
+                    return (char)6;
                 case BiomeType.Sea:
                 case BiomeType.Ocean:
                     return (char)247;
@@ -191,7 +175,7 @@ namespace FieryOpal.Src.Procedural
 
                 case BiomeType.Ice:
                 default:
-                    return (char)219;
+                    return '/';
             }
         }
 
@@ -200,20 +184,34 @@ namespace FieryOpal.Src.Procedural
         {
             get
             {
-                return (localMap = localMap ?? GenerateLocalMap());
+                bool first = localMap == null;
+                var ret = (localMap = localMap ?? GenerateLocalMap());
+                if (first) ret.GenerateWFGs();
+                return ret;
             }
         }
 
         private OpalLocalMap GenerateLocalMap()
         {
-            var map = new OpalLocalMap(REGION_WIDTH, REGION_HEIGHT, this);
-            map.Generate(BiomeTerrainGenerator.Make(Biome.Type, this));
+            var map = new OpalLocalMap(REGION_WIDTH, REGION_HEIGHT, this, Biome?.Type.ToString() ?? "Instance");
+            TerrainGeneratorBase gen;
+            if (Biome != null)
+            {
+                gen = BiomeTerrainGenerator.Make(Biome.Type, this);
+            }
+            else gen = new SimpleTerrainGenerator(this);
+
+            map.Generate(gen);
             return map;
         }
 
         public Cell DefaultGraphics
         {
-            get => new Cell(BiomePalette[Biome.Type.ToString()], Color.Lerp(new Color(222, 221, 195), Color.Lerp(BiomePalette[Biome.Type.ToString()], Color.Black, 0.5f), .75f), GetGlyph(Biome.Type));
+            get => new Cell(
+                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Foreground"], 
+                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Background"], 
+                GetGlyph(Biome.Type)
+            );
         }
 
         private Cell _graphics = null;
@@ -286,10 +284,22 @@ namespace FieryOpal.Src.Procedural
             int n_rivers = Util.GlobalRng.Next((int)(Width * Height * .006f));
             for (int i = 0; i < n_rivers; ++i)
                 yield return new RiverFeatureGenerator(
-                    (b) => b.AverageTemperature >= BiomeHeatType.Cold 
+                    (b) => b.AverageTemperature >= BiomeHeatType.Cold
                     ? OpalTile.GetRefTile<WaterSkeleton>()
                     : OpalTile.GetRefTile<FrozenWaterSkeleton>()
                 );
+
+            int n_colonies = Util.GlobalRng.Next((int)(Width * Height * .0028f));
+            for (int i = 0; i < n_colonies; ++i)
+                yield return new ColonyFeatureGenerator();
+
+            int n_villages = Util.GlobalRng.Next((int)(Width * Height * .0035f));
+            for (int i = 0; i < n_villages; ++i)
+                yield return new VillageFeatureGenerator();
+
+            int n_dungeons = Util.GlobalRng.Next((int)(Width * Height * .0015f));
+            for (int i = 0; i < n_dungeons; ++i)
+                yield return new DungeonFeatureGenerator();
         }
 
         public void Generate()
@@ -297,9 +307,13 @@ namespace FieryOpal.Src.Procedural
             var fElevMap = GenerateElevationMap();
             Apply(ref fElevMap, (x, y, f) => f);
             var fTempMap = GenerateTemperatureMap();
-            Apply(ref fTempMap, (x, y, f) => .25f * f + .75f * (.99f - Math.Abs(y - .5f) * 2));
+            Apply(ref fTempMap, (x, y, f) => .35f * f + .65f * (.99f - Math.Abs(y - .5f) * 2));
             var fRainMap = GenerateHumidityMap();
-            Apply(ref fRainMap, (x, y, f) => .6f * f + .4f * (1 - fElevMap[(int)(x * fElevMap.GetLength(0)), (int)(y * fElevMap.GetLength(1))]));
+            Apply(ref fRainMap, (x, y, f) => 
+                .25f * f 
+                + .5f * (1- 2 * Math.Max(0, fElevMap[(int)(x * fElevMap.GetLength(0)), (int)(y * fElevMap.GetLength(1))] - .5f))
+                + .25f * (1 - 1.75f * Math.Max(0, fTempMap[(int)(x * fTempMap.GetLength(0)), (int)(y * fTempMap.GetLength(1))] - .25f))
+            );
 
             var tempMap = CastMap<BiomeHeatType>(fTempMap, (x, y, f) => f);
             var rainMap = CastMap<BiomeMoistureType>(fRainMap, (x, y, f) => f);
@@ -332,14 +346,24 @@ namespace FieryOpal.Src.Procedural
             // WFG here
             List<WorldFeatureGenerator> gens = new List<WorldFeatureGenerator>();
             gens.AddRange(GetWFGs());
+            Dictionary<WorldFeatureGenerator, List<WorldTile>> regions = new Dictionary<WorldFeatureGenerator, List<WorldTile>>();
             foreach (var g in gens)
             {
+                regions[g] = new List<WorldTile>();
                 foreach(var t in g.GetMarkedRegions(this))
                 {
                     var r = RegionAt(t.X, t.Y);
 
                     r.FeatureGenerators.Add(g);
-                    r.Graphics = g.OverrideGraphics(r) ?? r.Graphics;
+                    regions[g].Add(r);
+                }
+            }
+
+            foreach (var t in regions)
+            {
+                foreach(var r in t.Value)
+                {
+                    r.Graphics = t.Key.OverrideGraphics(r) ?? r.Graphics;
                 }
             }
         }
@@ -352,7 +376,7 @@ namespace FieryOpal.Src.Procedural
                 Width,
                 Height,
                 .035f,
-                2,
+                4,
                 1f);
         }
 
@@ -363,9 +387,9 @@ namespace FieryOpal.Src.Procedural
                 Util.GlobalRng.Next(1000),
                 Width,
                 Height,
-                .033f,
-                4,
-                1f);
+                .015f,
+                8,
+                .9f);
         }
 
         private float[,] GenerateElevationMap()
@@ -375,8 +399,8 @@ namespace FieryOpal.Src.Procedural
                 Util.GlobalRng.Next(1000),
                 Width,
                 Height,
-                .05f,
-                3,
+                .012f,
+                5,
                 1f);
         }
 

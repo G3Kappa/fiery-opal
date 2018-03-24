@@ -61,6 +61,21 @@ namespace FieryOpal.Src
             }
         }
 
+        public static IEnumerable<Point> Disc(Point p, int r)
+        {
+            for(int x = -r; x < r; ++x)
+            {
+                for(int y = -r; y < r; ++y)
+                {
+                    Point q = new Point(x + p.X, y + p.Y);
+                    if (q.SquaredEuclidianDistance(p) <= r * r)
+                    {
+                        yield return q;
+                    }
+                }
+            }
+        }
+
         public static IEnumerable<Point> CubicBezier(Point p1, Point p2, Point p3, Point p4, int thickness = 1, int n = 20)
         {
             List<Point> pts = new List<Point>();
@@ -98,8 +113,20 @@ namespace FieryOpal.Src
             }
         }
 
+        public static IEnumerable<Point> Displace(IEnumerable<Point> list, int noiseW, int noiseH, float noiseS, float amplitude)
+        {
+            float[,] noise = Lib.Noise.Calc2D(0, 0, noiseW, noiseH, noiseS);
+            foreach(Point p in list)
+            {
+                float n = noise[p.X % noiseW, p.Y % noiseH];
+                yield return p + 
+                    new Point(
+                        (int)(Math.Cos(n * 2 * Math.PI - Math.PI) * amplitude), 
+                        (int)(Math.Sin(n * 2 * Math.PI - Math.PI) * amplitude)
+                    );
+            }
+        }
     }
-}
 
     public static partial class Extensions
     {
@@ -174,4 +201,5 @@ namespace FieryOpal.Src
             return (q - p) * (q - p);
         }
 
+    }
 }

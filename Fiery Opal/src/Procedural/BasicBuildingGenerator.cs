@@ -17,7 +17,7 @@ namespace FieryOpal.Src.Procedural
 
         public void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height, null);
+            Tiles = new OpalLocalMap(m.Width, m.Height, null, "BasicBuildingGenerator Workspace");
         }
 
         public OpalTile Get(int x, int y)

@@ -1,6 +1,7 @@
 ﻿using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using SadConsole;
+using System.Collections.Generic;
 
 namespace FieryOpal.Src.Ui
 {
@@ -91,6 +92,8 @@ namespace FieryOpal.Src.Ui
         public Point CursorPosition = new Point();
         public Cell Cursor = new Cell(Color.Red, Color.Transparent, 'X');
 
+        public Dictionary<Point, Cell> Markers = new Dictionary<Point, Cell>();
+
         public override int TargetWidth => Target?.Width ?? -1;
         public override int TargetHeight => Target?.Height ?? -1;
 
@@ -112,6 +115,11 @@ namespace FieryOpal.Src.Ui
                 if (targetArea.X + pos.X >= targetArea.Width || targetArea.Y + pos.Y >= targetArea.Height) continue;
 
                 surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, t.Graphics);
+                if(Markers.ContainsKey(t.WorldPosition))
+                {
+                    var v = Markers[t.WorldPosition];
+                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, v);
+                }
                 if(t.WorldPosition == CursorPosition)
                 {
                     surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Foreground);

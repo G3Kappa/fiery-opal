@@ -81,7 +81,7 @@ namespace FieryOpal.Src
 
     public static partial class Extensions
     {
-        public static string Format(this string s, params object[] args)
+        public static string Fmt(this string s, params object[] args)
         {
             return String.Format(s, args);
         }

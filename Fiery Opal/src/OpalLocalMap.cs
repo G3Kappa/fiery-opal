@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -86,21 +87,23 @@ namespace FieryOpal.Src
 
         public int Width { get; }
         public int Height { get; }
+        public string Name { get; set; }
 
         public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
 
         public WorldTile ParentRegion;
 
-        public OpalLocalMap(int width, int height, WorldTile parent)
+        public OpalLocalMap(int width, int height, WorldTile parent, string name)
         {
             TerrainGrid = new OpalTile[width, height];
             Actors = new List<IOpalGameActor>();
             Width = width;
             Height = height;
-            SkyColor = Color.DeepSkyBlue;
+            SkyColor = Palette.Terrain["FP_OverworldFog"];
             FogColor = Color.DarkSlateGray;
             ParentRegion = parent;
+            Name = name;
         }
 
         public bool AddActor(IOpalGameActor actor)
@@ -113,7 +116,7 @@ namespace FieryOpal.Src
 
         public void AddActors(IEnumerable<IOpalGameActor> actors)
         {
-            foreach(var actor in actors)
+            foreach (var actor in actors)
             {
                 AddActor(actor);
             }
@@ -129,7 +132,7 @@ namespace FieryOpal.Src
 
         public void RemoveAllActors()
         {
-            foreach(var actor in Actors.ToList())
+            foreach (var actor in Actors.ToList())
             {
                 RemoveActor(actor);
             }
@@ -163,9 +166,9 @@ namespace FieryOpal.Src
                         self.TerrainGrid[x, y] = output;
                     }
                     IDecoration decor = gen.GetDecoration(x, y);
-                    if(decor != null)
+                    if (decor != null)
                     {
-                        if(!decor.ChangeLocalMap(self, new Point(x, y)))
+                        if (!decor.ChangeLocalMap(self, new Point(x, y)))
                         {
                             Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
                         }
@@ -182,7 +185,10 @@ namespace FieryOpal.Src
                 // and longer as new maps are generated.
                 gen.Dispose();
             }
+        }
 
+        public void GenerateWFGs()
+        {
             if (ParentRegion == null) return;
             foreach (var gen in ParentRegion.FeatureGenerators)
             {
@@ -217,7 +223,7 @@ namespace FieryOpal.Src
                     neighbours.Push(n.Item2);
                 }
 
-                if(newTile != null) SetTile(x, y, newTile); // Flood fill is still useful even without actually applying it.
+                if (newTile != null) SetTile(x, y, newTile); // Flood fill is still useful even without actually applying it.
                 processed.Add(new Point(x, y));
 
                 yield return processed.Last();
@@ -232,18 +238,22 @@ namespace FieryOpal.Src
 
         public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1)
         {
-            foreach(var p in Util.BresenhamLine(start, end, thickness))
-            {
-                SetTile(p.X, p.Y, newTile);
-            }
+            DrawTiles(Util.BresenhamLine(start, end, thickness), newTile);
+        }
+
+        public void DrawDisc(Point center, int radius, OpalTile newTile)
+        {
+            DrawTiles(Util.Disc(center, radius), newTile);
         }
 
         public void DrawCurve(Point p1, Point p2, Point p3, Point p4, OpalTile newTile, int thickness = 1, int n = 5)
         {
-            foreach (var p in Util.CubicBezier(p1, p2, p3, p4, thickness: thickness, n: n))
-            {
-                SetTile(p.X, p.Y, newTile);
-            }
+            DrawTiles(Util.CubicBezier(p1, p2, p3, p4, thickness: thickness, n: n), newTile);
+        }
+
+        public void DrawTiles(IEnumerable<Point> points, OpalTile brush)
+        {
+            foreach (var p in points) SetTile(p.X, p.Y, brush);
         }
 
         public void Update(TimeSpan delta)
@@ -412,8 +422,13 @@ namespace FieryOpal.Src
                             a => !(a is IDecoration) || (a as IDecoration).BlocksMovement
                          )
                     );
-            }
 
+                if (r >= Width / 2)
+                {
+                    Util.Log("No accessible tile around {0}!".Fmt(xy), true);
+                    return new Point(0, 0);
+                }
+            }
             while (tiles_in_ring.Count() == 0);
 
             return tiles_in_ring.First().Item2;

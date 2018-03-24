@@ -209,8 +209,8 @@ namespace FieryOpal.Src.Actors
         {
             var scroll = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "");
             World world = holder.Map.ParentRegion.ParentWorld;
+
             WorldMapViewport vwp = new WorldMapViewport(world, new Rectangle(0, 0, world.Width, world.Height));
-            vwp.CursorPosition = holder.Map.ParentRegion.WorldPosition;
             scroll.Viewport = vwp;
             OpalDialog.LendKeyboardFocus(scroll);
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "World Map: Warp to location"), (i) => 
@@ -221,6 +221,17 @@ namespace FieryOpal.Src.Actors
                 Util.Log(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), true);
                 scroll.Hide();
             });
+
+            scroll.MoveCursor(holder.Map.ParentRegion.WorldPosition.X, holder.Map.ParentRegion.WorldPosition.Y);
+            scroll.Viewport.Markers.Add(
+                holder.Map.ParentRegion.WorldPosition, 
+                new Cell(
+                    Palette.Ui["DefaultForeground"], 
+                    Palette.Ui["DefaultBackground"], 
+                    '@'
+                )
+            );
+
             scroll.Show();
             scroll.Closed += (e, eh) =>
             {

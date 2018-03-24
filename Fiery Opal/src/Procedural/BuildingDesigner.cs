@@ -13,7 +13,7 @@ namespace FieryOpal.Src.Procedural
 
         public BuildingDesigner(Rectangle area)
         {
-            Workspace = new OpalLocalMap(area.Width, area.Height, null);
+            Workspace = new OpalLocalMap(area.Width, area.Height, null, "BuildingDesigner Workspace");
             MapOffset = area.Location;
         }
 
@@ -30,7 +30,7 @@ namespace FieryOpal.Src.Procedural
                  ).ToList();
             // Free resources
             Workspace.RemoveAllActors();
-            Workspace = new OpalLocalMap(Workspace.Width, Workspace.Height, null);
+            Workspace = new OpalLocalMap(Workspace.Width, Workspace.Height, null, "BuildingDesigner Workspace");
 
             return ret;
         }

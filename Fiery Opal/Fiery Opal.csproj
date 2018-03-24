@@ -42,6 +42,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="cfg\palettes\fpview.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="cfg\suppressionrules.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -59,9 +62,13 @@
     <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
     <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
-    <Compile Include="src\Procedural\Terrain\Worldgen\RiverFeatureGenerator.cs" />
-    <Compile Include="src\Procedural\Terrain\Worldgen\WorldFeatureGenerator.cs" />
-    <Compile Include="src\Procedural\Terrain\BasicTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Dungeons\DungeonTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Worldgen\VillageFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\Worldgen\DungeonFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\Worldgen\ColonyFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\Worldgen\RiverFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\Worldgen\WorldFeatureGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\TerrainGeneratorBase.cs" />
     <Compile Include="src\Procedural\BuildingDesigner.cs" />
     <Compile Include="src\Procedural\Deity.cs" />
     <Compile Include="src\Procedural\ILocalFeatureGenerator.cs" />
