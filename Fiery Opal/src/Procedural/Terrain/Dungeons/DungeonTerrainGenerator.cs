@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace FieryOpal.src.Procedural.Terrain.Dungeons
 {
-    public class DungeonTerrainGenerator : BiomeTerrainGenerator
+    public class DungeonTerrainGenerator : TerrainGeneratorBase
     {
         public int Depth { get; }
 

@@ -51,9 +51,6 @@ namespace FieryOpal.Src
 
         public void BeginTurn(OpalLocalMap map, Guid playerGuid)
         {
-            // Don't allow time to flow if the player still has unresolved dialogs
-            if (OkCancelDialog.CurrentDialogCount > 0) return;
-
             var turnTakers = map.ActorsWithin(null).Where(a => a is ITurnTaker).OrderBy(tt => (tt as ITurnTaker).TurnPriority).ToList();
             Dictionary<Guid, Queue<TurnBasedAction>> actions = new Dictionary<Guid, Queue<TurnBasedAction>>();
             foreach (var taker in turnTakers)

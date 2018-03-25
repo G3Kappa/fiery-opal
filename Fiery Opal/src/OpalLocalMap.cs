@@ -146,7 +146,38 @@ namespace FieryOpal.Src
             }
         }
 
-        public virtual void Generate(params ILocalFeatureGenerator[] generators)
+        public void CallLocalGenerator(ILocalFeatureGenerator gen)
+        {
+            gen.Generate(this);
+            Iter((self, x, y, t) =>
+            {
+                OpalTile output = gen.Get(x, y);
+                if (output != null)
+                {
+                    self.TerrainGrid[x, y] = output;
+                }
+                IDecoration decor = gen.GetDecoration(x, y);
+                if (decor != null)
+                {
+                    if (!decor.ChangeLocalMap(self, new Point(x, y)))
+                    {
+                        Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
+                    }
+                }
+
+                return false;
+            });
+            // Generators often instantiate their own OpalLocalMaps,
+            // and they yield tiles by copying them, so they need
+            // a way to dispose of the allocated resources once the
+            // current call to Generate is no longer relevant.
+            // If they don't dispose of these resources, the function
+            // getFirstFreeId() of OpalLocalTile will take longer
+            // and longer as new maps are generated.
+            gen.Dispose();
+        }
+
+        public virtual void GenerateAnew(params ILocalFeatureGenerator[] generators)
         {
             Iter((self, x, y, t) =>
             {
@@ -157,37 +188,11 @@ namespace FieryOpal.Src
             actorsAtHashmap = new Dictionary<Point, List<IOpalGameActor>>();
             foreach (var gen in generators)
             {
-                gen.Generate(this);
-                Iter((self, x, y, t) =>
-                {
-                    OpalTile output = gen.Get(x, y);
-                    if (output != null)
-                    {
-                        self.TerrainGrid[x, y] = output;
-                    }
-                    IDecoration decor = gen.GetDecoration(x, y);
-                    if (decor != null)
-                    {
-                        if (!decor.ChangeLocalMap(self, new Point(x, y)))
-                        {
-                            Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
-                        }
-                    }
-
-                    return false;
-                });
-                // Generators often instantiate their own OpalLocalMaps,
-                // and they yield tiles by copying them, so they need
-                // a way to dispose of the allocated resources once the
-                // current call to Generate is no longer relevant.
-                // If they don't dispose of these resources, the function
-                // getFirstFreeId() of OpalLocalTile will take longer
-                // and longer as new maps are generated.
-                gen.Dispose();
+                CallLocalGenerator(gen);
             }
         }
 
-        public void GenerateWFGs()
+        public void GenerateWorldFeatures()
         {
             if (ParentRegion == null) return;
             foreach (var gen in ParentRegion.FeatureGenerators)
@@ -196,14 +201,17 @@ namespace FieryOpal.Src
             }
         }
 
-        public virtual void Iter(OpalLocalMapIterator iter)
+        public virtual void Iter(OpalLocalMapIterator iter, Rectangle? area = null)
         {
-            for (int x = 0; x < Width; ++x)
+            for (int x = 0; x < (area?.Width ?? Width); ++x)
             {
-                for (int y = 0; y < Height; ++y)
+                for (int y = 0; y < (area?.Height ?? Height); ++y)
                 {
-                    OpalTile t = TileAt(x, y);
-                    if (iter(this, x, y, t)) break;
+                    int X = (area?.X ?? 0) + x;
+                    int Y = (area?.Y ?? 0) + y;
+
+                    OpalTile t = TileAt(X, Y);
+                    if (iter(this, X, Y, t)) break;
                 }
             }
         }

@@ -186,7 +186,7 @@ namespace FieryOpal.Src.Procedural
             {
                 bool first = localMap == null;
                 var ret = (localMap = localMap ?? GenerateLocalMap());
-                if (first) ret.GenerateWFGs();
+                if (first) ret.GenerateWorldFeatures();
                 return ret;
             }
         }
@@ -201,7 +201,7 @@ namespace FieryOpal.Src.Procedural
             }
             else gen = new SimpleTerrainGenerator(this);
 
-            map.Generate(gen);
+            map.GenerateAnew(gen);
             return map;
         }
 

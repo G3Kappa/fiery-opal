@@ -2,32 +2,32 @@
 
 namespace FieryOpal.Src.Procedural
 {
-    public class BasicBuildingGenerator : ILocalFeatureGenerator
+    public abstract class BuildingGeneratorBase : ILocalFeatureGenerator
     {
-        protected OpalLocalMap Tiles;
+        protected OpalLocalMap Workspace;
 
         public void Dispose()
         {
-            Tiles.Iter((self, x, y, T) =>
+            Workspace.Iter((self, x, y, T) =>
             {
                 T?.Dispose();
                 return false;
             });
         }
 
-        public void Generate(OpalLocalMap m)
+        public virtual void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height, null, "BasicBuildingGenerator Workspace");
+            Workspace = new OpalLocalMap(m.Width, m.Height, null, "BuildingGeneratorBase Workspace");
         }
 
         public OpalTile Get(int x, int y)
         {
-            return (OpalTile)Tiles.TileAt(x, y); // Either previous references or already cloned by the building designers
+            return Workspace.TileAt(x, y); // Either previous references or already cloned by the building designers
         }
 
         public IDecoration GetDecoration(int x, int y)
         {
-            return Tiles.ActorsAt(x, y).FirstOrDefault(t => t is IDecoration) as IDecoration;
+            return Workspace.ActorsAt(x, y).FirstOrDefault(t => t is IDecoration) as IDecoration;
         }
     }
 

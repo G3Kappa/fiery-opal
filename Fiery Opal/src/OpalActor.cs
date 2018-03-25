@@ -23,7 +23,12 @@ namespace FieryOpal.Src
         Font Spritesheet { get; }
     }
 
-    public interface IOpalGameActor : ICustomSpritesheet
+    public interface INamedObject
+    {
+        string Name { get; }
+    }
+
+    public interface IOpalGameActor : ICustomSpritesheet, INamedObject
     {
         Guid Handle { get; }
         Point LocalPosition { get; }
@@ -68,7 +73,7 @@ namespace FieryOpal.Src
         float LightRadius { get; }
     }
 
-    public interface IInteractive
+    public interface IInteractive : INamedObject
     {
         bool InteractWith(OpalActorBase actor);
     }
@@ -112,6 +117,8 @@ namespace FieryOpal.Src
 
         public bool IsPlayer => (this as TurnTakingActor)?.Brain is PlayerControlledAI;
 
+        public string Name { get; set; }
+
         public OpalActorBase()
         {
             Handle = Guid.NewGuid();
@@ -143,7 +150,7 @@ namespace FieryOpal.Src
             else if(!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
             {
                 var curRegion = map.ParentRegion;
-                var world = curRegion.ParentWorld;
+                var world = curRegion?.ParentWorld;
                 if(world == null)
                 {
                     if(IsPlayer)
@@ -181,17 +188,17 @@ namespace FieryOpal.Src
                     if (!t.Properties.BlocksMovement)
                         ChangeLocalMap(new_region.LocalMap, new_spawn);
                     else if(IsPlayer)
-                        Util.Log(Util.Localize("Actor_CannotChangeRegion", t.InternalName).ToColoredString(Palette.Ui["BoringMessage"]), false);
+                        Util.Log(Util.Str("Actor_CannotChangeRegion", t.Name).ToColoredString(Palette.Ui["BoringMessage"]), false);
                 }
                 else if (IsPlayer)
-                    Util.Log(Util.Localize("Actor_CannotChangeRegion", "the edge of the world").ToColoredString(Palette.Ui["BoringMessage"]), false);
+                    Util.Log(Util.Str("Actor_CannotChangeRegion", "the edge of the world").ToColoredString(Palette.Ui["BoringMessage"]), false);
             }
 
             if(!ret && IsPlayer)
             {
                 var t = Map.TileAt(LocalPosition + p);
                 if(t?.Properties.IsBlock ?? false) 
-                    Util.Log(Util.Localize("Actor_BumpInto", t.InternalName).ToColoredString(Palette.Ui["BoringMessage"]), false);
+                    Util.Log(Util.Str("Actor_BumpInto", t.Name).ToColoredString(Palette.Ui["BoringMessage"]), false);
             }
 
             return ret;

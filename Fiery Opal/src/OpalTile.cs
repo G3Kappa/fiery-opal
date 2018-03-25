@@ -25,7 +25,7 @@ namespace FieryOpal.Src
         }
     }
 
-    public class OpalTile : IDisposable, ICloneable, ICustomSpritesheet
+    public class OpalTile : IDisposable, ICloneable, ICustomSpritesheet, INamedObject
     {
         private static Dictionary<int, OpalTile> InstantiatedTiles = new Dictionary<int, OpalTile>();
 
@@ -40,10 +40,11 @@ namespace FieryOpal.Src
 
         public readonly Cell Graphics;
         public OpalTileProperties Properties;
-        public readonly string InternalName;
         public readonly int Id;
         public readonly TileSkeleton Skeleton;
         public Font Spritesheet => Program.Fonts.Spritesheets["Terrain"];
+
+        public string Name { get; private set; }
 
         public OpalTile(int id, TileSkeleton skeleton, string name = "Untitled", OpalTileProperties properties = new OpalTileProperties(), Cell graphics = null)
         {
@@ -54,7 +55,7 @@ namespace FieryOpal.Src
 
             Graphics = graphics ?? new Cell(Color.Magenta, Color.DarkMagenta, 'E');
             Properties = properties;
-            InternalName = name;
+            Name = name;
             Id = id;
             Skeleton = skeleton;
 
@@ -89,7 +90,7 @@ namespace FieryOpal.Src
 
         public virtual object Clone()
         {
-            return new OpalTile(GetFirstFreeId(), Skeleton, InternalName, Properties, Graphics);
+            return new OpalTile(GetFirstFreeId(), Skeleton, Name, Properties, Graphics);
         }
 
         private static Dictionary<string, OpalTile> ReferenceTileInstances = new Dictionary<string, OpalTile>();
@@ -97,8 +98,8 @@ namespace FieryOpal.Src
         public static bool RegisterRefTile(TileSkeleton reference_maker)
         {
             var tile = TileFactory.Make(reference_maker.Make);
-            if (ReferenceTileInstances.ContainsKey(tile.InternalName)) return false;
-            ReferenceTileInstances[tile.InternalName] = tile;
+            if (ReferenceTileInstances.ContainsKey(tile.Name)) return false;
+            ReferenceTileInstances[tile.Name] = tile;
             return true;
         }
 
@@ -270,16 +271,16 @@ namespace FieryOpal.Src
 
         public override OpalTile Make(int id)
         {
-            return new Door(id, this, DefaultName, DefaultProperties, DefaultGraphics);
+            return new DoorTile(id, this, DefaultName, DefaultProperties, DefaultGraphics);
         }
     }
 
-    public class Door : OpalTile
+    public class DoorTile : OpalTile, IInteractive
     {
         protected bool isOpen = false;
         public bool IsOpen => isOpen;
 
-        public Door(int id, TileSkeleton k, string defaultname, OpalTileProperties props, Cell graphics) : base(id, k, defaultname, props, graphics) { }
+        public DoorTile(int id, TileSkeleton k, string defaultname, OpalTileProperties props, Cell graphics) : base(id, k, defaultname, props, graphics) { }
 
         public void Toggle()
         {
@@ -289,7 +290,14 @@ namespace FieryOpal.Src
 
         public override object Clone()
         {
-            return new Door(GetFirstFreeId(), Skeleton, InternalName, Properties, Graphics);
+            return new DoorTile(GetFirstFreeId(), Skeleton, Name, Properties, Graphics);
+        }
+
+        public bool InteractWith(OpalActorBase actor)
+        {
+            if (!actor.CanMove) return false;
+            Toggle();
+            return true;
         }
     }
 

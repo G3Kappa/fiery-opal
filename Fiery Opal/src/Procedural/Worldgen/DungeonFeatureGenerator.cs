@@ -3,13 +3,34 @@ using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using FieryOpal.Src.Procedural.Terrain;
 
 namespace FieryOpal.Src.Procedural.Worldgen
 {
+    public struct Portal
+    {
+        public DungeonInstance FromInstance;
+        public Point FromPos;
+        public DungeonInstance ToInstance;
+        public Point ToPos;
+
+        public Portal Invert()
+        {
+            return new Portal()
+            {
+                FromInstance = ToInstance,
+                FromPos = ToPos,
+                ToInstance = FromInstance,
+                ToPos = FromPos
+            };
+        }
+    }
+
     public class StairTile : OpalTile, IInteractive
     {
-        public Tuple<OpalLocalMap, Point> Exit { get; set; }
+        public Portal? Portal { get; set; }
 
         public StairTile(int id, StairSkeleton skeleton, string name = "Untitled", OpalTileProperties properties = new OpalTileProperties(), Cell graphics = null)
             : base(id, skeleton, name, properties, graphics)
@@ -18,25 +39,25 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         public bool InteractWith(OpalActorBase actor)
         {
-            if(Exit?.Item1 != null)
+            if (Portal?.ToInstance != null)
             {
-                actor.ChangeLocalMap(Exit.Item1, Exit.Item2);
-                if(actor.IsPlayer)
+                actor.ChangeLocalMap(Portal.Value.ToInstance.Map, Portal.Value.ToPos);
+                if (actor.IsPlayer)
                 {
-                    Util.Log("Moving to {0} at {1}.".Fmt(Exit.Item1.Name, Exit.Item2), false);
+                    Util.Log(Util.Str("Player_UsingStairs", Portal.Value.ToInstance.Map.Name, Portal.Value.ToPos), false);
                 }
                 return true;
             }
             if (actor.IsPlayer)
             {
-                Util.Log("These stairs lead to nowhere.", false);
+                Util.Log(Util.Str("Player_StairsUnconnected"), false);
             }
             return false;
         }
 
         public override object Clone()
         {
-            return new StairTile(GetFirstFreeId(), (StairSkeleton)Skeleton, InternalName, Properties, Graphics);
+            return new StairTile(GetFirstFreeId(), (StairSkeleton)Skeleton, Name, Properties, Graphics);
         }
     }
 
@@ -70,69 +91,138 @@ namespace FieryOpal.Src.Procedural.Worldgen
         public override string DefaultName => "Upstairs";
     }
 
-    internal class DungeonInstanceGenerator : WorldFeatureGenerator
-    {
-        public WorldTile ParentRegion;
 
-        public DungeonInstanceGenerator(DungeonTerrainGenerator tg, WorldTile parent, int floor)
+    public class DungeonInstance : INamedObject
+    {
+        protected const int DUNGEON_WIDTH = 70;
+        protected const int DUNGEON_HEIGHT = 70;
+
+
+        private OpalLocalMap _map = null;
+        public OpalLocalMap Map
         {
-            ParentRegion = parent;
+            get
+            {
+                if (_map != null) return _map;
+                GenerateMap(DUNGEON_WIDTH, DUNGEON_HEIGHT);
+                return _map;
+            }
+            set => _map = value;
+        }
+        public List<Portal> UpstairPortals { get; }
+        public int Depth { get; }
+        public string Name { get; }
+
+        public List<Portal> DownstairPortals { get; } = new List<Portal>();
+        
+        public WorldTile WorldRegion { get; }
+
+        protected TerrainGeneratorBase TerrainGenerator;
+
+        public DungeonInstance(int floor, string name, WorldTile parentRegion, List<Portal> pointing)
+        {
+            UpstairPortals = pointing;
+            Depth = floor;
+            Name = name;
+            WorldRegion = parentRegion;
+
+            TerrainGenerator = new DungeonTerrainGenerator(null, Depth);
         }
 
-        protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
+        private void MakeUpstairs(Portal p)
+        {
+            StairTile stairs = (StairTile)OpalTile.GetRefTile<UpstairSkeleton>().Clone();
+            stairs.Portal = p.Invert();
+            Map.SetTile(p.ToPos.X, p.ToPos.Y, stairs);
+        }
+
+        private void MakeDownstairs(Portal p)
         {
             StairTile stairs = (StairTile)OpalTile.GetRefTile<DownstairSkeleton>().Clone();
-            // Make down stairs on the previous map
-            stairs.Exit = new Tuple<OpalLocalMap, Point>(m, new Point(0, 0));
-            ParentRegion.LocalMap.SetTile(0, 0, stairs);
-            // Make up stairs on this map
-            stairs = (StairTile)OpalTile.GetRefTile<UpstairSkeleton>().Clone();
-            stairs.Exit = new Tuple<OpalLocalMap, Point>(ParentRegion.LocalMap, new Point(0, 0));
-            m.SetTile(0, 0, stairs);
-
-            m.SkyColor = Palette.Terrain["FP_DungeonFog"];
-            m.Name = "Dungeon Instance";
+            stairs.Portal = p;
+            Map.SetTile(p.ToPos.X, p.ToPos.Y, stairs);
         }
 
-        protected override IEnumerable<Point> MarkRegions(World w)
+        public IList<Portal> GenerateDownstairPortals(DungeonInstance to)
         {
-            yield return ParentRegion.WorldPosition;
+            DownstairPortals.Clear();
+            int n_portals = 3;
+            for (int i = 0; i < n_portals; ++i)
+            {
+                Point p = new Point(Util.GlobalRng.Next(DUNGEON_WIDTH), Util.GlobalRng.Next(DUNGEON_HEIGHT));
+                DownstairPortals.Add(new Portal()
+                {
+                    FromInstance = this,
+                    FromPos = p,
+                    ToInstance = to,
+                    ToPos = p
+                });
+            }
+
+            return DownstairPortals;
+        }
+
+        public void GenerateMap(int w, int h)
+        {
+            Map = new OpalLocalMap(w, h, WorldRegion, Util.Str("Dungeon_InstanceNameFmt", Name, Depth));
+            Map.SkyColor = Palette.Terrain["FP_DungeonFog"];
+
+            Map.GenerateAnew(TerrainGenerator);
+            foreach(var portal in UpstairPortals)
+            {
+                MakeUpstairs(portal);
+            }
+
+            foreach(var portal in DownstairPortals)
+            {
+                MakeDownstairs(portal);
+            }
         }
     }
-
-    public class DungeonFeatureGenerator : VillageFeatureGenerator
+    
+    public class DungeonFeatureGenerator : VillageFeatureGenerator, INamedObject
     {
         public DungeonTerrainGenerator TerrainGenerator;
 
+        public string Name { get; }
+        public int Depth { get; }
+
         public DungeonFeatureGenerator()
         {
-            BaseGraphics.Glyph = 159 - 16;
+            BaseGraphics.Glyph = 143;
             BaseGraphics.Foreground = Palette.Terrain["World_DungeonForeground"];
+
+            var lairname = new GoodDeityGenerator().Generate().Name;
+            Name = "Lair of {0}".Fmt(lairname.Substring(0, lairname.Length - 1));
+
+            Depth = Util.GlobalRng.Next(3, 30);
         }
 
-        protected virtual WorldTile GetInstance(WorldTile parent, int floor)
+        protected Dictionary<int, DungeonInstance> Instances = new Dictionary<int, DungeonInstance>();
+        protected DungeonInstance GetInstance(int floor, WorldTile parent)
         {
-            WorldTile region = new WorldTile(parent.ParentWorld, new Point(-2, -2));
-            DungeonInstanceGenerator inst_gen = new DungeonInstanceGenerator(TerrainGenerator, parent, floor);
-            inst_gen.GetMarkedRegions(null);
-            region.FeatureGenerators.Add(inst_gen);
-            return region;
-        }
+            if (Instances.ContainsKey(floor)) return Instances[floor];
 
+            DungeonInstance instance = new DungeonInstance(floor, Name, parent, new List<Portal>());
+            return (Instances[floor] = instance);
+        }
+        
         protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
         {
-            TerrainGenerator = new DungeonTerrainGenerator(parent, 100);
+            parent = new WorldTile(parent.ParentWorld, new Point(-2, -2));
 
-            // Generate whole dungeon structure, then link it to m with a vault
-            // Structure is: Region -> Map -> Region -> ...
-            var first = GetInstance(parent, 0);
-            first.LocalMap.GetType();
-            parent = first;
+            Instances.Clear();
+            var prevInst = GetInstance(0, parent);
+            var vaultGen = new DungeonVaultGenerator(prevInst);
+            m.CallLocalGenerator(vaultGen);
+            prevInst.UpstairPortals.Add(vaultGen.EntrancePortal);
 
-            for (int i = 1; i < TerrainGenerator.Depth; ++i)
+            for(int i = 1; i < Depth - 1; ++i)
             {
-                var floor = GetInstance(parent, i);
-                parent = floor;
+                var inst = GetInstance(i, parent);
+                prevInst.GenerateDownstairPortals(inst).ToList();
+                inst.UpstairPortals.AddRange(prevInst.DownstairPortals);
+                prevInst = inst;
             }
         }
     }

@@ -63,6 +63,7 @@
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
     <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
     <Compile Include="src\Procedural\Terrain\Dungeons\DungeonTerrainGenerator.cs" />
+    <Compile Include="src\Procedural\Terrain\Dungeons\DungeonVaultGenerator.cs" />
     <Compile Include="src\Procedural\Worldgen\VillageFeatureGenerator.cs" />
     <Compile Include="src\Procedural\Worldgen\DungeonFeatureGenerator.cs" />
     <Compile Include="src\Procedural\Worldgen\ColonyFeatureGenerator.cs" />
@@ -191,9 +192,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="cfg\keys.cfg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="cfg\locale\IT.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="cfg\locale\en_US.cfg">

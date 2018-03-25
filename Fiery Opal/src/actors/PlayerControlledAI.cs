@@ -85,8 +85,8 @@ namespace FieryOpal.Src.Actors
             Body.Inventory.Store(new Journal());
             Body.Inventory.Store(new WorldMap());
 
-            Body.Inventory.ItemStored += (item) => Util.Log(Util.Localize("Player_ItemPickedUp", item.ItemInfo.Name), false);
-            Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Localize("Player_ItemDropped", item.ItemInfo.Name), false);
+            Body.Inventory.ItemStored += (item) => Util.Log(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
+            Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
         }
 
         public void BindKeys()
@@ -134,24 +134,69 @@ namespace FieryOpal.Src.Actors
 
         private void Interact()
         {
-            var pos = Body.LocalPosition + Util.NormalizedStep(Body.LookingAt);
+            var interaction_rect = new Rectangle(
+                Body.LocalPosition - new Point(1), 
+                new Point(3)
+            );
 
-            var tile = Body.Map.TileAt(Body.LocalPosition.X, Body.LocalPosition.Y);
-            IInteractive interactive;
-            if (tile is IInteractive)
+            var interactives = 
+                Body.Map.ActorsWithin(interaction_rect)
+                .Where(a => a is IInteractive && a != Body)
+                .Select(a => a as IInteractive)
+                .ToList();
+            interactives.AddRange(
+                Body.Map.TilesWithin(interaction_rect)
+                .Where(t => t.Item1 is IInteractive)
+                .Select(t => t.Item1 as IInteractive)
+                .ToList()
+            );
+
+            if(interactives.Count == 0)
             {
-                interactive = tile as IInteractive;
+                Util.Log(Util.Str("Player_NoAvailableInteractions").ToColoredString(Palette.Ui["BoringMessage"]), false);
+                return;
             }
-            else interactive = Body.Map.ActorsAt(pos.X, pos.Y).FirstOrDefault(a => a is IInteractive) as IInteractive;
-
-            if (interactive == null) return;
-            Body.EnqueuedActions.Enqueue(() =>
+            else if(interactives.Count == 1)
             {
-                (interactive as IInteractive).InteractWith(Body);
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    interactives.First().InteractWith(Body);
+                    return 0f;
+                });
                 InputHandled("FlagRaycastViewportForRedraw");
-                return 0f;
-            });
-            InputHandled();
+                return;
+            }
+
+            ContextMenu<IInteractive> dialog =
+                OpalDialog.Make<ContextMenu<IInteractive>>(
+                    Util.Str("Player_ChooseInteractionTitle"), ""
+                );
+            dialog.CloseOnESC = true;
+            dialog.Closed += (e, eh) =>
+            {
+                dialog.ChosenAction?.Invoke(null);
+                InputHandled("FlagRaycastViewportForRedraw");
+            };
+
+            char key = 'A';
+            foreach(var itr in interactives)
+            {
+                Keybind.KeybindInfo info = new Keybind.KeybindInfo(
+                    (Keys)(key++),
+                    Keybind.KeypressState.Press,
+                    Util.Str("Player_InteractWithHelpText", itr.Name)
+                );
+                dialog.AddAction(itr.Name, (_) => {
+                    Body.EnqueuedActions.Enqueue(() =>
+                    {
+                        itr.InteractWith(Body);
+                        return 0f;
+                    });
+                }, info);
+            }
+
+            OpalDialog.LendKeyboardFocus(dialog);
+            dialog.Show();
         }
 
         private void OpenInventory()

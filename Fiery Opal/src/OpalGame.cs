@@ -93,8 +93,7 @@ namespace FieryOpal.Src
                         }
                         ));
                     break;
-                case "MapRefreshed":
-                    Util.Log("hey", true);
+                case "MapRefreshed": // Unused
                     TurnManager.ResetAccumulator();
                     break;
                 case "PlayerInputHandled":

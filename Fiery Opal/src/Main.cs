@@ -46,10 +46,10 @@ namespace FieryOpal
 
         private static void Update(GameTime time)
         {
-            Keybind.Update();
             Util.Update(time);
-            mainGameWindowManager.Update(time);
             OpalDialog.Update(time);
+            Keybind.Update();
+            mainGameWindowManager.Update(time);
         }
 
         private static void Draw(GameTime time)
@@ -80,7 +80,7 @@ namespace FieryOpal
             OpalGame g = new OpalGame(world);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
 
-            Util.Log(Util.Localize("WelcomeMessage"), false);
+            Util.Log(Util.Str("WelcomeMessage"), false);
         }
     }
 }

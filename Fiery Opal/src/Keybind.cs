@@ -154,8 +154,10 @@ namespace FieryOpal.Src
             }
         }
 
+        private static bool IsCKDShown = false;
         public static void ShowCurrentKeybindsDialog()
         {
+            if (IsCKDShown) return;
             var dialog = OpalDialog.Make<ContextMenu<Keybind>>("Current Key Mapping", "");
             dialog.BindActions = false;
             foreach (var bind in CurrentDelegates.Keys)
@@ -170,6 +172,11 @@ namespace FieryOpal.Src
                 dialog.AddAction(bind.HelpText, (kb) => { }, bind);
             }
             dialog.Show();
+            dialog.Closed += (e, eh) =>
+            {
+                IsCKDShown = false;
+            };
+            IsCKDShown = true;
         }
 
     }
