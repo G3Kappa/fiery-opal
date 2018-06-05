@@ -1,13 +1,13 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using System.Linq;
 
 namespace FieryOpal.Src.Procedural.Terrain
 {
     public abstract class TerrainGeneratorBase : ILocalFeatureGenerator
     {
-        protected OpalLocalMap Tiles; 
+        protected OpalLocalMap Workspace;
         protected WorldTile Region;
-        
+
         public TerrainGeneratorBase(WorldTile region)
         {
             Region = region;
@@ -15,7 +15,7 @@ namespace FieryOpal.Src.Procedural.Terrain
 
         public void Dispose()
         {
-            Tiles.Iter((self, x, y, T) =>
+            Workspace.Iter((self, x, y, T) =>
             {
                 T?.Dispose();
                 return false;
@@ -24,17 +24,17 @@ namespace FieryOpal.Src.Procedural.Terrain
 
         public virtual void Generate(OpalLocalMap m)
         {
-            Tiles = new OpalLocalMap(m.Width, m.Height, Region, "TerrainGeneratorBase Workspace");
+            Workspace = new OpalLocalMap(m.Width, m.Height, Region, "TerrainGeneratorBase Workspace");
         }
 
         public OpalTile Get(int x, int y)
         {
-            return (OpalTile)(Tiles.TileAt(x, y)?.Clone() ?? OpalTile.GetRefTile<DirtSkeleton>().Clone()); // Since we don't alter individual tiles, we only need to clone them when requested.
+            return (OpalTile)(Workspace.TileAt(x, y)?.Clone() ?? OpalTile.GetRefTile<DirtSkeleton>().Clone()); // Since we don't alter individual tiles, we only need to clone them when requested.
         }
 
         public IDecoration GetDecoration(int x, int y)
         {
-            return Tiles.ActorsAt(x, y).Where(a => a is IDecoration).FirstOrDefault() as IDecoration;
+            return Workspace.ActorsAt(x, y).Where(a => a is IDecoration).FirstOrDefault() as IDecoration;
         }
     }
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using System.Linq;
-using System.Collections.Generic;
 using SadConsole;
+using System.Collections.Generic;
 
 namespace FieryOpal.Src.Procedural.Worldgen
 {

@@ -1,37 +1,9 @@
 ﻿using FieryOpal.Src.Lib;
-using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using SadConsole;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    public class IceSkeleton : NaturalFloorSkeleton
-    {
-        public override string DefaultName => "Ice Ground";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], '.');
-    }
 
-    public class FrozenWaterSkeleton : WaterSkeleton
-    {
-        public override OpalTileProperties DefaultProperties => new OpalTileProperties(
-            is_block: base.DefaultProperties.IsBlock,
-            is_natural: base.DefaultProperties.IsNatural,
-            movement_penalty: 0
-        );
-
-        public override string DefaultName => "Frozen Water";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], 247);
-    }
-
-    public class IceWallSkeleton : NaturalWallSkeleton
-    {
-        public override OpalTileProperties DefaultProperties => new OpalTileProperties(
-            is_block: true,
-            is_natural: base.DefaultProperties.IsNatural
-        );
-        public override string DefaultName => "Ice Wall";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["IceForeground"], Palette.Terrain["IceBackground"], '/');
-    }
 
     /*
         ICE SHEET
@@ -79,11 +51,11 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
                 1f
             );
 
-            Tiles.Iter((s, x, y, t) =>
+            Workspace.Iter((s, x, y, t) =>
             {
                 if (icebergNoise[x, y] * icebergMaskNoise[x, y] < .5f)
                 {
-                    s.SetTile(x, y, OpalTile.GetRefTile<IceSkeleton>());
+                    s.SetTile(x, y, OpalTile.GetRefTile<IceFloorSkeleton>());
                 }
                 else
                 {

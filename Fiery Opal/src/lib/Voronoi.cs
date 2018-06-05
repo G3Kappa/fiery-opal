@@ -1,10 +1,6 @@
-﻿using FieryOpal.Src;
-using Microsoft.Xna.Framework;
-using System;
+﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FieryOpal.Src.Lib
 {
@@ -22,7 +18,7 @@ namespace FieryOpal.Src.Lib
 
             for (int x = 0; x < r.Width; ++x)
             {
-                for(int y = 0; y < r.Height; ++y)
+                for (int y = 0; y < r.Height; ++y)
                 {
                     var p = new Point(x, y);
                     int closest = 0;

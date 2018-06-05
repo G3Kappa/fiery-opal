@@ -1,12 +1,8 @@
-﻿using System;
+﻿using FieryOpal.Src.Ui;
+using Microsoft.Xna.Framework;
+using SadConsole;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Worldgen
 {
@@ -25,7 +21,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected bool ValidRegion(WorldTile t)
         {
-            return t != null 
+            return t != null
                 && (t.Biome.AverageTemperature < BiomeHeatType.Hottest && t.Biome.AverageTemperature > BiomeHeatType.Coldest)
                 && !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)
                 && !VillagesNearby(t);
@@ -45,7 +41,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             int start_tries = 100;
             do
             {
-                c = new Point(Util.GlobalRng.Next(0, w.Width), Util.GlobalRng.Next(0, w.Height));
+                c = new Point(Util.Rng.Next(0, w.Width), Util.Rng.Next(0, w.Height));
             }
             while (!ValidRegion(w.RegionAt(c.X, c.Y)) && --start_tries > 0);
             if (start_tries < 0)
@@ -58,7 +54,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
         {
-            
+
         }
     }
 }

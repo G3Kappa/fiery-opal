@@ -1,17 +1,15 @@
-using SadConsole;
-using Microsoft.Xna.Framework;
 using FieryOpal.Src;
+using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
-using System.Collections.Generic;
-using System.Linq;
-using System;
+using FieryOpal.Src.Procedural.Terrain.Tiles;
+using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using FieryOpal.Src.Ui.Windows;
-using FieryOpal.Src.Ui;
+using Microsoft.Xna.Framework;
 
 namespace FieryOpal
 {
-    class Program
+    class Nexus
     {
 
         public static int Width { get; private set; }
@@ -23,6 +21,8 @@ namespace FieryOpal
         public static LocalizationInfo Locale { get; private set; }
         public static KeybindConfigInfo Keys { get; private set; }
         public static PaletteConfigInfo PaletteInfo { get; private set; }
+        public static OpalGame GameInstance { get; private set; }
+        public static TurnTakingActor Player => GameInstance.Player;
 
         public static InitConfigInfo InitInfo { get; set; }
 
@@ -77,8 +77,10 @@ namespace FieryOpal
 
             World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
             world.Generate();
-            OpalGame g = new OpalGame(world);
-            mainGameWindowManager = new MainGameWindowManager(Width, Height, g);
+            GameInstance = new OpalGame(world);
+            mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
+
+            TileSkeleton.PreloadAllSkeletons();
 
             Util.Log(Util.Str("WelcomeMessage"), false);
         }

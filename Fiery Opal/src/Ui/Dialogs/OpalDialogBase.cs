@@ -1,16 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Ui.Windows;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using SadConsole;
+using SadConsole.Input;
+using SadConsole.Themes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SadConsole.Input;
-using SadConsole.Themes;
-using Microsoft.Xna.Framework.Input;
-using FieryOpal.Src.Ui.Windows;
 
 namespace FieryOpal.Src.Ui.Dialogs
 {
-    public abstract  class OpalDialog : OpalConsoleWindow
+    public abstract class OpalDialog : OpalConsoleWindow
     {
         public static ButtonTheme DialogButtonTheme = new ButtonTheme()
         {
@@ -102,17 +102,17 @@ namespace FieryOpal.Src.Ui.Dialogs
         public static T Make<T>(string caption, string text)
             where T : OpalDialog, new()
         {
-            return Make<T>(caption, text, new Point((int)(Program.Width / 1.5f) - 2, Program.Height - Program.Height / 6 - 2));
+            return Make<T>(caption, text, new Point(-1, -1));
         }
 
         public static T Make<T>(string caption, string text, Point size)
             where T : OpalDialog, new()
         {
-            _MakeSize = size;
+            _MakeSize = new Point(size.X >= 0 ? size.X : (int)(Nexus.Width / 1.5f) - 2, size.Y >= 0 ? size.Y : (int)(Nexus.Height / 1.25f) - 2);
             _MakeCaption = caption;
             T dialog = new T()
             {
-                Position = new Point(Program.Width / 2 - size.X / 2, Program.Height / 2 - size.Y / 2)
+                Position = new Point(Nexus.Width / 2 - _MakeSize.X / 2, Nexus.Height / 2 - _MakeSize.Y / 2)
             };
             dialog.PrintText(text);
             return dialog;

@@ -1,4 +1,4 @@
-﻿using FieryOpal.Src.Procedural.Worldgen;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
@@ -22,6 +22,7 @@ namespace FieryOpal.Src.Actors
 
         Interact = 7,
         OpenInventory = 8,
+        Attack = 9
     }
 
     public class PlayerActionsKeyConfiguration
@@ -55,7 +56,7 @@ namespace FieryOpal.Src.Actors
 
         public bool IsValid()
         {
-            foreach(PlayerAction key in Enum.GetValues(typeof(PlayerAction)))
+            foreach (PlayerAction key in Enum.GetValues(typeof(PlayerAction)))
             {
                 if (!Config.ContainsKey(key)) return false;
             }
@@ -72,7 +73,7 @@ namespace FieryOpal.Src.Actors
 
         public PlayerControlledAI(TurnTakingActor player, PlayerActionsKeyConfiguration keyconfig) : base(player)
         {
-            if(!keyconfig?.IsValid() ?? true)
+            if (!keyconfig?.IsValid() ?? true)
             {
                 Util.Err("Invalid player key configuration. Check cfg/keys.cfg.");
 #if DEBUG
@@ -82,8 +83,13 @@ namespace FieryOpal.Src.Actors
             KeyConfig = keyconfig;
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
 
+            Body.TurnPriority = 0;
+
             Body.Inventory.Store(new Journal());
             Body.Inventory.Store(new WorldMap());
+            var f = new Freezzino();
+            f.Own(Body);
+            Body.Inventory.Store(f);
 
             Body.Inventory.ItemStored += (item) => Util.Log(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
             Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
@@ -91,7 +97,7 @@ namespace FieryOpal.Src.Actors
 
         public void BindKeys()
         {
-            Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Wait), (info) => { Wait(5); });
+            Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Wait), (info) => { Wait(1); });
 
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.MoveU), (info) => { MoveRelative(0, -1); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.MoveD), (info) => { MoveRelative(0, 1); });
@@ -103,13 +109,35 @@ namespace FieryOpal.Src.Actors
 
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Interact), (info) => { Interact(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
+            Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Attack), (info) => { Attack(); });
 #if DEBUG
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F2, Keybind.KeypressState.Press, "Debug: Toggle fog", ctrl: true), (info) => {
-                TileMemory.Toggle();
-                Util.Log(
-                    ("-- " + (TileMemory.IsEnabled ? "Enabled " : "Disabled") + " fog.").ToColoredString(Palette.Ui["DebugMessage"]),
-                    false
-                );
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press, "Debug: Destroy Wall"), (info) =>
+            {
+                Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<DirtSkeleton>());
+                InputHandled("FlagRaycastViewportForRedraw");
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "Debug: Make Wall"), (info) =>
+            {
+                Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<NaturalWallSkeleton>());
+                InputHandled("FlagRaycastViewportForRedraw");
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Debug: Wait 50 turns", true), (info) =>
+            {
+                Wait(50);
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Open CLI"), (info) =>
+            {
+                var cli = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Nexus.Width * .4f), 4));
+                cli.Position = new Point(0, 0);
+                OpalDialog.LendKeyboardFocus(cli);
+                cli.Show();
+                cli.Closed += (e, eh) =>
+                {
+                    InputHandled("FlagRaycastViewportForRedraw");
+                };
             });
 #endif
 
@@ -126,7 +154,8 @@ namespace FieryOpal.Src.Actors
         /// <param name="msgForWindow"></param>
         private void InputHandled(string msgForWindow = null)
         {
-            InternalMessagePipeline.Broadcast(null, (g) => {
+            InternalMessagePipeline.Broadcast(null, (g) =>
+            {
                 if (msgForWindow != null) g.InternalMessagePipeline.Broadcast(null, (c) => msgForWindow);
                 return "PlayerInputHandled";
             });
@@ -135,11 +164,11 @@ namespace FieryOpal.Src.Actors
         private void Interact()
         {
             var interaction_rect = new Rectangle(
-                Body.LocalPosition - new Point(1), 
+                Body.LocalPosition - new Point(1),
                 new Point(3)
             );
 
-            var interactives = 
+            var interactives =
                 Body.Map.ActorsWithin(interaction_rect)
                 .Where(a => a is IInteractive && a != Body)
                 .Select(a => a as IInteractive)
@@ -151,12 +180,12 @@ namespace FieryOpal.Src.Actors
                 .ToList()
             );
 
-            if(interactives.Count == 0)
+            if (interactives.Count == 0)
             {
                 Util.Log(Util.Str("Player_NoAvailableInteractions").ToColoredString(Palette.Ui["BoringMessage"]), false);
                 return;
             }
-            else if(interactives.Count == 1)
+            else if (interactives.Count == 1)
             {
                 Body.EnqueuedActions.Enqueue(() =>
                 {
@@ -179,14 +208,15 @@ namespace FieryOpal.Src.Actors
             };
 
             char key = 'A';
-            foreach(var itr in interactives)
+            foreach (var itr in interactives)
             {
                 Keybind.KeybindInfo info = new Keybind.KeybindInfo(
                     (Keys)(key++),
                     Keybind.KeypressState.Press,
                     Util.Str("Player_InteractWithHelpText", itr.Name)
                 );
-                dialog.AddAction(itr.Name, (_) => {
+                dialog.AddAction(itr.Name, (_) =>
+                {
                     Body.EnqueuedActions.Enqueue(() =>
                     {
                         itr.InteractWith(Body);
@@ -217,7 +247,7 @@ namespace FieryOpal.Src.Actors
                 // Here "PlayerInputHandled" isn't received in time for the rotation update,
                 // but the parameterless call will fix everything harmlessly.
                 InputHandled("UpdateRaycastWindowRotation");
-                return 1 /20f;
+                return 1 / 20f;
             });
             InputHandled();
         }
@@ -250,5 +280,29 @@ namespace FieryOpal.Src.Actors
 
             InputHandled("FlagRaycastViewportForRedraw");
         }
+
+        private void Attack()
+        {
+            Body.EnqueuedActions.Enqueue(() =>
+            {
+                var weaps = Body.Equipment.GetEquipedItems().Where(i => i is Weapon).Select(i => i as Weapon).ToList();
+                if (weaps.Count == 0)
+                {
+                    // Todo log
+                    return 0f;
+                }
+
+                float delay = 0.0f;
+                foreach (var w in weaps)
+                {
+                    w.Attack(Body.LookingAt.ToUnit().ToPoint());
+                    delay += w.AttackDelay;
+                }
+                InputHandled("FlagRaycastViewportForRedraw");
+                return delay;
+            });
+            InputHandled();
+        }
+
     }
 }

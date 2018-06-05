@@ -208,7 +208,7 @@ namespace FieryOpal.Src.Procedural
             DeityNameGenerator.DeityNameGeneratorInfo dinfo = new DeityNameGenerator.DeityNameGeneratorInfo()
             {
                 Gender = Util.RandomTernary(),
-                Spheres = Util.ChooseN(AllowedSpheres, Util.GlobalRng.Next(1, 5))
+                Spheres = Util.ChooseN(AllowedSpheres, Util.Rng.Next(1, 5))
             };
 
             return new DeityBase(NameGenerator.GetName(dinfo), dinfo.Spheres);
@@ -247,7 +247,7 @@ namespace FieryOpal.Src.Procedural
             DeityNameGenerator.DeityNameGeneratorInfo dinfo = new DeityNameGenerator.DeityNameGeneratorInfo()
             {
                 Gender = Util.RandomTernary(),
-                Spheres = Util.ChooseN(AllowedSpheres, Util.GlobalRng.Next(1, 5))
+                Spheres = Util.ChooseN(AllowedSpheres, Util.Rng.Next(1, 5))
             };
 
             return new DeityBase(NameGenerator.GetName(dinfo), dinfo.Spheres);

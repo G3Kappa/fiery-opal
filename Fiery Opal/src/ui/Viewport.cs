@@ -1,7 +1,9 @@
 ﻿using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using SadConsole;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src.Ui
 {
@@ -22,6 +24,9 @@ namespace FieryOpal.Src.Ui
         public override int TargetWidth => Target?.Width ?? -1;
         public override int TargetHeight => Target?.Height ?? -1;
 
+        private Dictionary<Guid, Point> LastKnownPos = new Dictionary<Guid, Point>();
+        private string CurrentMapName = "";
+
         public LocalMapViewport(OpalLocalMap target, Rectangle view_area)
         {
             ViewArea = view_area;
@@ -33,8 +38,19 @@ namespace FieryOpal.Src.Ui
             surface.SetCell(p.X, p.Y, new Cell(Target.FogColor, Target.FogColor, ' '));
         }
 
+        public void Print(SadConsole.Console surf, TileMemory fog = null)
+        {
+            Print(surf, Rectangle.Empty, fog);
+        }
+
         public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
+            if (Target.Name != CurrentMapName)
+            {
+                LastKnownPos.Clear();
+                CurrentMapName = Target.Name;
+            }
+
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
             foreach (var tuple in tiles)
@@ -60,27 +76,40 @@ namespace FieryOpal.Src.Ui
                 }
             }
 
-            var actors = Target.ActorsWithin(ViewArea);
+            var actors = Target.ActorsWithin(ViewArea).ToList();
+            foreach (var k in LastKnownPos.Keys) actors.Add(Target.FindActorByHandle(k));
             foreach (var act in actors)
             {
-                if (!act.Visible) continue;
-                Point pos = act.LocalPosition - new Point(ViewArea.X, ViewArea.Y);
-                if (pos.X >= targetArea.Width || pos.Y >= targetArea.Height)
+                if (act == null) continue;
+                Point vw = new Point(ViewArea.X, ViewArea.Y);
+
+                bool canSee = fog.CanSee(act.LocalPosition);
+                bool knowsOf = fog.KnowsOf(act.LocalPosition);
+
+                // If we have seen this actor, but they're out of view, draw them at the last position we know of.
+                if (LastKnownPos.ContainsKey(act.Handle) && !canSee)
+                {
+                    var p = LastKnownPos[act.Handle] - vw;
+                    if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
+
+                    surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
+                    continue;
+                }
+                // Unexplored tiles
+                else if (!knowsOf)
                 {
                     continue;
                 }
-                if (!fog.KnowsOf(act.LocalPosition))
+                else if (canSee)
                 {
-                    continue;
-                }
-                else if(act is DecorationBase && !fog.CanSee(act.LocalPosition))
-                {
-                    surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Glyph);
-                }
-                else // Right now, creatures (but not decorations, assumedly unmoving) that move in known tiles are always seen by the player
-                {
-                    surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Foreground);
-                    surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, act.Graphics.Glyph);
+                    if (!act.Visible) continue;
+                    LastKnownPos[act.Handle] = act.LocalPosition;
+
+                    Point p = act.LocalPosition - vw;
+                    if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
+
+                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Foreground);
+                    surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
                 }
             }
         }
@@ -107,7 +136,7 @@ namespace FieryOpal.Src.Ui
         {
             surface.Clear();
             var regions = Target.RegionsWithin(ViewArea);
-            foreach(var t in regions)
+            foreach (var t in regions)
             {
                 if (t == null) continue;
 
@@ -115,12 +144,12 @@ namespace FieryOpal.Src.Ui
                 if (targetArea.X + pos.X >= targetArea.Width || targetArea.Y + pos.Y >= targetArea.Height) continue;
 
                 surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, t.Graphics);
-                if(Markers.ContainsKey(t.WorldPosition))
+                if (Markers.ContainsKey(t.WorldPosition))
                 {
                     var v = Markers[t.WorldPosition];
                     surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, v);
                 }
-                if(t.WorldPosition == CursorPosition)
+                if (t.WorldPosition == CursorPosition)
                 {
                     surface.SetForeground(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Foreground);
                     surface.SetGlyph(targetArea.X + pos.X, targetArea.Y + pos.Y, Cursor.Glyph);

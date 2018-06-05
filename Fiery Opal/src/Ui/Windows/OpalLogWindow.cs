@@ -51,7 +51,7 @@ namespace FieryOpal.Src.Ui.Windows
             if (debug && !DebugMode) return; 
 #endif
             string msg_str = msg.ToString();
-            foreach(var exp in SuppressedMessagesRegexps)
+            foreach (var exp in SuppressedMessagesRegexps)
             {
                 if (exp.IsMatch(msg_str)) return;
             }
@@ -64,7 +64,7 @@ namespace FieryOpal.Src.Ui.Windows
             if (debug) debug_header += new ColoredString(" ", debug_background, debug_background);
 
             var tup = new Tuple<ColoredString, bool>(debug_header + msg, debug);
-            if(LastShownMessages.Count > 0 && LastShownMessages[LastShownMessages.Count - 1].Item1.String.StartsWith(tup.Item1.String))
+            if (LastShownMessages.Count > 0 && LastShownMessages[LastShownMessages.Count - 1].Item1.String.StartsWith(tup.Item1.String))
             {
                 var last = LastShownMessages[LastShownMessages.Count - 1];
                 int count = 2;

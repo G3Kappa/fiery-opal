@@ -1,6 +1,4 @@
-﻿using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -49,7 +47,7 @@ namespace FieryOpal.Src
             Accumulator = new Dictionary<Guid, float>();
         }
 
-        public void BeginTurn(OpalLocalMap map, Guid playerGuid)
+        public void BeginTurn(OpalLocalMap map)
         {
             var turnTakers = map.ActorsWithin(null).Where(a => a is ITurnTaker).OrderBy(tt => (tt as ITurnTaker).TurnPriority).ToList();
             Dictionary<Guid, Queue<TurnBasedAction>> actions = new Dictionary<Guid, Queue<TurnBasedAction>>();
@@ -58,7 +56,7 @@ namespace FieryOpal.Src
                 if (!Accumulator.ContainsKey(taker.Handle)) Accumulator[taker.Handle] = 0.0f;
                 actions[taker.Handle] = new Queue<TurnBasedAction>();
                 var intentions = (taker as ITurnTaker).ProcessTurn(CurrentTurn, 1 - Accumulator[taker.Handle]);
-                foreach(var intention in intentions)
+                foreach (var intention in intentions)
                 {
                     actions[taker.Handle].Enqueue(intention);
                 }
@@ -66,7 +64,15 @@ namespace FieryOpal.Src
 
             for (float t = 0; t < 1; t += TimeDilation)
             {
-                if (actions[playerGuid].Count == 0 && Accumulator[playerGuid] == .0f)
+                // If the player is dead allow no further processing of turns.
+                // Unless they somehow come back to life, that is.
+                if(!actions.ContainsKey(Nexus.Player.Handle))
+                {
+                    Util.Log("You died.", false);
+                    return;
+                }
+
+                if (actions[Nexus.Player.Handle].Count == 0 && Accumulator[Nexus.Player.Handle] == .0f)
                 {
                     // If the player has no more actions to perform but hasn't completed their turn yet,
                     // end the current turn now and let them make another move.
@@ -77,7 +83,7 @@ namespace FieryOpal.Src
                     if (Accumulator[kvp.Key] <= t && kvp.Value.Count > 0)
                     {
                         var cost = kvp.Value.Dequeue().Invoke();
-                        Accumulator[kvp.Key] += cost - TimeDilation;
+                        Accumulator[kvp.Key] += cost * TimeDilation;
                     }
                     else Accumulator[kvp.Key] = Math.Max(Accumulator[kvp.Key] - TimeDilation, 0);
                 }

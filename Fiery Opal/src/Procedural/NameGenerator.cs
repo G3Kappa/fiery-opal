@@ -20,8 +20,8 @@ namespace FieryOpal.Src.Procedural
             public IEnumerable<DivineSphere> Spheres;
             public bool? Gender;
 
-            public bool IsMale    => Gender.HasValue && Gender.Value;
-            public bool IsFemale  => Gender.HasValue && !Gender.Value;
+            public bool IsMale => Gender.HasValue && Gender.Value;
+            public bool IsFemale => Gender.HasValue && !Gender.Value;
             public bool IsAsexual => !Gender.HasValue;
         }
 
@@ -59,7 +59,7 @@ namespace FieryOpal.Src.Procedural
                 "ne", "ko", "por", "qin", "-", "'"
             };
 
-            int length = Util.GlobalRng.Next(2, 5);
+            int length = Util.Rng.Next(2, 5);
             return String.Join("", Util.ChooseN(syllables, length)).CapitalizeFirst();
         }
 
@@ -68,8 +68,8 @@ namespace FieryOpal.Src.Procedural
             var dinfo = (info as DeityNameGeneratorInfo);
             return String.Format(
                 "{0}, {1} of {2}.",
-                GetProperNoun(dinfo), 
-                GetGenderedNoun(dinfo), 
+                GetProperNoun(dinfo),
+                GetGenderedNoun(dinfo),
                 JoinSpheres(dinfo)
             );
         }

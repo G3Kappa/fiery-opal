@@ -6,7 +6,7 @@ namespace FieryOpal.Src.Actors
 {
     public class Plant : DecorationBase
     {
-        public override Font Spritesheet => Program.Fonts.Spritesheets["Vegetation"];
+        public override Font Spritesheet => Nexus.Fonts.Spritesheets["Vegetation"];
 
         public override bool BlocksMovement => true;
         protected static Color[] PossibleColors;
@@ -22,7 +22,7 @@ namespace FieryOpal.Src.Actors
             };
 
             /* Dead Tree */
-            if (Util.GlobalRng.NextDouble() > .8f)
+            if (Util.Rng.NextDouble() > .8f)
             {
                 PossibleGlyphs = new[] { (byte)'v' + 16 };
                 PossibleColors = new[] {
@@ -30,7 +30,7 @@ namespace FieryOpal.Src.Actors
                 };
             }
 
-            FirstPersonVerticalOffset = 4.5f * -3/2f;
+            FirstPersonVerticalOffset = 4.5f * -3 / 2f;
             FirstPersonScale = new Vector2(.5f, 1 / 3f);
 
             SetGraphics();
@@ -38,7 +38,7 @@ namespace FieryOpal.Src.Actors
 
         protected void SetGraphics()
         {
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.GlobalRng.Next(PossibleColors.Length)], Color.Transparent, PossibleGlyphs[Util.GlobalRng.Next(PossibleGlyphs.Length)]));
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.Rng.Next(PossibleColors.Length)], Color.Transparent, PossibleGlyphs[Util.Rng.Next(PossibleGlyphs.Length)]));
         }
     }
 

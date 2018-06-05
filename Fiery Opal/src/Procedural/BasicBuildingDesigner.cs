@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using static FieryOpal.Src.Procedural.GenUtil;
@@ -20,7 +19,7 @@ namespace FieryOpal.Src.Procedural
             // 4. Go to 1
             // 5. If there are still empty squares surrounded by empty squares,
             // 6.   With probability (3 - Count) / 3 fill a random square
-            Point square = new Point(Util.GlobalRng.Next(0, 3), Util.GlobalRng.Next(0, 3)), start = square;
+            Point square = new Point(Util.Rng.Next(0, 3), Util.Rng.Next(0, 3)), start = square;
             int numSquaresFilled = 0;
             do
             {
@@ -41,9 +40,9 @@ namespace FieryOpal.Src.Procedural
                 if (canMoveDown) choices.Add(new Point(square.X, square.Y + 1));
 
                 if (numSquaresFilled == 9 || choices.Count == 0) break;
-                square = choices[Util.GlobalRng.Next(choices.Count)];
+                square = choices[Util.Rng.Next(choices.Count)];
             }
-            while (Util.GlobalRng.NextDouble() > (numSquaresFilled / 9f));
+            while (Util.Rng.NextDouble() > (numSquaresFilled / 9f));
 
             if (grid[1, 1]) return grid;
 
@@ -54,7 +53,7 @@ namespace FieryOpal.Src.Procedural
             int count = new[] { aboveCenter, belowCenter, leftofCenter, rightofCenter }.Sum(b => b ? 1 : 0);
 
             // If three or more squares are perpendicularly next to the center square, it is impossible for there to be a solitary empty square
-            if (count >= 3 || Util.GlobalRng.NextDouble() < count / 3) return grid;
+            if (count >= 3 || Util.Rng.NextDouble() < count / 3) return grid;
             // If two squares are perpendicularly next to the center square, only one solitary tile exists and it lies in the opposite corner of the grid.
             if (count == 2)
             {
@@ -66,10 +65,10 @@ namespace FieryOpal.Src.Procedural
             // If only one square is perpendicularly next to the center, there can be three solitary tiles on the opposite side of the grid.
             else if (count == 1)
             {
-                if (aboveCenter) grid[Util.GlobalRng.Next(0, 3), 2] = true;
-                else if (belowCenter) grid[Util.GlobalRng.Next(0, 3), 0] = true;
-                else if (leftofCenter) grid[2, Util.GlobalRng.Next(0, 3)] = true;
-                else if (rightofCenter) grid[0, Util.GlobalRng.Next(0, 3)] = true;
+                if (aboveCenter) grid[Util.Rng.Next(0, 3), 2] = true;
+                else if (belowCenter) grid[Util.Rng.Next(0, 3), 0] = true;
+                else if (leftofCenter) grid[2, Util.Rng.Next(0, 3)] = true;
+                else if (rightofCenter) grid[0, Util.Rng.Next(0, 3)] = true;
             }
             // Otherwise, it is safe to assume that there was only one filled square and it was a corner square, in which case there are three solitary tiles on all other corners.
             else
@@ -138,14 +137,14 @@ namespace FieryOpal.Src.Procedural
                 {
                     building_rects[i, j] = new Rectangle(0, 0, 0, 0);
                     if (!matrix[i, j]) continue;
-                    Point sz = new Point((int)(Workspace.Width / (Util.GlobalRng.NextDouble() * 3 + 1)), (int)(Workspace.Height / (Util.GlobalRng.NextDouble() * 3 + 1)));
+                    Point sz = new Point((int)(Workspace.Width / (Util.Rng.NextDouble() * 3 + 1)), (int)(Workspace.Height / (Util.Rng.NextDouble() * 3 + 1)));
                     Point p = new Point((i + 1) * Workspace.Width / 4, (j + 1) * Workspace.Height / 4);
                     p -= new Point(sz.X / 2, sz.Y / 2);
 
                     building_rects[i, j] = new Rectangle(p, sz); // GenUtil.Partition(new Rectangle(p, sz), 1, 1 / 2f, 0.0f).ElementAt(0);
                     var /*my_*/sides = GenUtil.SplitRect(building_rects[i, j], .5f).ToList();
 
-                    if(sides[0].X < sides[1].X)
+                    if (sides[0].X < sides[1].X)
                     // Vertical cut
                     {
                         sides[1] = new Rectangle(sides[1].X - 1, sides[1].Y, sides[1].Width, sides[1].Height);

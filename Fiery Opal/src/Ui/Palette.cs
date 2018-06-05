@@ -20,7 +20,7 @@ namespace FieryOpal.Src.Ui
         public Palette(IEnumerable<Tuple<string, Color>> colors)
         {
             Capacity = colors.Count();
-            foreach(var t in colors)
+            foreach (var t in colors)
             {
                 Add(t.Item1, t.Item2);
             }
@@ -28,7 +28,7 @@ namespace FieryOpal.Src.Ui
 
         public bool Add(string name, Color c)
         {
-            if(Dict.Keys.Count < Capacity)
+            if (Dict.Keys.Count < Capacity)
             {
                 if (Dict.ContainsKey(name)) return false;
                 Dict[name] = c.PackedValue;
@@ -90,7 +90,7 @@ namespace FieryOpal.Src.Ui
         {
             get
             {
-                if(Ui.Capacity > 0)
+                if (Ui.Capacity > 0)
                 {
                     return new Cell(
                         Ui["DefaultForeground"],

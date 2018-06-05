@@ -1,5 +1,4 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Actors;
+﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -35,7 +34,7 @@ namespace FieryOpal.Src
             using (var file = File.OpenText(filename))
             {
                 string line = null;
-                while((line = file.ReadLine()) != null)
+                while ((line = file.ReadLine()) != null)
                 {
                     if (line.Trim().Length == 0) continue;
 
@@ -65,7 +64,7 @@ namespace FieryOpal.Src
             Type prop_type = prop.PropertyType;
             if (dict_index == null)
             {
-                if(value is string)
+                if (value is string)
                 {
                     TypeConverter converter = TypeDescriptor.GetConverter(prop_type);
                     try
@@ -152,7 +151,7 @@ namespace FieryOpal.Src
     {
         protected Func<RelectionBasedConfigLoader<T>, string, object> DelegatedConversion;
 
-        public RelectionBasedConfigLoader(Func<RelectionBasedConfigLoader<T>, string, object> convert_rhs) 
+        public RelectionBasedConfigLoader(Func<RelectionBasedConfigLoader<T>, string, object> convert_rhs)
             : base(new ConfigParserBase())
         {
             DelegatedConversion = convert_rhs;
@@ -179,7 +178,7 @@ namespace FieryOpal.Src
             Dictionary<string, string> Macros = new Dictionary<string, string>();
             List<Tuple<string, string>> token_list = new List<Tuple<string, string>>(tokens);
             var cur_dir = Parser.CurrentDirectory;
-            while(token_list.Count > 0)
+            while (token_list.Count > 0)
             {
                 // Grab first token
                 var t = token_list.First();
@@ -196,7 +195,7 @@ namespace FieryOpal.Src
                     continue;
                 }
                 // Otherwise, if the LHS is a macro
-                else if(lhs.StartsWith("#"))
+                else if (lhs.StartsWith("#"))
                 {
                     // Add its expansion to Macros
                     Macros[lhs] = rhs;
@@ -204,7 +203,7 @@ namespace FieryOpal.Src
                 }
 
                 // For each defined macro
-                foreach(var define in Macros.Where(d => rhs.Contains(d.Key)))
+                foreach (var define in Macros.Where(d => rhs.Contains(d.Key)))
                 {
                     // Try to apply it to the rhs
                     rhs = t.Item2.Replace(define.Key, define.Value);
@@ -212,7 +211,7 @@ namespace FieryOpal.Src
 
                 // Try to cast the rsh (a string) to an object of the correct type by calling DelegatedConversion.
                 object rhs_obj = DelegatedConversion(this, rhs);
-                if(rhs_obj == null)
+                if (rhs_obj == null)
                 {
                     Util.Err(String.Format("Invalid right-hand side expression: \"{0}\" for type {1}", rhs, typeof(T).ToString()));
                     continue;
@@ -231,7 +230,7 @@ namespace FieryOpal.Src
                 {
                     property_set = TrySetProperty(ret, lhs, rhs_obj, null);
                 }
-                if(!property_set) Util.Err(String.Format("Unknown property: \"{0}\" for type {1}", lhs, typeof(T).ToString()));
+                if (!property_set) Util.Err(String.Format("Unknown property: \"{0}\" for type {1}", lhs, typeof(T).ToString()));
             }
             return ret;
         }
@@ -290,7 +289,7 @@ namespace FieryOpal.Src
         {
             get
             {
-                if(ContainsKey(key))
+                if (ContainsKey(key))
                 {
                     K value;
                     TryGetValue(key, out value);
@@ -339,7 +338,7 @@ namespace FieryOpal.Src
             return cfg;
         }
 
-}
+    }
 
     public class KeybindConfigLoader : RelectionBasedConfigLoader<KeybindConfigInfo>
     {
@@ -362,7 +361,7 @@ namespace FieryOpal.Src
             ret.ShiftDown = bool.Parse(groups[5].Value);
             ret.AltDown = bool.Parse(groups[6].Value);
 
-            if(ret.MainKey == Keys.None)
+            if (ret.MainKey == Keys.None)
             {
                 Util.Err(String.Format("Unknown key: \"{0}\"; HelpText: \"{1}\"", groups[1].Value, ret.HelpText));
             }
@@ -392,14 +391,14 @@ namespace FieryOpal.Src
 
         private static Color ParseRhs(string rhs)
         {
-            if(RGBAParserRegex.IsMatch(rhs))
+            if (RGBAParserRegex.IsMatch(rhs))
             {
                 var m = RGBAParserRegex.Match(rhs);
                 int R = 0, G = 0, B = 0, A = 255;
                 R = int.Parse(m.Groups[1].Value);
                 G = int.Parse(m.Groups[2].Value);
                 B = int.Parse(m.Groups[3].Value);
-                if(m.Groups.Count == 5 && m.Groups[4].Value.Length > 0)
+                if (m.Groups.Count == 5 && m.Groups[4].Value.Length > 0)
                 {
                     A = int.Parse(m.Groups[4].Value);
                 }

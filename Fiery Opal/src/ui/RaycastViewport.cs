@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Actors;
+﻿using FieryOpal.src.Ui;
+using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -20,7 +21,6 @@ namespace FieryOpal.Src.Ui
             public int DrawStart;
             public int DrawEnd;
             public int LineHeight;
-            public int ViewportHeight;
             public Vector2 RayDir;
             public Point RayPos;
             public Vector2 StartPos;
@@ -37,7 +37,7 @@ namespace FieryOpal.Src.Ui
             get
             {
                 var look = Following.LookingAt.ToUnit();
-                if(Vector2.DistanceSquared(look, new Vector2(0, 0)) == 2)
+                if (Vector2.DistanceSquared(look, new Vector2(0, 0)) == 2)
                 {
                     return look / 3 * AspectRatio;
                 }
@@ -62,7 +62,7 @@ namespace FieryOpal.Src.Ui
         {
             if (perpDist / ViewDistance > .4f)
             {
-                return Program.Fonts.MainFont;
+                return Nexus.Fonts.MainFont;
             }
             return thing.Spritesheet;
         }
@@ -107,7 +107,7 @@ namespace FieryOpal.Src.Ui
             for (int y = info.DrawStart; y <= info.DrawEnd; y++)
             {
                 //256 and 128 factors to avoid floats
-                int d = y * 256 - info.ViewportHeight * 128 + info.LineHeight * 128;
+                int d = y * 256 - surface.Height * 128 + info.LineHeight * 128;
                 int texY = ((d * spritesheet.Size.Y) / (info.LineHeight + 1)) / 256;
                 if (texY < 0) continue;
 
@@ -148,9 +148,9 @@ namespace FieryOpal.Src.Ui
 
             OpalTile lastTile = null;
             Color[,] floorPixels = null;
-            for (int y = info.DrawEnd; y < info.ViewportHeight; y++)
+            for (int y = info.DrawEnd; y < surface.Height; y++)
             {
-                float currentDist = info.ViewportHeight / (2f * y - info.ViewportHeight);
+                float currentDist = surface.Height / (2f * y - surface.Height);
                 if (currentDist > info.PerpWallDist) continue;
 
                 float weight = currentDist / info.PerpWallDist;
@@ -176,16 +176,16 @@ namespace FieryOpal.Src.Ui
                         floorTile.Graphics.Background
                     );
 
-                Color floorColor = Color.Lerp(floorPixels[floorTex.X, floorTex.Y], Target.SkyColor, (float)Math.Pow(((info.ViewportHeight) / 2f) / y, ViewDistance / 2));
+                Color floorColor = Color.Lerp(floorPixels[floorTex.X, floorTex.Y], Target.SkyColor, (float)Math.Pow(((surface.Height) / 2f) / y, ViewDistance / 2));
                 // Floor
                 surface.SetCell(info.Column, y, new Cell(floorColor, floorColor, ' '));
                 // Ceiling
-                surface.SetCell(info.Column, info.ViewportHeight - y - 1, new Cell(Target.SkyColor, Target.SkyColor, ' '));
+                surface.SetCell(info.Column, surface.Height - y - 1, new Cell(Target.SkyColor, Target.SkyColor, ' '));
                 lastTile = floorTile;
             }
         }
 
-        private void DrawActorSpriteVLines(SadConsole.Console surface, float[] zbuffer, int viewportWidth, int viewportHeight, Vector2 startPos)
+        private void DrawActorSpriteVLines(SadConsole.Console surface, float[] zbuffer, Vector2 startPos)
         {
             List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)startPos.X, (int)startPos.Y, (int)ViewDistance, 0)
                 .Where(a =>
@@ -201,7 +201,8 @@ namespace FieryOpal.Src.Ui
                        && (Math.Sign(a.LocalPosition.X - startPos.X) == Math.Sign(DirectionVector.X)
                        || Math.Sign(a.LocalPosition.Y - startPos.Y) == Math.Sign(DirectionVector.Y))
                 ).ToList();
-            actors_within_viewarea.Sort((a, b) => {
+            actors_within_viewarea.Sort((a, b) =>
+            {
                 var b_dist = a.LocalPosition.SquaredEuclidianDistance(startPos.ToPoint());
                 var a_dist = b.LocalPosition.SquaredEuclidianDistance(startPos.ToPoint());
                 return a_dist > b_dist ? 1 : (a_dist == b_dist ? 0 : -1);
@@ -222,19 +223,19 @@ namespace FieryOpal.Src.Ui
                 float distance_scaled = (float)actor.LocalPosition.Dist(startPos) / ViewDistance;
                 Font spritesheet = GetFontByDist(distance_scaled * ViewDistance, actor);
 
-                int spriteScreenX = (int)((viewportWidth / 2) * (1 + spriteProjection.X / spriteProjection.Y));
-                int spriteHeight = (int)(Math.Abs((int)(viewportHeight / spriteProjection.Y)) / actor.FirstPersonScale.Y);
-                int vMoveScreen = (int)(actor.FirstPersonVerticalOffset * spritesheet.Size.Y / spriteProjection.Y);
+                int spriteScreenX = (int)((surface.Width / 2) * (1 + spriteProjection.X / spriteProjection.Y));
+                int spriteHeight = (int)(Math.Abs((int)(surface.Height / spriteProjection.Y)) / actor.FirstPersonScale.Y);
+                int vMoveScreen = (int)(actor.FirstPersonVerticalOffset * spritesheet.Size.Y / spriteProjection.Y) + spriteHeight / 2;
 
                 //calculate width of the sprite
-                int spriteWidth = (int)(Math.Abs((int)(viewportHeight / (spriteProjection.Y))) / actor.FirstPersonScale.X);
+                int spriteWidth = (int)(Math.Abs((int)(surface.Height / (spriteProjection.Y))) / actor.FirstPersonScale.X);
 
                 //calculate lowest and highest pixel to fill in current stripe
                 Point drawStart = new Point(), drawEnd = new Point();
                 drawStart.X = Math.Max(-spriteWidth / 2 + spriteScreenX, 0);
-                drawStart.Y = Math.Max(-spriteHeight / 2 + viewportHeight / 2 + vMoveScreen, 0);
-                drawEnd.X = Math.Min(spriteWidth / 2 + spriteScreenX, viewportWidth - 1);
-                drawEnd.Y = Math.Min(spriteHeight / 2 + viewportHeight / 2 + vMoveScreen, viewportHeight - 1);
+                drawStart.Y = Math.Max(-spriteHeight / 2 + surface.Height / 2 + vMoveScreen, 0);
+                drawEnd.X = Math.Min(spriteWidth / 2 + spriteScreenX, surface.Width - 1);
+                drawEnd.Y = Math.Min(spriteHeight / 2 + surface.Height / 2 + vMoveScreen, surface.Height - 1);
 
                 //loop through every vertical stripe of the sprite on screen
                 if (drawStart.X >= drawEnd.X || spriteHeight == 0)
@@ -249,10 +250,10 @@ namespace FieryOpal.Src.Ui
                     //2) it's on the screen (left)
                     //3) it's on the screen (right)
                     //4) ZBuffer, with perpendicular distance
-                    int lineHeight = (int)(viewportHeight / zbuffer[stripe]);
-                    int drawStartStripe = Math.Max(-lineHeight / 2 + viewportHeight / 2, 0);
+                    int lineHeight = (int)(surface.Height / zbuffer[stripe]);
+                    int drawStartStripe = Math.Max(-lineHeight / 2 + surface.Height / 2, 0);
 
-                    if (spriteProjection.Y > 0 && stripe > 0 && stripe < viewportWidth && (spriteProjection.Y < zbuffer[stripe] || drawStart.Y < drawStartStripe))
+                    if (spriteProjection.Y > 0 && stripe > 0 && stripe < surface.Width && (spriteProjection.Y < zbuffer[stripe] || drawStart.Y < drawStartStripe))
                     {
                         // For every pixel of this stripe
                         for (int y = drawStart.Y; y < drawEnd.Y; y++)
@@ -266,7 +267,7 @@ namespace FieryOpal.Src.Ui
                                     Color.Transparent
                                 );
 
-                            int d = (y - vMoveScreen) * 256 - viewportHeight * 128 + spriteHeight * 128;
+                            int d = (y - vMoveScreen) * 256 - surface.Height * 128 + spriteHeight * 128;
                             int texY = Math.Max(((d * spritesheet.Size.Y) / spriteHeight) / 256, 0);
 
                             Color spriteColor = spritePixels[texX, texY];
@@ -281,7 +282,7 @@ namespace FieryOpal.Src.Ui
             }
         }
 
-        public override void Print(SadConsole.Console surf, Rectangle tArea, TileMemory fog = null)
+        public override void Print(SadConsole.Console surf, Rectangle viewArea, TileMemory fog = null)
         {
             // Don't waste precious cycles
             if (!Dirty) return;
@@ -294,15 +295,15 @@ namespace FieryOpal.Src.Ui
 
             // Move the ray at the center of the square instead of at the TL corner
             Vector2 startPos = Following.LocalPosition.ToVector2() + new Vector2(.5f);
-            AspectRatio = tArea.Width / (float)tArea.Height;
+            AspectRatio = surf.Width / (float)surf.Height;
 
-            float[] zbuffer = new float[tArea.Width];
-            for (int x = 0; x < tArea.Width; ++x)
+            float[] zbuffer = new float[surf.Width];
+            for (int x = 0; x < surf.Width; ++x)
             {
                 // x-coordinate in camera space
                 // A small floating point value is added to X to prevent integers
                 // from messing up floating point maths. Go figure.
-                float cameraX = 2 * (x + .001f) / (float)tArea.Width - 1;
+                float cameraX = 2 * (x + .001f) / (float)surf.Width - 1;
 
                 // Direction of this ray
                 Vector2 rayDir = new Vector2(DirectionVector.X + PlaneVector.X * cameraX, DirectionVector.Y + PlaneVector.Y * cameraX);
@@ -313,11 +314,11 @@ namespace FieryOpal.Src.Ui
                 float perpWallDist = zbuffer[x] = Raycaster.CastRay(Target, startPos, ref mapPos, rayDir, ref side, fog);
 
                 // Calculate height of line to draw on screen
-                int lineHeight = (int)(tArea.Height / perpWallDist);
+                int lineHeight = (int)(surf.Height / perpWallDist);
 
                 // Calculate lowest and highest pixel to fill in current stripe
-                int drawStart = (int)(Math.Max(-lineHeight / 2f + tArea.Height / 2f, 0));
-                int drawEnd = (int)(Math.Min(lineHeight / 2f + tArea.Height / 2f, tArea.Height - 1));
+                int drawStart = (int)(Math.Max(-lineHeight / 2f + surf.Height / 2f, 0));
+                int drawEnd = (int)(Math.Min(lineHeight / 2f + surf.Height / 2f, surf.Height - 1));
 
                 // Calculate value of wallX (where exactly the wall was hit)
                 float wallX = side
@@ -337,7 +338,6 @@ namespace FieryOpal.Src.Ui
                     RayDir = rayDir,
                     RayPos = mapPos.ToPoint(),
                     StartPos = startPos,
-                    ViewportHeight = tArea.Height
                 };
 
                 DrawFloorAndSkyVLine(surf, rcpInfo);
@@ -347,10 +347,9 @@ namespace FieryOpal.Src.Ui
             DrawActorSpriteVLines(
                 surf,
                 zbuffer,
-                tArea.Width,
-                tArea.Height,
                 startPos
             );
+
 
             Dirty = false;
         }

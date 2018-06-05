@@ -1,6 +1,5 @@
 ﻿using FieryOpal.Src.Lib;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 
@@ -66,7 +65,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         private ColoredString MakeBorder(int width)
         {
             ColoredGlyph[] glyphs = new ColoredGlyph[width];
-            var noise = Noise.Calc1D(Util.GlobalRng.Next(0, 100), width, .25f);
+            var noise = Noise.Calc1D(Util.Rng.Next(0, 100), width, .25f);
 
             for (int i = 0; i < width; ++i)
             {

@@ -1,9 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FieryOpal.Src
 {
@@ -60,7 +57,7 @@ namespace FieryOpal.Src
                     fog.Learn(new Point((int)mapPos.X, (int)mapPos.Y));
                 }
                 //Check if ray has hit a wall
-                if (t == null || t.Properties.IsBlock && !(t is DoorTile && (t as DoorTile).IsOpen))
+                if (t == null || t.Properties.IsBlock)
                 {
                     return side;
                 }
@@ -92,7 +89,7 @@ namespace FieryOpal.Src
             Vector2 deltaDist = new Vector2(Math.Abs(1 / rayDir.X), Math.Abs(1 / rayDir.Y));
             float perpWallDist;
 
-            if(fog != null)
+            if (fog != null)
             {
                 // See this position now since the ray won't
                 fog.See(position.ToPoint());

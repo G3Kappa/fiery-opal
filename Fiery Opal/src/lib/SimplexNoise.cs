@@ -12,7 +12,7 @@ namespace FieryOpal.Src.Lib
     /// </summary>
     public class Noise
     {
-        public static float[,] Calc2D(int x, int y, int width, int height, float scale, int octaves=1, float persistence=1f)
+        public static float[,] Calc2D(int x, int y, int width, int height, float scale, int octaves = 1, float persistence = 1f)
         {
             float[,] values = new float[width, height];
             for (int i = 0; i < width; i++)
@@ -20,11 +20,11 @@ namespace FieryOpal.Src.Lib
                 {
                     values[i, j] = CalcPixel2D(x + i, y + j, scale);
                     float tot_div = 1f;
-                    for(int k = 0; k < octaves - 1; ++k)
+                    for (int k = 0; k < octaves - 1; ++k)
                     {
                         float div = (float)Math.Pow(2, k + 1);
-                        values[i, j] += CalcPixel2D(x + i, y + j, (float)Math.Pow(scale, persistence * 1f / (k+1))) / div;
-                        tot_div += 1/div;
+                        values[i, j] += CalcPixel2D(x + i, y + j, (float)Math.Pow(scale, persistence * 1f / (k + 1))) / div;
+                        tot_div += 1 / div;
                     }
                     values[i, j] /= tot_div;
                     values[i, j] /= 256;

@@ -104,7 +104,7 @@ namespace FieryOpal.Src.Procedural
         {
             Name = name;
             DevelopedIndustries = new Dictionary<Industry, float>();
-            foreach(Industry key in Enum.GetValues(typeof(Industry)))
+            foreach (Industry key in Enum.GetValues(typeof(Industry)))
             {
                 DevelopedIndustries[key] = 0.0f; // 0 = undeveloped
             }

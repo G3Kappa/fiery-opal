@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 
@@ -8,14 +9,35 @@ namespace FieryOpal.Src.Actors
     {
         public Humanoid() : base()
         {
-            Graphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
-            FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
+            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Creatures["Humanoid"], Color.Transparent, '@'));
             Brain = new WanderingBrain(this);
 
             Inventory = new PersonalInventory(10, this);
+            Equipment = new PersonalEquipment((t) =>
+            {
+                switch(t)
+                {
+                    case EquipmentSlotType.Arm:
+                        return 2;
+                    case EquipmentSlotType.Hand:
+                        return 2;
+
+                    case EquipmentSlotType.Leg:
+                        return 2;
+                    case EquipmentSlotType.Foot:
+                        return 2;
+
+                    case EquipmentSlotType.Head:
+                        return 1;
+                    case EquipmentSlotType.Torso:
+                        return 1;
+
+                    default: return 0;
+                }
+            });
         }
 
-        public override float TurnPriority => 0;
+        public override float TurnPriority { get; set; } = .2f;
 
 
         public bool InteractWith(OpalActorBase actor)

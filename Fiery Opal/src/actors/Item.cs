@@ -6,16 +6,16 @@ using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src.Actors
 {
     public enum ItemCategory
     {
         Miscellaneous,
-        Potion,
         Book,
-        Armor,
-        Weapon,
+        Potion,
+        Equipment,
     }
 
     public struct ItemInfo<T>
@@ -29,16 +29,18 @@ namespace FieryOpal.Src.Actors
         public bool IsUnique;
     }
 
-
     public abstract class Item : OpalActorBase, IInteractive
     {
         public virtual ItemInfo<Item> ItemInfo { get; protected set; }
-        protected Dictionary<string, Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>>> InventoryActions { get; } = new Dictionary<string, Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>>>();
+        protected Dictionary<string, Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>, bool>> InventoryActions { get; } = new Dictionary<string, Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>, bool>>();
 
-        private void DropFrom(IInventoryHolder holder)
+        public IInventoryHolder Owner { get; private set; } = null;
+
+        protected virtual void DropFrom(IInventoryHolder holder)
         {
             holder.Inventory.Retrieve(this);
             ChangeLocalMap(holder.Map, holder.Map.FirstAccessibleTileAround(holder.LocalPosition));
+            Owner = null;
         }
 
         public Item(ColoredString name, ItemCategory category = ItemCategory.Miscellaneous)
@@ -58,13 +60,24 @@ namespace FieryOpal.Src.Actors
         public bool RegisterInventoryAction(string action, Action<IInventoryHolder> act, Keybind.KeybindInfo shortcut)
         {
             if (InventoryActions.ContainsKey(action)) return false;
-            InventoryActions[action] = new Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>>(shortcut, act);
+            InventoryActions[action] = new Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>, bool>(shortcut, act, true);
+            return true;
+        }
+
+        public bool ToggleInventoryAction(string action, bool status)
+        {
+            if (!InventoryActions.ContainsKey(action)) return false;
+            InventoryActions[action] = new Tuple<Keybind.KeybindInfo, Action<IInventoryHolder>, bool>(
+                InventoryActions[action].Item1,
+                InventoryActions[action].Item2,
+                status
+            );
             return true;
         }
 
         public bool CallInventoryAction(string action, IInventoryHolder callee)
         {
-            if (!InventoryActions.ContainsKey(action)) return false;
+            if (!InventoryActions.ContainsKey(action) || !InventoryActions[action].Item3) return false;
             InventoryActions[action].Item2(callee);
             return true;
         }
@@ -77,7 +90,7 @@ namespace FieryOpal.Src.Actors
 
         public IEnumerable<string> EnumerateInventoryActions()
         {
-            foreach (var key in InventoryActions.Keys) yield return key;
+            foreach (var kvp in InventoryActions.Where(kvp => kvp.Value.Item3)) yield return kvp.Key;
         }
 
         public virtual bool UnregisterInventoryAction(string action)
@@ -98,69 +111,13 @@ namespace FieryOpal.Src.Actors
             if (a == null) return false;
             bool ret = a.Inventory.Store(this);
             if (ret) ChangeLocalMap(null, new Point());
+            Owner = a;
             return ret;
         }
-    }
 
-    public delegate void ItemContainerContentsChanged(Item i);
-
-    public class ItemContainer<T>
-        where T : Item
-    {
-        protected Dictionary<Guid, T> Contents;
-        protected int capacity = 1;
-        public int Capacity => capacity;
-
-        public int Count { get; private set; } = 0;
-
-        public event ItemContainerContentsChanged ItemRetrieved;
-        public event ItemContainerContentsChanged ItemStored;
-
-        public virtual bool IsRetrievable(T item)
+        public void Own(IInventoryHolder newOwner)
         {
-            return Contents.ContainsKey(item.Handle);
-        }
-
-        public ItemContainer(int cap)
-        {
-            Contents = new Dictionary<Guid, T>();
-            capacity = cap;
-        }
-
-        public virtual bool Retrieve(T item)
-        {
-            if (!IsRetrievable(item)) return false;
-            Contents.Remove(item.Handle);
-            Count--;
-            ItemRetrieved?.Invoke(item);
-            return true;
-        }
-
-        public virtual bool Store(T item)
-        {
-            if (Contents.Count >= Capacity || Contents.ContainsKey(item.Handle)) return false;
-            Contents[item.Handle] = item;
-            Count++;
-            ItemStored?.Invoke(item);
-            return true;
-        }
-
-        public IEnumerable<T> GetContents()
-        {
-            foreach (var value in Contents.Values)
-            {
-                yield return value;
-            }
-        }
-    }
-
-    public class PersonalInventory : ItemContainer<Item>
-    {
-        public IInventoryHolder Owner;
-
-        public PersonalInventory(int cap, IInventoryHolder person) : base(cap)
-        {
-            Owner = person;
+            Owner = newOwner;
         }
     }
 
@@ -213,7 +170,7 @@ namespace FieryOpal.Src.Actors
             WorldMapViewport vwp = new WorldMapViewport(world, new Rectangle(0, 0, world.Width, world.Height));
             scroll.Viewport = vwp;
             OpalDialog.LendKeyboardFocus(scroll);
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "World Map: Warp to location"), (i) => 
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "World Map: Warp to location"), (i) =>
             {
                 DateTime now = DateTime.Now;
                 var newMap = holder.Map.ParentRegion.ParentWorld.RegionAt(vwp.CursorPosition.X, vwp.CursorPosition.Y).LocalMap;
@@ -224,10 +181,10 @@ namespace FieryOpal.Src.Actors
 
             scroll.MoveCursor(holder.Map.ParentRegion.WorldPosition.X, holder.Map.ParentRegion.WorldPosition.Y);
             scroll.Viewport.Markers.Add(
-                holder.Map.ParentRegion.WorldPosition, 
+                holder.Map.ParentRegion.WorldPosition,
                 new Cell(
-                    Palette.Ui["DefaultForeground"], 
-                    Palette.Ui["DefaultBackground"], 
+                    Palette.Ui["DefaultForeground"],
+                    Palette.Ui["DefaultBackground"],
                     '@'
                 )
             );

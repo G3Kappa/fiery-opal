@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework.Input;
 
 namespace FieryOpal.Src.Ui.Dialogs
 {
@@ -29,7 +29,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             get => bookmarked_page;
             set
             {
-                if(bookmarked_page == value)
+                if (bookmarked_page == value)
                 {
                     bookmarked_page = -1;
                 }
@@ -135,10 +135,10 @@ namespace FieryOpal.Src.Ui.Dialogs
                 {
                     glyph = cornerGlyph;
                 }
-                else if (x == w / 2)  glyph = downwardsTGlyph;
+                else if (x == w / 2) glyph = downwardsTGlyph;
                 else glyph = hBorderGlyph;
 
-                if(x <= 1 || x >= w - 2)
+                if (x <= 1 || x >= w - 2)
                 {
                     fg = DefaultPalette["CoverCornerForeground"];
                     bg = DefaultPalette["CoverCornerBackground"];
@@ -168,7 +168,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
                     if (glyph == doubleDownwardsTGlyph) glyph = doubleUpwardsTGlyph;
                     else if (glyph == dblTLCorner) glyph = dblBLCorner;
-                    else if(glyph == dblTRCorner) glyph = dblBRCorner;
+                    else if (glyph == dblTRCorner) glyph = dblBRCorner;
 
                     Print(x, h - 2, ((char)glyph).ToString(), fg, bg);
                 }
@@ -183,7 +183,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         SadConsole.Console LeftPage, RightPage;
 
-        public BookDialog() 
+        public BookDialog()
             : base()
         {
             Borderless = true;
@@ -194,12 +194,12 @@ namespace FieryOpal.Src.Ui.Dialogs
             LeftPage = new SadConsole.Console((Width - 11) / 2, Height - 8);
             LeftPage.Position = new Point(5, 5);
             RightPage = new SadConsole.Console((Width - 11) / 2, Height - 8);
-            RightPage.Position = new Point(8 + (Width - 11) / 2 + (1- Height % 2), 5);
+            RightPage.Position = new Point(8 + (Width - 11) / 2 + (1 - Height % 2), 5);
         }
 
         public override void Draw(TimeSpan delta)
         {
-            if(Dirty)
+            if (Dirty)
             {
                 Clear();
                 PrintFrame(Width, Height, BookmarkedPage == CurrentPage);
@@ -227,7 +227,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
             var page_size = LeftPage.Width * (LeftPage.Height - 2);
             var len = 0;
-            while(len < Text.Length)
+            while (len < Text.Length)
             {
                 Pages.Add(Text.Substring(len, Math.Min(page_size, Text.Length - len)));
                 len += page_size;
@@ -268,7 +268,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             RightPage.Fill(DefaultPalette["CurrentPagesForeground"], DefaultPalette["CurrentPagesBackground"], ' ');
 
             Print(3, LeftPage.Position.Y + LeftPage.Height - 2, l_pg);
-            if(CurrentPage + 2 <= Pages.Count) { 
+            if (CurrentPage + 2 <= Pages.Count)
+            {
                 Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, r_pg);
             }
             else

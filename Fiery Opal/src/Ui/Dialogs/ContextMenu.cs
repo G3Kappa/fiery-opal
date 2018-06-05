@@ -17,8 +17,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             Borderless = true;
             Actions = new List<Tuple<string, Action<T>, Keybind.KeybindInfo>>();
 
-            textSurface.DefaultBackground = 
-                Theme.FillStyle.Background = 
+            textSurface.DefaultBackground =
+                Theme.FillStyle.Background =
                 DefaultPalette["ShadeDark"];
             Clear();
         }
@@ -27,7 +27,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         {
             base.BindKeys();
             if (!BindActions) return;
-            foreach(var a in Actions)
+            foreach (var a in Actions)
             {
                 Keybind.BindKey(a.Item3, (i) =>
                 {

@@ -1,7 +1,7 @@
-﻿using FieryOpal.src.Procedural.Terrain.Dungeons;
-using FieryOpal.Src.Lib;
+﻿using FieryOpal.Src.Lib;
 using FieryOpal.Src.Procedural.Terrain;
 using FieryOpal.Src.Procedural.Terrain.Biomes;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using FieryOpal.Src.Procedural.Worldgen;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
@@ -82,7 +82,7 @@ namespace FieryOpal.Src.Procedural
             BiomeType baseType = BiomeTable[(int)AverageHumidity, (int)AverageTemperature];
             if (baseType == BiomeType.Ice) return baseType;
 
-            switch(Elevation)
+            switch (Elevation)
             {
                 case BiomeElevationType.WayBelowSeaLevel:
                     return BiomeType.Ocean;
@@ -91,8 +91,9 @@ namespace FieryOpal.Src.Procedural
                 case BiomeElevationType.AtSeaLevel:
                     return baseType;
                 case BiomeElevationType.AboveSeaLevel:
-                case BiomeElevationType.WayAboveSeaLevel:
                     return BiomeType.Mountain;
+                case BiomeElevationType.WayAboveSeaLevel:
+                    return BiomeType.Peak;
                 default:
                     return BiomeType.Ice;
             }
@@ -117,7 +118,7 @@ namespace FieryOpal.Src.Procedural
         public override string ToString()
         {
             string fmt = "BIOME: {0} | HEAT: {1} | MOISTURE: {2} | ELEVATION: {3}";
-            return String.Format(fmt, 
+            return String.Format(fmt,
                 _Name(Type), _Name(AverageTemperature),
                 _Name(AverageHumidity), _Name(Elevation)
             );
@@ -145,7 +146,7 @@ namespace FieryOpal.Src.Procedural
 
         private static char GetGlyph(BiomeType biome)
         {
-            switch(biome)
+            switch (biome)
             {
                 case BiomeType.Desert:
                     return (char)239;
@@ -208,14 +209,15 @@ namespace FieryOpal.Src.Procedural
         public Cell DefaultGraphics
         {
             get => new Cell(
-                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Foreground"], 
-                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Background"], 
+                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Foreground"],
+                Palette.Terrain["Biome_" + Biome.Type.ToString() + "Background"],
                 GetGlyph(Biome.Type)
             );
         }
 
         private Cell _graphics = null;
-        public Cell Graphics {
+        public Cell Graphics
+        {
             get { return _graphics ?? DefaultGraphics; }
             set { _graphics = value; }
         }
@@ -281,7 +283,7 @@ namespace FieryOpal.Src.Procedural
 
         private IEnumerable<WorldFeatureGenerator> GetWFGs()
         {
-            int n_rivers = Util.GlobalRng.Next((int)(Width * Height * .006f));
+            int n_rivers = Util.Rng.Next((int)(Width * Height * .006f));
             for (int i = 0; i < n_rivers; ++i)
                 yield return new RiverFeatureGenerator(
                     (b) => b.AverageTemperature >= BiomeHeatType.Cold
@@ -289,15 +291,15 @@ namespace FieryOpal.Src.Procedural
                     : OpalTile.GetRefTile<FrozenWaterSkeleton>()
                 );
 
-            int n_colonies = Util.GlobalRng.Next((int)(Width * Height * .0028f));
+            int n_colonies = Util.Rng.Next((int)(Width * Height * .0028f));
             for (int i = 0; i < n_colonies; ++i)
                 yield return new ColonyFeatureGenerator();
 
-            int n_villages = Util.GlobalRng.Next((int)(Width * Height * .0035f));
+            int n_villages = Util.Rng.Next((int)(Width * Height * .0035f));
             for (int i = 0; i < n_villages; ++i)
                 yield return new VillageFeatureGenerator();
 
-            int n_dungeons = Util.GlobalRng.Next((int)(Width * Height * .0015f));
+            int n_dungeons = Util.Rng.Next((int)(Width * Height * .0015f));
             for (int i = 0; i < n_dungeons; ++i)
                 yield return new DungeonFeatureGenerator();
         }
@@ -305,19 +307,19 @@ namespace FieryOpal.Src.Procedural
         public void Generate()
         {
             var fElevMap = GenerateElevationMap();
-            Apply(ref fElevMap, (x, y, f) => f);
+            Apply(ref fElevMap, (x, y, f) => (float)Math.Pow(f, .9f));
             var fTempMap = GenerateTemperatureMap();
             Apply(ref fTempMap, (x, y, f) => .35f * f + .65f * (.99f - Math.Abs(y - .5f) * 2));
             var fRainMap = GenerateHumidityMap();
-            Apply(ref fRainMap, (x, y, f) => 
-                .25f * f 
-                + .5f * (1- 2 * Math.Max(0, fElevMap[(int)(x * fElevMap.GetLength(0)), (int)(y * fElevMap.GetLength(1))] - .5f))
+            Apply(ref fRainMap, (x, y, f) =>
+                .25f * f
+                + .5f * (1 - 2 * Math.Max(0, fElevMap[(int)(x * fElevMap.GetLength(0)), (int)(y * fElevMap.GetLength(1))] - .5f))
                 + .25f * (1 - 1.75f * Math.Max(0, fTempMap[(int)(x * fTempMap.GetLength(0)), (int)(y * fTempMap.GetLength(1))] - .25f))
             );
 
             var tempMap = CastMap<BiomeHeatType>(fTempMap, (x, y, f) => f);
             var rainMap = CastMap<BiomeMoistureType>(fRainMap, (x, y, f) => f);
-            var elevMap = CastMap<BiomeElevationType>(fElevMap, (x, y, f) => Math.Max(0, f - f * f * .33f));
+            var elevMap = CastMap<BiomeElevationType>(fElevMap, (x, y, f) => f);
 
             BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Ocean);
             BiomeTerrainGenerator.RegisterType<OceanTerrainGenerator>(BiomeType.Sea);
@@ -336,7 +338,7 @@ namespace FieryOpal.Src.Procedural
 
             for (int x = 0; x < Width; ++x)
             {
-                for(int y = 0; y < Height; ++y)
+                for (int y = 0; y < Height; ++y)
                 {
                     var tile = Regions[x, y] = new WorldTile(this, new Point(x, y));
                     tile.Biome = new BiomeInfo(tempMap[x, y], rainMap[x, y], elevMap[x, y]);
@@ -350,7 +352,7 @@ namespace FieryOpal.Src.Procedural
             foreach (var g in gens)
             {
                 regions[g] = new List<WorldTile>();
-                foreach(var t in g.GetMarkedRegions(this))
+                foreach (var t in g.GetMarkedRegions(this))
                 {
                     var r = RegionAt(t.X, t.Y);
 
@@ -361,7 +363,7 @@ namespace FieryOpal.Src.Procedural
 
             foreach (var t in regions)
             {
-                foreach(var r in t.Value)
+                foreach (var r in t.Value)
                 {
                     r.Graphics = t.Key.OverrideGraphics(r) ?? r.Graphics;
                 }
@@ -371,8 +373,8 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateTemperatureMap()
         {
             return Noise.Calc2D(
-                Util.GlobalRng.Next(1000),
-                Util.GlobalRng.Next(1000),
+                Util.Rng.Next(1000),
+                Util.Rng.Next(1000),
                 Width,
                 Height,
                 .035f,
@@ -383,8 +385,8 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateHumidityMap()
         {
             return Noise.Calc2D(
-                Util.GlobalRng.Next(1000),
-                Util.GlobalRng.Next(1000),
+                Util.Rng.Next(1000),
+                Util.Rng.Next(1000),
                 Width,
                 Height,
                 .015f,
@@ -395,13 +397,13 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateElevationMap()
         {
             return Noise.Calc2D(
-                Util.GlobalRng.Next(1000),
-                Util.GlobalRng.Next(1000),
+                Util.Rng.Next(1000),
+                Util.Rng.Next(1000),
                 Width,
                 Height,
                 .012f,
-                5,
-                1f);
+                7,
+                .999f);
         }
 
         private void Apply(ref float[,] map, Func<float, float, float, float> f)

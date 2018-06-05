@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework.Input;
-using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Dialogs;
+using System;
+using System.Collections.Generic;
 
 namespace FieryOpal.Src
 {
@@ -96,7 +95,7 @@ namespace FieryOpal.Src
 
         public static bool UnbindKey(KeybindInfo kb)
         {
-            if(CurrentDelegates.ContainsKey(kb))
+            if (CurrentDelegates.ContainsKey(kb))
             {
                 CurrentDelegates.Remove(kb);
                 return true;
@@ -131,9 +130,9 @@ namespace FieryOpal.Src
 
         public static void Update()
         {
-            bool ctrl  = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftControl) || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightControl);
-            bool shift = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftShift)   || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightShift);
-            bool alt   = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftAlt)     || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightAlt);
+            bool ctrl = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftControl) || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightControl);
+            bool shift = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftShift) || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightShift);
+            bool alt = SadConsole.Global.KeyboardState.IsKeyDown(Keys.LeftAlt) || SadConsole.Global.KeyboardState.IsKeyDown(Keys.RightAlt);
 
             foreach (var k in SadConsole.Global.KeyboardState.KeysDown)
             {

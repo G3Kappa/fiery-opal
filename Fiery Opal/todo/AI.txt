@@ -1,0 +1,37 @@
+﻿ON ARTIFICIAL INTELLIGENCE
+
+In Fiery Opal, the player doesn't learn to exploit the game. Instead, the game learns to exploit the player.
+Artificial Intelligence is handled by neural networks, such that creatures may adapt to their environment.
+
+Since having a simulated brain for every single creature would obviously pose serious scaling problems, the "Overmind" approach is taken instead.
+
+THE OVERMIND
+Each species, or particular class of creature has its own hivemind, or "Overmind".
+Essentially, this works like system virtualization: each creature borrows resources and processing power from the same machine,
+but this particular machine learns too. The architecture originates from the following diagram:
+
+SENSE 1 (Sight) >>────────•
+SENSE 2 (Smell) >>──────• │
+SENSE 3 (Touch) >>────• │ │
+                      │ │ │
+                      │ │ │
+                      │ │ │
+                    •─v─v─v──────•      
+                    │  SENSORY   >>────•
+                    │ AGGREGATOR │     │
+                    •────────────•     │
+                                       │
+                                       │
+                                       │
+                                  •────v───────•
+                                  │  DECISION  │
+                                  │   MAKER    >>─•
+                                  •────^───────•  │
+                                       │          │
+                                       │          │
+                                       │          │
+                                       │     •────v───────•
+                                       │     │  DECISION  │
+                            (Backprop) •────<<  HANDLER   │
+    www                                         •────────────•
+qqee

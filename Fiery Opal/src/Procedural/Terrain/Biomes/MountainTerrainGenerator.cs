@@ -1,6 +1,4 @@
-﻿using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using SadConsole;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
@@ -12,7 +10,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         {
             base.Generate(m);
 
-            Tiles.Iter((s, x, y, t) =>
+            Workspace.Iter((s, x, y, t) =>
             {
                 s.SetTile(x, y, OpalTile.GetRefTile<DirtSkeleton>());
                 return false;

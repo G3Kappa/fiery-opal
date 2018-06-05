@@ -1,19 +1,12 @@
-﻿using FieryOpal.Src.Lib;
-using FieryOpal.Src.Actors;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Lib;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
-using SadConsole;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    public class DryGrassSkeleton : GrassSkeleton
-    {
-        public override string DefaultName => "Dry Grass";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["DryGrassForeground"], Palette.Terrain["DryGrassBackground"], ';');
-    }
-
     public class UmbrellaThornAcacia : Plant
     {
         public UmbrellaThornAcacia()
@@ -61,10 +54,10 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             base.Generate(m);
 
             var trees = PoissonDiskSampler.SampleRectangle(new Vector2(0), new Vector2(m.Width, m.Height), 10f).Select(v => v.ToPoint());
-            Tiles.Iter((s, x, y, t) =>
+            Workspace.Iter((s, x, y, t) =>
             {
                 s.SetTile(x, y, OpalTile.GetRefTile<DryGrassSkeleton>());
-                if(trees.Contains(new Point(x, y)))
+                if (trees.Contains(new Point(x, y)))
                 {
                     var tree = new UmbrellaThornAcacia();
                     tree.ChangeLocalMap(s, new Point(x, y));

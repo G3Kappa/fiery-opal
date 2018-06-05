@@ -10,11 +10,13 @@ namespace FieryOpal.Src.Ui.Windows
         public int Width { get; }
         public int Height { get; }
 
-        public virtual void Update(GameTime gameTime) {
+        public virtual void Update(GameTime gameTime)
+        {
             HandleInput();
             InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(w => { w.Update(gameTime.ElapsedGameTime); return "Update"; }));
         }
-        public virtual void Draw(GameTime gameTime) {
+        public virtual void Draw(GameTime gameTime)
+        {
             InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(w => { w.Draw(gameTime.ElapsedGameTime); return "Draw"; }));
         }
 

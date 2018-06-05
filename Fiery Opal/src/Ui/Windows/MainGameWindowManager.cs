@@ -1,8 +1,6 @@
 ﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using SadConsole;
-using System.Text.RegularExpressions;
 
 namespace FieryOpal.Src.Ui.Windows
 {
@@ -19,7 +17,7 @@ namespace FieryOpal.Src.Ui.Windows
             // FPVFont is smaller than the main font, so we need to multiply
             // the size of the raycast window by the correct amount as to fill
             // all the available space.
-            Vector2 font_ratio = Program.Fonts.MainFont.Size.ToVector2() / Program.Fonts.FirstPersonViewportFont.Size.ToVector2();
+            Vector2 font_ratio = Nexus.Fonts.MainFont.Size.ToVector2() / Nexus.Fonts.FirstPersonViewportFont.Size.ToVector2();
 
             // The layout is defined in the [0, 1] range.
             Vector2 tdPos = new Vector2(0, 0f);
@@ -49,7 +47,7 @@ namespace FieryOpal.Src.Ui.Windows
                 (int)(fpSize.X * w), (int)(fpSize.Y * h),
                 g,
                 raycastViewport,
-                Program.Fonts.FirstPersonViewportFont
+                Nexus.Fonts.FirstPersonViewportFont
             );
             FirstPersonWindow.Position = new Point((int)(fpPos.X * w), (int)(fpPos.Y * h));
             RegisterWindow(FirstPersonWindow);
@@ -68,7 +66,7 @@ namespace FieryOpal.Src.Ui.Windows
 
             LogWindow = new OpalLogWindow((int)(logSize.X * w), (int)(logSize.Y * h));
             LogWindow.Position = new Point((int)(logPos.X * w), (int)(logPos.Y * h));
-            LogWindow.LoadSuppressionRules(Program.InitInfo);
+            LogWindow.LoadSuppressionRules(Nexus.InitInfo);
             RegisterWindow(LogWindow);
             // So that this window can receive logs from anywhere
             Util.GlobalLogPipeline.Subscribe(LogWindow);
@@ -76,20 +74,21 @@ namespace FieryOpal.Src.Ui.Windows
 
         public MainGameWindowManager(int w, int h, OpalGame g) : base(w, h)
         {
-            
+
             Game = g;
 
             CreateLayout(w, h, g);
 
-            PlayerControlledAI player_brain = new PlayerControlledAI(Game.Player, Program.Keys.GetPlayerKeybinds());
+            PlayerControlledAI player_brain = new PlayerControlledAI(Game.Player, Nexus.Keys.GetPlayerKeybinds());
             player_brain.InternalMessagePipeline.Subscribe(Game);
             player_brain.BindKeys();
             Game.Player.Brain = player_brain;
 
-           // CTRL+F1: Log window toggles debug mode. If compiling a debug assembly, DBG: messages can be hidden and shown at will.
-           // Under release mode, DBG: messages will not be logged at all. It is still possible to enable debug logging, but it will
-           // only log debug messages for as long as debug logging is enabled, and discard anything else.
-           Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, "Toggle debug logging", ctrl: true), (info) => {
+            // CTRL+F1: Log window toggles debug mode. If compiling a debug assembly, DBG: messages can be hidden and shown at will.
+            // Under release mode, DBG: messages will not be logged at all. It is still possible to enable debug logging, but it will
+            // only log debug messages for as long as debug logging is enabled, and discard anything else.
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F1, Keybind.KeypressState.Press, "Toggle debug logging", ctrl: true), (info) =>
+            {
                 LogWindow.DebugMode = !LogWindow.DebugMode;
                 LogWindow.Log(
                     ("--" + (LogWindow.DebugMode ? "Enabled " : "Disabled") + " debug logging.").ToColoredString(Palette.Ui["DebugMessage"]),

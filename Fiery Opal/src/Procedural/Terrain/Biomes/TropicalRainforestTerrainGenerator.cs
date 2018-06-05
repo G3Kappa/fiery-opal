@@ -1,17 +1,7 @@
-﻿using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using SadConsole;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    // Terrain types: moss, mud, rock, grass
-
-    public class MossSkeleton : DirtSkeleton
-    {
-        public override string DefaultName => "Moss Ground";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["MossGroundForeground"], Palette.Terrain["MossGroundBackground"], 177);
-    }
-
     public class TropicalRainforestTerrainGenerator : BiomeTerrainGenerator
     {
         protected TropicalRainforestTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
@@ -20,9 +10,9 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         {
             base.Generate(m);
 
-            Tiles.Iter((s, x, y, t) =>
+            Workspace.Iter((s, x, y, t) =>
             {
-                s.SetTile(x, y, OpalTile.GetRefTile<MossSkeleton>());
+                s.SetTile(x, y, OpalTile.GetRefTile<MossFloorSkeleton>());
                 return false;
             });
         }

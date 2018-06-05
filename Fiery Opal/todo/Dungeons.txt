@@ -1,0 +1,65 @@
+﻿Skyrim-Style Overworld Dungeons
+	- Mostly caves, sometimes decorated or made into proper fortresses and temples.
+
+	TERRAIN
+	- Long tunnels that mostly wind around one path
+	- Tunnels may be blocked by mechanical gates that open after completing a puzzle
+	- Some areas might contain traps
+	- Stairs to next floor are at the end of the path
+	- Progression is linear, each floor and its puzzles are self-contained
+	- Large naturally shaped rooms, usually furnished according to a theme
+	- Secret areas accessible by unlocking a mechanism (may require item found elsewhere in the world)
+	- Generic loot is mostly from small chests, bags and corpses
+	- End area contains a powerful (lich?) boss and awesome rewards, usually unobtainable otherwise (powers?)
+
+	PUZZLES
+	- Three Pedestals: The player will face a closed gate and three pedestals will be the dominant element of the room.
+	Each pedestal will display a symbol and will rotate upon interaction, changing the displayed symbol.
+	A lever will be placed in front of the pedestals and, when pulled, if the three pedestals match a pre-defined pattern, the gate will open.
+	If the pedestals don't match the pattern, a trap may be triggered and potentially harm the player.
+	The player may obtain clues about this puzzle in two ways: by reading books and notes scattered around the previously explored areas,
+	or by looking for etchings on the walls (which are only visible in first person mode).
+
+	- Weird Keyhole: The player will face a closed gate with a weirdly shaped keyhole in it.
+	The key is a small artifact that may be held by a particular enemy or hidden in a safe location.
+	Either way, it will always be within the player's reach, and within the (so-far explored) dungeon.
+	This puzzle doesn't require much clue hunting, but it may prompt the player to explore and backtrack more.
+	Furthermore, if the key is held by a strong enemy, it may force the player to fight it or leave the dungeon instead of simply trying to ignore or kite it.
+
+	- Three Levers: This puzzle is a classic "perform the sequence" puzzle.
+	Again, a gate will be blocking the way. This time, three levers will be
+	placed on a nearby wall. The player will have to pull them in a particular order
+	and the gate will open. This puzzle is otherwise very similar to the three-pedestals puzzle.
+
+	- Pressure Plate Path: The player will enter a large room, each tile of the floor being a pressure plate.
+	Most pressure plates will trigger a trap that directly injures the player, but there exists a path through which one
+	can pass unscathed. Clues regarding this puzzle may be written in a cryptic manner as to mislead the player into the wrong path.
+	(ref. We Were Here)
+
+	- Mirrors and Lasers: The player will enter a large room. There will be a lever that, when pulled,
+	will activate a sizzling laser. This laser can be redirected by moving (by bumping into) and rotating (by interacting with)
+	some pedestals with mirrors on top of them. Moving into the laser will harm the player, so it's best to power it off when moving the pedestals.
+	When the laser finally hits a specific wall tile, the puzzle will be completed and the gate will open.
+
+	SECRET PUZZLES
+	Secret puzzles are not designed to be unlocked in a linear fashion, some even requiring the player to leave the dungeon and backtrack.
+
+	- Passphrase Puzzle: A gate may ask for a pass phrase, and the player will have to type in an answer.
+	In order to solve this puzzle, the player must look around for clues about this specific dungeon.
+	Some information sources are books, gossip and journals taken from other explorers.
+	Once they know the passphrase, they'll be able to return to the gate and open it.
+
+	ENEMIES
+	Enemies depend on the theme of the dungeon.
+
+	- Cultists: Some cultists have made this cave their meeting place. The upper levels will contain lower-level cultists,
+	while the lower levels will contain strong foes capable of mighty invocations and sorcery.
+	The final boss is nothing less than a hellish fiend summoned from another dimension.
+
+	- Bandits: Some bandits have made this cave their refuge. The upper levels will contain the newer recruits,
+	while the lower levels will contain battle-worn mercenaries and sneaky thieves.
+	The final boss is a gang of strong bandits fought inside an arena-like environment that connects to a vault of stolen and pillaged goods.
+
+	- Beasts: Time has worn this place down, breaking some of its inner machinations. Beasts readily settled in, making it their lair.
+	The upper levels will contain beasts such as bats, rats, foxes and moles, while the lower levels will be home to much less mundane creatures.
+	The final boss is a dragon who has settled in the deepest reaches of the cave and guards a vault full of gold and riches.

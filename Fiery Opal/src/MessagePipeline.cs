@@ -1,5 +1,4 @@
-﻿using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Windows;
+﻿using FieryOpal.Src.Ui.Windows;
 using SadConsole;
 using System;
 using System.Collections.Generic;
@@ -50,9 +49,10 @@ namespace FieryOpal.Src
 
         public static IEnumerable<Guid> GetSubscribedPipelines(Guid window_handle)
         {
-            foreach(MessagePipeline<T> mp in Pipelines.Values)
+            foreach (MessagePipeline<T> mp in Pipelines.Values)
             {
-                if(mp.Subscribers.ContainsKey(window_handle)) {
+                if (mp.Subscribers.ContainsKey(window_handle))
+                {
                     yield return mp.Handle;
                 }
             }
@@ -87,7 +87,7 @@ namespace FieryOpal.Src
 
         public void Broadcast(T sender, Func<T, string> action)
         {
-            foreach(IPipelineSubscriber<T> sub in Subscribers.Values)
+            foreach (IPipelineSubscriber<T> sub in Subscribers.Values)
             {
                 Guid from = sender == null ? Guid.Empty : sender.Handle;
                 sub.ReceiveMessage(Handle, from, action, true);
@@ -139,7 +139,7 @@ namespace FieryOpal.Src
         static Queue<Tuple<ColoredString, bool>> logQueue = new Queue<Tuple<ColoredString, bool>>();
         public static void BroadcastLogMessage(this MessagePipeline<OpalConsoleWindow> self, OpalConsoleWindow sender, ColoredString msg, bool debug)
         {
-            if(self.SubscriberCount > 0)
+            if (self.SubscriberCount > 0)
             {
                 while (logQueue.Count > 0)
                 {

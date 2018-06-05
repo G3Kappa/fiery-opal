@@ -15,10 +15,10 @@ namespace FieryOpal.Src
         {
             if (xy)
             {
-                return new Point(Util.GlobalRng.Next(3) - 1, Util.GlobalRng.Next(3) - 1);
+                return new Point(Util.Rng.Next(3) - 1, Util.Rng.Next(3) - 1);
             }
-            bool x = Util.GlobalRng.NextDouble() < .5f;
-            return new Point(x ? Util.GlobalRng.Next(3) - 1 : 0, !x ? Util.GlobalRng.Next(3) - 1 : 0);
+            bool x = Util.Rng.NextDouble() < .5f;
+            return new Point(x ? Util.Rng.Next(3) - 1 : 0, !x ? Util.Rng.Next(3) - 1 : 0);
         }
 
         public static Vector2 Orthogonal(this Vector2 v)
@@ -63,9 +63,9 @@ namespace FieryOpal.Src
 
         public static IEnumerable<Point> Disc(Point p, int r)
         {
-            for(int x = -r; x < r; ++x)
+            for (int x = -r; x < r; ++x)
             {
-                for(int y = -r; y < r; ++y)
+                for (int y = -r; y < r; ++y)
                 {
                     Point q = new Point(x + p.X, y + p.Y);
                     if (q.SquaredEuclidianDistance(p) <= r * r)
@@ -79,7 +79,7 @@ namespace FieryOpal.Src
         public static IEnumerable<Point> CubicBezier(Point p1, Point p2, Point p3, Point p4, int thickness = 1, int n = 20)
         {
             List<Point> pts = new List<Point>();
-            for(int i = 0; i <= n; ++i)
+            for (int i = 0; i <= n; ++i)
             {
                 double t = (double)i / n;
                 double a = Math.Pow(1 - t, 3);
@@ -95,7 +95,7 @@ namespace FieryOpal.Src
             }
             for (int i = 0; i < n; ++i)
             {
-                foreach(Point p in BresenhamLine(pts[i], pts[i+1], thickness))
+                foreach (Point p in BresenhamLine(pts[i], pts[i + 1], thickness))
                     yield return p;
             }
 
@@ -116,12 +116,12 @@ namespace FieryOpal.Src
         public static IEnumerable<Point> Displace(IEnumerable<Point> list, int noiseW, int noiseH, float noiseS, float amplitude)
         {
             float[,] noise = Lib.Noise.Calc2D(0, 0, noiseW, noiseH, noiseS);
-            foreach(Point p in list)
+            foreach (Point p in list)
             {
                 float n = noise[p.X % noiseW, p.Y % noiseH];
-                yield return p + 
+                yield return p +
                     new Point(
-                        (int)(Math.Cos(n * 2 * Math.PI - Math.PI) * amplitude), 
+                        (int)(Math.Cos(n * 2 * Math.PI - Math.PI) * amplitude),
                         (int)(Math.Sin(n * 2 * Math.PI - Math.PI) * amplitude)
                     );
             }
@@ -201,5 +201,14 @@ namespace FieryOpal.Src
             return (q - p) * (q - p);
         }
 
+        public static Point RotateCW(this Point p)
+        {
+            return new Point(p.Y, -p.X);
+        }
+
+        public static Point RotateCCW(this Point p)
+        {
+            return new Point(-p.Y, p.X);
+        }
     }
 }

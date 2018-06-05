@@ -45,7 +45,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             if (selected_stuff == null) return null;
 
             var options = selected_stuff.EnumerateInventoryActions();
-            foreach(var opt in options)
+            foreach (var opt in options)
             {
                 var key = selected_stuff.GetInventoryActionShortcut(opt);
                 context_menu.AddAction(opt, (i) => { i.CallInventoryAction(opt, Inventory.Owner); }, key);
@@ -299,7 +299,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             PrintFooter();
             PrintSlots();
 
-            if(Inventory != null) PrintItemsAndScrollbar();
+            if (Inventory != null) PrintItemsAndScrollbar();
 
             Dirty = false;
         }

@@ -18,7 +18,7 @@ namespace FieryOpal.Src.Ui.Windows
 
         public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(width - 2, height - 2)
         {
-            TextSurface.Font = f ?? Program.Fonts.MainFont;
+            TextSurface.Font = f ?? Nexus.Fonts.MainFont;
 
             CaptionSurface = new BasicSurface(caption.Length, 1, TextSurface.Font);
             new SurfaceEditor(CaptionSurface).Print(0, 0, caption.ToColoredString(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]));
@@ -45,9 +45,9 @@ namespace FieryOpal.Src.Ui.Windows
 
             Theme = new SadConsole.Themes.WindowTheme()
             {
-                 FillStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
-                 BorderStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
-                 TitleStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
+                FillStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
+                BorderStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
+                TitleStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]),
             };
 
             Redraw();
@@ -73,7 +73,7 @@ namespace FieryOpal.Src.Ui.Windows
 
         public void VPrint(int x, int y, ColoredString s)
         {
-            for(int j = 0; j < s.Count; ++j)
+            for (int j = 0; j < s.Count; ++j)
             {
                 Print(x, y + j, s.SubString(j, 1));
             }

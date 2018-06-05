@@ -1,11 +1,7 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Worldgen
 {
@@ -16,8 +12,8 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         public ColonyFeatureGenerator()
         {
-            Radius = Util.GlobalRng.Next(2, 12);
-            Density = Util.GlobalRng.Next(20, 70) / 100f;
+            Radius = Util.Rng.Next(2, 12);
+            Density = Util.Rng.Next(20, 70) / 100f;
             BaseGraphics.Glyph = 158;
         }
 
@@ -31,7 +27,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             int start_tries = 100;
             do
             {
-                c = new Point(Util.GlobalRng.Next(0, w.Width), Util.GlobalRng.Next(0, w.Height));
+                c = new Point(Util.Rng.Next(0, w.Width), Util.Rng.Next(0, w.Height));
             }
             while (!ValidRegion(w.RegionAt(c.X, c.Y)) && --start_tries > 0);
             if (start_tries < 0)
@@ -51,7 +47,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
         {
-            
+
         }
     }
 }

@@ -1,25 +1,25 @@
 ﻿namespace FieryOpal.Src.Procedural
 {
-    public class BasicTerrainDecorator : ILocalFeatureGenerator
+    public class TerrainDecoratorBase : ILocalFeatureGenerator
     {
-        private OpalLocalMap CurrentMap;
+        protected OpalLocalMap CurrentMap;
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             // Do nothing since we're not copying CurrentMap
         }
 
-        public void Generate(OpalLocalMap m)
+        public virtual void Generate(OpalLocalMap m)
         {
             CurrentMap = m;
         }
 
-        public OpalTile Get(int x, int y)
+        public virtual OpalTile Get(int x, int y)
         {
             return null;
         }
 
-        public IDecoration GetDecoration(int x, int y)
+        public virtual IDecoration GetDecoration(int x, int y)
         {
             return null;
         }

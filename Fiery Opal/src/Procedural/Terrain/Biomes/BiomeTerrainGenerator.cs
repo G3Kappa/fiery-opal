@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using System.Reflection;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes

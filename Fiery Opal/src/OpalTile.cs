@@ -1,11 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles;
+using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using FieryOpal.Src.Ui;
-using FieryOpal.Src.Procedural.Terrain.Biomes;
-using System.Runtime.Serialization;
+using System.Linq;
 
 namespace FieryOpal.Src
 {
@@ -42,7 +40,7 @@ namespace FieryOpal.Src
         public OpalTileProperties Properties;
         public readonly int Id;
         public readonly TileSkeleton Skeleton;
-        public Font Spritesheet => Program.Fonts.Spritesheets["Terrain"];
+        public Font Spritesheet => Nexus.Fonts.Spritesheets["Terrain"];
 
         public string Name { get; private set; }
 
@@ -117,6 +115,21 @@ namespace FieryOpal.Src
             return ReferenceTileInstances[reference_maker.DefaultName];
         }
 
+        public static OpalTile GetRefTileByRefId(int ref_id)
+        {
+            var values = ReferenceTileInstances.Values;
+            if (ref_id < 0 || ref_id >= values.Count) return null;
+            return values.ElementAt(ref_id);
+        }
+
+        public static int GetRefId(OpalTile t)
+        {
+            if (t == null) return -1;
+            return ReferenceTileInstances.Keys.ToList().IndexOf(t.Skeleton.DefaultName);
+        }
+
+        public static int ReferenceTileCount => ReferenceTileInstances.Count;
+
         /* --- NOTES ON TILE HIERARCHY --- 
            * Tiles are defined by TileSkeletons. These expose the default properties used by the Make function.
            * If Make is overridden, the default properties may or may not be used.
@@ -138,178 +151,5 @@ namespace FieryOpal.Src
         {
             return d(OpalTile.GetFirstFreeId());
         }
-    }
-
-
-    [Serializable]
-    public abstract class TileSkeleton : IDisposable
-    {
-        protected static Dictionary<Type, TileSkeleton> Instances = new Dictionary<Type, TileSkeleton>();
-
-        public virtual OpalTileProperties DefaultProperties { get; private set; }
-        public virtual string DefaultName { get; private set; }
-        public virtual Cell DefaultGraphics { get; private set; }
-
-        public virtual OpalTile Make(int id)
-        {
-            return new OpalTile(id, this, DefaultName, DefaultProperties, DefaultGraphics);
-        }
-
-        protected TileSkeleton() { }
-
-        public static TileSkeleton Get<T>()
-            where T : TileSkeleton, new ()
-        {
-            Type type = typeof(T);
-            if (!Instances.ContainsKey(type))
-            {
-                Instances[type] = new T();
-                OpalTile.RegisterRefTile(Instances[type]);
-            }
-            return Instances[type];
-        }
-
-        public void Dispose()
-        {
-            Instances.Remove(Instances.Where(kp => kp.Key == this.GetType()).First().Key);
-        }
-    }   
-
-    public class DebugFloorSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: false,
-                is_natural: false,
-                movement_penalty: 0f,
-                fertility: 0f
-            );
-        public override string DefaultName => "<Debug Floor>";
-        private Cell graphics = new Cell(Palette.Terrain[""], Palette.Terrain[""], '?');
-        public override Cell DefaultGraphics => graphics;
-
-        public DebugFloorSkeleton SetGraphics(Cell c)
-        {
-            graphics = c;
-            return this;
-        }
-    }
-
-    public class NaturalFloorSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: false,
-                is_natural: true,
-                movement_penalty: 0f,
-                fertility: 0f
-            );
-        public override string DefaultName => "Rock Floor";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["RockFloorForeground"], Palette.Terrain["RockFloorBackground"], '.');
-    }
-
-    public class NaturalWallSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: true,
-                is_natural: true,
-                movement_penalty: 0f,
-                fertility: 0f
-            );
-        public override string DefaultName => "Rock Wall";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["RockWallForeground"], Palette.Terrain["RockWallBackground"], 177);
-    }
-
-    public class DirtSkeleton : NaturalFloorSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: base.DefaultProperties.IsBlock,
-                is_natural: base.DefaultProperties.IsNatural,
-                movement_penalty: .1f,
-                fertility: .2f
-            );
-        public override string DefaultName => "Dirt";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["DirtForeground"], Palette.Terrain["DirtBackground"], '.');
-    }
-    public class FertileSoilSkeleton : DirtSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: base.DefaultProperties.IsBlock,
-                is_natural: base.DefaultProperties.IsNatural,
-                movement_penalty: 0f,
-                fertility: 1f
-            );
-        public override string DefaultName => "Fertile Soil";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["SoilForeground"], Palette.Terrain["SoilBackground"], '=');
-    }
-
-    public class ConstructedWallSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: true,
-                is_natural: false,
-                movement_penalty: 0f // Unneeded since it blocks movement
-            );
-        public override string DefaultName => "Constructed Wall";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["ConstructedWallForeground"], Palette.Terrain["ConstructedWallBackground"], 176);
-    }
-
-    public class DoorSkeleton : ConstructedWallSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: true,
-                is_natural: false,
-                movement_penalty: 0f
-            );
-        public override string DefaultName => "Door";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["DoorForeground"], Palette.Terrain["DoorBackground"], 197);
-
-        public override OpalTile Make(int id)
-        {
-            return new DoorTile(id, this, DefaultName, DefaultProperties, DefaultGraphics);
-        }
-    }
-
-    public class DoorTile : OpalTile, IInteractive
-    {
-        protected bool isOpen = false;
-        public bool IsOpen => isOpen;
-
-        public DoorTile(int id, TileSkeleton k, string defaultname, OpalTileProperties props, Cell graphics) : base(id, k, defaultname, props, graphics) { }
-
-        public void Toggle()
-        {
-            isOpen = !isOpen;
-            Properties.IsBlock = !isOpen;
-        }
-
-        public override object Clone()
-        {
-            return new DoorTile(GetFirstFreeId(), Skeleton, Name, Properties, Graphics);
-        }
-
-        public bool InteractWith(OpalActorBase actor)
-        {
-            if (!actor.CanMove) return false;
-            Toggle();
-            return true;
-        }
-    }
-
-    public class ConstructedFloorSkeleton : TileSkeleton
-    {
-        public override OpalTileProperties DefaultProperties =>
-            new OpalTileProperties(
-                is_block: false,
-                is_natural: false,
-                movement_penalty: -.1f // Slightly favor constructed flooring over natural terrain
-            );
-        public override string DefaultName => "Constructed Floor";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["ConstructedFloorForeground"], Palette.Terrain["ConstructedFloorBackground"], '+');
     }
 }

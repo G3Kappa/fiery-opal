@@ -1,12 +1,8 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FieryOpal.Src.Ui
 {
@@ -151,7 +147,7 @@ namespace FieryOpal.Src.Ui
             {
                 return (byte)' ';
             }
-            if(!CachedFonts.ContainsKey(f.Name))
+            if (!CachedFonts.ContainsKey(f.Name))
             {
                 GetRecoloredPixels(f, 0, Color.White, Color.Black);
             }

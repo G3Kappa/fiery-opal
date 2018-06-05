@@ -4,6 +4,7 @@ using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using System;
+using System.Linq;
 
 namespace FieryOpal.Src
 {
@@ -27,7 +28,8 @@ namespace FieryOpal.Src
             InternalMessagePipeline = new MessagePipeline<OpalConsoleWindow>();
             TurnManager = new TurnManager();
 
-            Player.MapChanged += (player, old_map) => {
+            Player.MapChanged += (player, old_map) =>
+            {
                 // Tell any subscribed OpalGameWindow to render the viewport.
                 InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(
                     cw =>
@@ -55,17 +57,28 @@ namespace FieryOpal.Src
         {
             // Tell any subscribed OpalGameWindow to render the viewport.
             InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(
-                cw => 
+                cw =>
                 {
                     OpalGameWindow w = cw as OpalGameWindow;
                     if (Player != null)
                     {
                         w.Viewport.ViewArea = new Rectangle(Player.LocalPosition.X - w.Width / 2,
-                                                            Player.LocalPosition.Y - w.Height / 2, 
-                                                            w.Width, 
+                                                            Player.LocalPosition.Y - w.Height / 2,
+                                                            w.Width,
                                                             w.Height);
                     }
+                    bool wasDirty = (w.Viewport as RaycastViewport)?.Dirty ?? false;
                     w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)), Player.Brain.TileMemory);
+
+                    var rc = w.Viewport as RaycastViewport;
+                    if(rc != null && wasDirty)
+                    {
+                        var weaps = Player.Equipment.GetEquipedItems().Where(i => i is Weapon).Select(i => i as Weapon);
+                        foreach(var weapon in weaps)
+                        {
+                            weapon.ViewGraphics.DrawOnto(w);
+                        }
+                    }
                     return "ViewportRefresh";
                 }
                 ));
@@ -73,13 +86,13 @@ namespace FieryOpal.Src
         public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalGame, string> msg, bool is_broadcast)
         {
             string performed_action = msg(this);
-            switch(performed_action)
+            switch (performed_action)
             {
                 case "RequestInfo": // Is a FWD from an OpalInfoWindow connected to a MessagePipeline<OpalConsoleWindow>
                     var info_pipeline = MessagePipeline<OpalConsoleWindow>.GetPipeline(pipeline_handle);
                     // Using a Forward in order to pass our Handle despite not being an OpalConsoleWindow
                     info_pipeline.Forward<OpalConsoleWindow>(pipeline_handle, Handle, sender_handle, new Func<OpalConsoleWindow, string>(
-                        w => 
+                        w =>
                         {
                             OpalInfoWindow info_window = (OpalInfoWindow)w;
                             OpalInfoWindow.GameInfo info = new OpalInfoWindow.GameInfo
@@ -97,7 +110,7 @@ namespace FieryOpal.Src
                     TurnManager.ResetAccumulator();
                     break;
                 case "PlayerInputHandled":
-                    TurnManager.BeginTurn(CurrentMap, Player.Handle);
+                    TurnManager.BeginTurn(CurrentMap);
                     break;
                 default:
                     break;

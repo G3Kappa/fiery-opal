@@ -3,7 +3,6 @@ using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace FieryOpal.Src
@@ -20,6 +19,13 @@ namespace FieryOpal.Src
 
         public static void Log(String msg, bool debug, Color? fg = null, Color? bg = null)
         {
+            if (msg.Contains("\n"))
+            {
+                var split = msg.Split('\n');
+                foreach (string s in split) Log(s, debug, fg, bg);
+                return;
+            }
+
             Color fore = fg.HasValue ? fg.Value : (debug ? Palette.Ui["BoringMessage"] : Palette.Ui["DefaultForeground"]);
             Color back = bg.HasValue ? bg.Value : Palette.Ui["DefaultBackground"];
 
@@ -28,6 +34,13 @@ namespace FieryOpal.Src
 
         public static void Err(String msg, bool debug = false)
         {
+            if (msg.Contains("\n"))
+            {
+                var split = msg.Split('\n');
+                foreach (string s in split) Log(s, debug);
+                return;
+            }
+
             Color fore = Palette.Ui["ErrorMessage"];
             Color back = Palette.Ui["DefaultBackground"];
 
@@ -42,6 +55,13 @@ namespace FieryOpal.Src
 
         public static void Warn(String msg, bool debug = false)
         {
+            if (msg.Contains("\n"))
+            {
+                var split = msg.Split('\n');
+                foreach (string s in split) Log(s, debug);
+                return;
+            }
+
             Color fore = Palette.Ui["WarningMessage"];
             Color back = Palette.Ui["DefaultBackground"];
 
@@ -54,9 +74,19 @@ namespace FieryOpal.Src
             GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
         }
 
+        public static void LogCmd(String msg)
+        {
+            Color fore = Palette.Ui["DebugMessage"];
+            Color back = Palette.Ui["DefaultBackground"];
+
+            ColoredString header = new ColoredString("CMD>", back, fore);
+
+            GlobalLogPipeline.BroadcastLogMessage(null, header + new ColoredString(msg, Palette.DefaultTextStyle), false);
+        }
+
         public static string Str(string s, params object[] args)
         {
-            return String.Format(Program.Locale.Translation[s], args);
+            return String.Format(Nexus.Locale.Translation[s], args);
         }
     }
 

@@ -27,6 +27,11 @@
             var ret = new PaletteConfigLoader().LoadFile("cfg/palettes.cfg");
             return ret;
         }
+
+        public static bool CoinToss()
+        {
+            return Rng.NextDouble() < .5f;
+        }
     }
 
     public static partial class Extensions

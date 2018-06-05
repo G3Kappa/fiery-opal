@@ -1,30 +1,29 @@
 ﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using static FieryOpal.Src.Procedural.GenUtil;
-using Microsoft.Xna.Framework.Input;
 
 namespace FieryOpal.Src
 {
     public static partial class Util
     {
-        public static Random GlobalRng { get; } = new Random(0);
+        public static Random Rng { get; } = new Random(0);
 
         private static double framerate = 0;
         public static double Framerate => framerate;
 
         public static T Choose<T>(IList<T> from)
         {
-            return from[GlobalRng.Next(from.Count)];
+            return from[Rng.Next(from.Count)];
         }
 
         public static IEnumerable<T> ChooseN<T>(IList<T> from, int n)
         {
             if (n >= from.Count) throw new ArgumentException();
 
-            foreach (var t in from.OrderBy(t => GlobalRng.Next()))
+            foreach (var t in from.OrderBy(t => Rng.Next()))
             {
                 if (n-- > 0) yield return t;
                 else break;
@@ -33,7 +32,7 @@ namespace FieryOpal.Src
 
         public static bool? RandomTernary()
         {
-            var r = GlobalRng.NextDouble();
+            var r = Rng.NextDouble();
             if (r < .33) return true;
             if (r < .66) return false;
             return new bool?();
@@ -64,7 +63,7 @@ namespace FieryOpal.Src
         public static float Step(float f, int n_steps)
         {
             Tuple<float, int> best_delta = new Tuple<float, int>(1000000f, 0);
-            for(int i = 2; i <= n_steps; ++i)
+            for (int i = 2; i <= n_steps; ++i)
             {
                 float n = 1f / i;
                 var delta = Math.Max(f, n) - Math.Min(n, f);
@@ -77,6 +76,11 @@ namespace FieryOpal.Src
 
             return 1f / best_delta.Item2;
         }
+
+        public static T LoadContent<T>(string name)
+        {
+            return SadConsole.Game.Instance.Content.Load<T>(name);
+        }
     }
 
     public static partial class Extensions
@@ -88,24 +92,24 @@ namespace FieryOpal.Src
 
         public static void DeepClone<T>(this T[,] c, ref T[,] other)
         {
-            if(c.GetLength(0) != other.GetLength(0) || c.GetLength(1) != other.GetLength(1))
+            if (c.GetLength(0) != other.GetLength(0) || c.GetLength(1) != other.GetLength(1))
             {
                 throw new ArgumentException("Both arrays must have the same size.");
             }
             int W = c.GetLength(0), H = c.GetLength(1);
-            for(int x = 0; x < W; x++)
+            for (int x = 0; x < W; x++)
             {
-                for(int y = 0; y < H; ++y)
+                for (int y = 0; y < H; ++y)
                 {
                     other[x, y] = c[x, y];
                 }
             }
         }
 
-        public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs=1, bool break_early=true, bool shuffle = false, bool randomize_order = false)
+        public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs = 1, bool break_early = true, bool shuffle = false, bool randomize_order = false)
         {
             List<int> done = new List<int>();
-            for(int k = 0; k < epochs; ++k)
+            for (int k = 0; k < epochs; ++k)
             {
                 int i = -1;
                 foreach (var m in mr)
@@ -130,6 +134,20 @@ namespace FieryOpal.Src
         {
             var min = list.Min(selector);
             return list.First(x => selector(x) == min);
+        }
+
+        public static IEnumerable<Tuple<T, T>> Pairs<T>(this IEnumerable<T> enumerable)
+        {
+            var list = enumerable.ToList();
+            for (int i = 1; i < list.Count; ++i)
+            {
+                yield return new Tuple<T, T>(list[i - 1], list[i]);
+            }
+        }
+
+        public static Color ChangeValue(this Color c, int r = -1, int g = -1, int b = -1, int a = -1)
+        {
+            return new Color((byte)(r >= 0 ? r : c.R), (byte)(g >= 0 ? g : c.G), (byte)(b >= 0 ? b : c.B), (byte)(a >= 0 ? a : c.A));
         }
     }
 }

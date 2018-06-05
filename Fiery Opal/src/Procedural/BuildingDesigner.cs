@@ -29,7 +29,7 @@ namespace FieryOpal.Src.Procedural
                     t.Item2 + MapOffset)
                  ).ToList();
             // Free resources
-            Workspace.RemoveAllActors();
+            Workspace.DespawnAll();
             Workspace = new OpalLocalMap(Workspace.Width, Workspace.Height, null, "BuildingDesigner Workspace");
 
             return ret;

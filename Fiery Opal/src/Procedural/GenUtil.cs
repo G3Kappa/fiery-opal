@@ -90,14 +90,14 @@ namespace FieryOpal.Src.Procedural
                 Rectanglef r1 = new Rectanglef(I.X, I.Y, r1W, r1H);
                 // r2 = Basically r1 but with X or Y incremented by the previously halved measure
                 Rectanglef r2 = new Rectanglef(
-                    I.X + (ver ? r1W : 0), 
-                    I.Y + (ver ? 0 : r1H), 
-                    (ver ? r1W : I.Width), 
+                    I.X + (ver ? r1W : 0),
+                    I.Y + (ver ? 0 : r1H),
+                    (ver ? r1W : I.Width),
                     (ver ? I.Height : r1H)
                 );
                 // If either of the generated rectangles is too small, as in
                 // if the width of rX divided by the original width is less than min_size
-                if ( ver ? (r1W / r.Width < min_size) : (r1H / r.Height < min_size) )
+                if (ver ? (r1W / r.Width < min_size) : (r1H / r.Height < min_size))
                 {
                     // Add the current rectangle to the list of returned partitions
                     partitions.Add(I);
@@ -149,7 +149,7 @@ namespace FieryOpal.Src.Procedural
         public static Rectangle GetEnclosingRectangle(IEnumerable<Point> area)
         {
             Point min = new Point(int.MaxValue, int.MaxValue), max = new Point(int.MinValue, int.MinValue);
-            foreach(var p in area)
+            foreach (var p in area)
             {
                 if (p.X < min.X)
                 {
@@ -171,14 +171,14 @@ namespace FieryOpal.Src.Procedural
             return new Rectangle(min.X, min.Y, max.X - min.X + 1, max.Y - min.Y + 1);
         }
 
-        public static void ConnectEnclosedAreas(OpalLocalMap tiles, IEnumerable<Tuple<IEnumerable<Point>, Point>> enclosedAreas, OpalTile pathTile, int minThickness, int maxThickness, int maxRadius)
+        public static void ConnectEnclosedAreas(OpalLocalMap tiles, IEnumerable<Tuple<IEnumerable<Point>, Point>> enclosedAreas, OpalTile pathTile, int minThickness, int maxThickness, int maxRadius, int maxConnections = 1)
         {
             var enclosed_areas = enclosedAreas.ToList();
             if (enclosed_areas.Count <= 1) return; // Done
 
             Dictionary<int, List<int>> connections = new Dictionary<int, List<int>>();
             Dictionary<int, List<int>> is_connected = new Dictionary<int, List<int>>();
-            int remaining_connections = enclosed_areas.Count;
+            int remaining_connections = enclosed_areas.Count * maxConnections;
             int radius = 2; // Tiles
 
             for (int i = 0; i < enclosed_areas.Count; ++i)
@@ -190,33 +190,93 @@ namespace FieryOpal.Src.Procedural
             {
                 for (int i = 0; i < enclosed_areas.Count; ++i)
                 {
-                    if (connections[i].Count >= 2) continue;
+                    if (connections[i].Count >= maxConnections) continue;
                     Point p1 = enclosed_areas[i].Item2;
                     for (int j = 0; j < enclosed_areas.Count; ++j)
                     {
-                        if (i == j || connections[j].Count >= 2 || connections[j].Contains(i)) continue;
+                        if (i == j || connections[j].Count >= maxConnections || connections[j].Contains(i)) continue;
                         Point p2 = enclosed_areas[j].Item2;
-                        if (p1.Dist(p2) <= 2 * radius)
+                        if (p1.Dist(p2) <= radius)
                         {
                             connections[i].Add(j);
                             connections[j].Add(i);
                             // Now that an optimal path has been found, shuffle the centroids of i and j around
+                            /*
                             enclosed_areas[i] = new Tuple<IEnumerable<Point>, Point>(
                                 enclosed_areas[i].Item1,
-                                enclosed_areas[i].Item2 + new Point(Util.GlobalRng.Next(-radius / 4, radius / 4), Util.GlobalRng.Next(-radius / 4, radius / 4))
+                                enclosed_areas[i].Item2 + new Point(Util.Rng.Next(-radius / 4, radius / 4), Util.Rng.Next(-radius / 4, radius / 4))
                             );
                             enclosed_areas[j] = new Tuple<IEnumerable<Point>, Point>(
                                 enclosed_areas[j].Item1,
-                                enclosed_areas[j].Item2 + new Point(Util.GlobalRng.Next(-radius / 4, radius / 4), Util.GlobalRng.Next(-radius / 4, radius / 4))
+                                enclosed_areas[j].Item2 + new Point(Util.Rng.Next(-radius / 4, radius / 4), Util.Rng.Next(-radius / 4, radius / 4))
                             );
+                            */
                             remaining_connections--;
-                            tiles.DrawLine(p1, p2, pathTile, thickness: Util.GlobalRng.Next(minThickness, maxThickness));
+                            tiles.DrawLine(p1, p2, pathTile, thickness: Util.Rng.Next(minThickness, maxThickness));
                         }
                     }
                 }
-                radius *= 2;
+                radius++;
             }
         }
+
+        public static IEnumerable<Point> MakeRockShape(Rectangle r)
+        {
+            // Use poisson to generate N points
+            // Create circles of varying radii on each point
+            // Iterate enclosing rectangle
+            // If (x, y) / g falls within a circle, yield (x, y) + ofs
+
+            Rectangle r2 = new Rectangle(r.Size / new Point(4) + r.Size / new Point(8), r.Size / new Point(2));
+            int max_radius = Math.Min(r2.Width, r2.Height) / 2;
+            int min_radius = Math.Min(r2.Width, r2.Height) / 3;
+
+            var points = Lib.PoissonDiskSampler.SampleRectangle(r2.Location.ToVector2(), (r2.Location + r2.Size).ToVector2(), min_radius)
+                .Select(p => new Tuple<Point, int, float>(p.ToPoint(), Util.Rng.Next(min_radius, max_radius + 1), (float)Util.Rng.NextDouble() / 2 + 1))
+                .ToList();
+            for (int x = 0; x < r.Width; ++x)
+            {
+                for (int y = 0; y < r.Height; ++y)
+                {
+                    var xy = new Point(x, y);
+                    if (points.Any(p => new Point((int)(x / p.Item3 + r.Width / 8), (int)(y / p.Item3 + r.Height / 8)).Dist(p.Item1.ToVector2() / new Vector2(p.Item3)) <= p.Item2 / p.Item3))
+                    {
+                        yield return xy + r.Location;
+                    }
+                }
+            }
+            yield break;
+        }
+
+        public static IEnumerable<Point> WeightedRandomWalk(OpalLocalMap map, Point start, Func<Point, float> cost, Predicate<OpalTile> floor, Predicate<OpalTile> wall, OpalTile brush)
+        {
+
+            Point q = start, end, dir;
+            do
+            {
+                dir = Util.RandomUnitPoint(false) * new Point(2);
+            } while (dir == Point.Zero);
+
+            while (map.Neighbours(q.X, q.Y, cardinal: true, yield_null: true).All(n => wall(n.Item1) || floor(n.Item1)))
+            {
+                end = q + dir;
+                if (Util.CoinToss())
+                {
+                    if (cost(q + dir.RotateCCW()) < cost(q + dir.RotateCW()))
+                    {
+                        dir = dir.RotateCCW();
+                    }
+                    else dir = dir.RotateCW();
+                }
+
+                var line = Util.BresenhamLine(q, end).Where(t => wall(map.TileAt(t))).ToList();
+                foreach (Point l in line) yield return l;
+
+                map.DrawShape(line, brush);
+                q = end;
+            }
+        }
+
 
         public class MRRule : Tuple<Predicate<OpalTile>, OpalTile>
         {
@@ -264,9 +324,9 @@ namespace FieryOpal.Src.Procedural
                     }
                 }
 
-                if(randomize_order) points = points.OrderBy(x => Util.GlobalRng.Next()).ToList();
+                if (randomize_order) points = points.OrderBy(x => Util.Rng.Next()).ToList();
 
-                foreach (var p in points) 
+                foreach (var p in points)
                 {
                     bool matches = false;
                     Apply(tiles, p, zero, one, ref matches, shuffle);
@@ -285,7 +345,7 @@ namespace FieryOpal.Src.Procedural
                 var arr = new[] { 0, 1, 2, 3 };
                 if (shuffle)
                 {
-                    arr = arr.OrderBy(x => Util.GlobalRng.Next()).ToArray();
+                    arr = arr.OrderBy(x => Util.Rng.Next()).ToArray();
                 }
                 for (int i = 0; i < 4; ++i)
                 {
@@ -441,14 +501,14 @@ namespace FieryOpal.Src.Procedural
 
             public static MatrixReplacement JaggedSurface = new MatrixReplacement(
                 new int[3, 3] {
-                    { 0, 0, 2, },
-                    { 2, 1, 1, },
-                    { 0, 0, 2, },
+                    { 0, 0, 0, },
+                    { 0, 1, 0, },
+                    { 2, 1, 2, },
                 },
                 new int[3, 3] {
-                    { 0, 0, 2, },
-                    { 0, 0, 1, },
-                    { 0, 0, 2, },
+                    { 0, 0, 0, },
+                    { 0, 0, 0, },
+                    { 2, 1, 2, },
                 },
                 "Jagged Surface"
             );
@@ -468,17 +528,31 @@ namespace FieryOpal.Src.Procedural
             );
 
             public static MatrixReplacement DiagonalGaps = new MatrixReplacement(
-                new int[3, 3] {
-                    { 0, 0, 1, },
-                    { 0, 0, 1, },
-                    { 1, 1, 0, },
+                new int[2, 2] {
+                    { 0, 1, },
+                    { 1, 0, },
                 },
-                new int[3, 3] {
-                    { 0, 0, 1, },
-                    { 0, 0, 0, },
-                    { 1, 0, 0, },
+                new int[2, 2] {
+                    { 0, 0, },
+                    { 0, 0, },
                 },
                 "Diagonal Gaps"
+            );
+
+            public static MatrixReplacement ThinWalls = new MatrixReplacement(
+                new int[4, 4] {
+                    { 0, 2, 1, 0, },
+                    { 0, 1, 1, 0, },
+                    { 0, 1, 2, 0, },
+                    { 2, 2, 2, 2, }
+                },
+                new int[4, 4] {
+                    { 0, 0, 0, 0, },
+                    { 0, 0, 0, 0, },
+                    { 0, 0, 0, 0, },
+                    { 2, 2, 2, 2, }
+                },
+                "Thin Walls"
             );
 
             public static MatrixReplacement[] CaveSystemRules = new[] {
@@ -486,9 +560,12 @@ namespace FieryOpal.Src.Procedural
                 NinetyDegCorners.Inverted(),
                 SmallGaps,
                 JaggedSurface,
+                JaggedSurface.Inverted(),
                 DiagonalGaps,
                 LoneTile,
+                ThinWalls
             };
         }
     }
+
 }

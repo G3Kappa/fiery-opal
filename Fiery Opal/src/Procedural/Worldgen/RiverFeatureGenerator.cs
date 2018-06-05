@@ -1,5 +1,4 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Biomes;
-using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -17,7 +16,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         public RiverFeatureGenerator(Func<BiomeInfo, OpalTile> tiles)
         {
-            Thickness = Util.GlobalRng.Next(2, 8) * 2 - 1;
+            Thickness = Util.Rng.Next(2, 8) * 2 - 1;
             TileSelector = tiles;
         }
 
@@ -26,9 +25,9 @@ namespace FieryOpal.Src.Procedural.Worldgen
             var edges = GetEdges(region).ToList();
 
             int glyph = BaseGraphics.Glyph;
-            if(edges.Count == 1)
+            if (edges.Count == 1)
             {
-                if      (edges[0].X < 0) glyph = 181;
+                if (edges[0].X < 0) glyph = 181;
                 else if (edges[0].X > 0) glyph = 198;
                 else if (edges[0].Y < 0) glyph = 208;
                 else if (edges[0].Y > 0) glyph = 210;
@@ -36,7 +35,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             else if (edges.Count == 2)
             {
                 var p1 = edges[0].X != 0 ? edges[0] : edges[1];
-                var p2 = p1 == edges[0] ? edges[1]  : edges[0];
+                var p2 = p1 == edges[0] ? edges[1] : edges[0];
 
                 // -1, 0; 0, -1 ╝
                 if (p1.X < 0 && p2.Y < 0) glyph = 188;
@@ -51,12 +50,12 @@ namespace FieryOpal.Src.Procedural.Worldgen
                 // Horizontal
                 else if (p1.Y == p2.Y) glyph = 205;
             }
-            else if(edges.Count == 3)
+            else if (edges.Count == 3)
             {
-                if      (!edges.Contains(new Point(-1, 0))) glyph = 204;
-                else if (!edges.Contains(new Point(1, 0)))  glyph = 185;
+                if (!edges.Contains(new Point(-1, 0))) glyph = 204;
+                else if (!edges.Contains(new Point(1, 0))) glyph = 185;
                 else if (!edges.Contains(new Point(0, -1))) glyph = 203;
-                else if (!edges.Contains(new Point(0, 1)))  glyph = 202;
+                else if (!edges.Contains(new Point(0, 1))) glyph = 202;
             }
             else if (edges.Count == 4)
             {
@@ -68,10 +67,10 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         private bool ValidRegion(WorldTile t)
         {
-            return 
+            return
                 (t.Biome.AverageTemperature <= BiomeHeatType.Hotter && t.Biome.AverageTemperature >= BiomeHeatType.Colder)
                 && t.Biome.AverageHumidity >= BiomeMoistureType.Dry
-                && !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type) 
+                && !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)
                 && !HasRiver(t);
         }
 
@@ -87,9 +86,9 @@ namespace FieryOpal.Src.Procedural.Worldgen
             // Pick a (semi-)random point as seed for the river
             do
             {
-                p = new Point(Util.GlobalRng.Next(0, w.Width), Util.GlobalRng.Next(0, w.Height));
+                p = new Point(Util.Rng.Next(0, w.Width), Util.Rng.Next(0, w.Height));
             }
-            while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .6f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
+            while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .75f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
             if (start_tries < 0)
             {
                 Util.Log("WorldFeatureGenerator: Could not place river.", true);
@@ -121,7 +120,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
         {
             var points = Descend(w).ToList();
             var unique = points.Where(p => points.Count(q => q == p) == 1);
-            if(unique.Count() > 3)
+            if (unique.Count() > 3)
             {
                 foreach (var p in unique) yield return p;
             }
@@ -178,7 +177,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
                 Point p2 = NormalizeEdge(edges[1], m);
                 m.DrawCurve(p1, center, center, p2, tileref, Thickness, 100);
             }
-            else if(edges.Count > 0)
+            else if (edges.Count > 0)
             {
                 foreach (var edge in edges)
                 {

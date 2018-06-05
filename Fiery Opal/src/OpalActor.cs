@@ -1,10 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Ui;
+using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Linq;
-using FieryOpal.Src.Actors;
-using System.Runtime.Serialization;
-using FieryOpal.Src.Ui;
 
 namespace FieryOpal.Src
 {
@@ -83,6 +82,11 @@ namespace FieryOpal.Src
         PersonalInventory Inventory { get; }
     }
 
+    public interface IEquipmentUser : IOpalGameActor
+    {
+        PersonalEquipment Equipment { get; }
+    }
+
     [Serializable]
     public class OpalActorBase : IPipelineSubscriber<OpalActorBase>, IOpalGameActor, IInspectable
     {
@@ -112,8 +116,14 @@ namespace FieryOpal.Src
         private bool can_move = true;
         public bool CanMove => can_move;
 
+        private bool ignores_collision = false;
+        public bool IgnoresCollision => ignores_collision;
+
+        private bool is_flying = false;
+        public bool IsFlying { get => is_flying; protected set => is_flying = value; }
+
         public Guid Handle { get; }
-        public virtual Font Spritesheet => Program.Fonts.Spritesheets["Creatures"];
+        public virtual Font Spritesheet => Nexus.Fonts.Spritesheets["Creatures"];
 
         public bool IsPlayer => (this as TurnTakingActor)?.Brain is PlayerControlledAI;
 
@@ -131,9 +141,10 @@ namespace FieryOpal.Src
 
         }
 
-        public void Update(TimeSpan delta)
+        public virtual void Update(TimeSpan delta)
         {
             if (Map == null) return;
+            if (IsDead) Map.Despawn(this);
         }
 
 
@@ -141,63 +152,81 @@ namespace FieryOpal.Src
         {
             var newPos = new Point();
             var ret = CanMoveTo(p, ref newPos, absolute);
-            if(ret)
+            if (ret)
             {
                 var oldPos = localPosition;
                 localPosition = newPos;
                 map.NotifyActorMoved(this, oldPos);
             }
-            else if(!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
+            else if (!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
             {
                 var curRegion = map.ParentRegion;
                 var world = curRegion?.ParentWorld;
-                if(world == null)
+                if (world == null)
                 {
-                    if(IsPlayer)
+                    if (IsPlayer)
                     {
                         Util.Log("The void lies there.", false);
                     }
                     return false;
                 }
 
-                Point new_region_pos = curRegion.WorldPosition + p;
+                Point q = new Point();
+                if (newPos.X < 0)
+                {
+                    q.X = -1;
+                }
+                if (newPos.Y < 0)
+                {
+                    q.Y = -1;
+                }
+                if (newPos.X >= map.Width)
+                {
+                    q.X = 1;
+                }
+                if (newPos.Y >= map.Height)
+                {
+                    q.Y = 1;
+                }
+
+                Point new_region_pos = curRegion.WorldPosition + q;
                 var new_region = world.RegionAt(new_region_pos.X, new_region_pos.Y);
 
                 if (new_region != null)
                 {
                     Point new_spawn = new Point(LocalPosition.X, LocalPosition.Y);
-                    if (p.X < 0)
+                    if (q.X < 0)
                     {
                         new_spawn.X = map.Width - 1;
                     }
                     else
-                    if (p.X > 0)
+                    if (q.X > 0)
                     {
                         new_spawn.X = 0;
                     }
-                    if (p.Y < 0)
+                    if (q.Y < 0)
                     {
                         new_spawn.Y = map.Height - 1;
                     }
-                    else if (p.Y > 0)
+                    else if (q.Y > 0)
                     {
                         new_spawn.Y = 0;
                     }
 
                     var t = new_region.LocalMap.TileAt(new_spawn);
-                    if (!t.Properties.BlocksMovement)
+                    if (!t.Properties.BlocksMovement || IgnoresCollision)
                         ChangeLocalMap(new_region.LocalMap, new_spawn);
-                    else if(IsPlayer)
+                    else if (IsPlayer)
                         Util.Log(Util.Str("Actor_CannotChangeRegion", t.Name).ToColoredString(Palette.Ui["BoringMessage"]), false);
                 }
                 else if (IsPlayer)
                     Util.Log(Util.Str("Actor_CannotChangeRegion", "the edge of the world").ToColoredString(Palette.Ui["BoringMessage"]), false);
             }
 
-            if(!ret && IsPlayer)
+            if (!ret && IsPlayer)
             {
                 var t = Map.TileAt(LocalPosition + p);
-                if(t?.Properties.IsBlock ?? false) 
+                if (t?.Properties.IsBlock ?? false)
                     Util.Log(Util.Str("Actor_BumpInto", t.Name).ToColoredString(Palette.Ui["BoringMessage"]), false);
             }
 
@@ -215,6 +244,8 @@ namespace FieryOpal.Src
                 localPosition = new_p;
                 return true;
             }
+
+            if (IgnoresCollision && !Util.OOB(new_p.X, new_p.Y, Map.Width, Map.Height)) return true;
 
             var actors_there = Map.ActorsAt(new_p.X, new_p.Y);
             if (actors_there.Count() > 0)
@@ -248,28 +279,31 @@ namespace FieryOpal.Src
 
         public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn)
         {
-            var old_map = map;
-            var old_pos = LocalPosition;
-             
+            map?.Despawn(this);
+
             if (new_map == null)
             {
-                if (map != null) map.RemoveActor(this);
                 map = null;
                 MapChanged?.Invoke(this, map);
-                old_map?.NotifyActorMoved(this, old_pos);
                 return true;
             }
 
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
             bool ret = tile == null || !tile.Properties.IsBlock;
 
-            if(!ret) new_spawn = new_map.FirstAccessibleTileAround(new_spawn);
+            if (!ret) new_spawn = new_map.FirstAccessibleTileAround(new_spawn);
 
             map = new_map;
             localPosition = new_spawn;
-            map.AddActor(this);
+            map.Spawn(this);
             MapChanged?.Invoke(this, map);
-            old_map?.NotifyActorMoved(this, old_pos);
+            map.NotifyActorMoved(this, new_spawn);
+
+            if (IsPlayer)
+            {
+                Soundtrack.Play(new_map.Soundtrack);
+            }
+
             return true;
         }
 
@@ -292,7 +326,12 @@ namespace FieryOpal.Src
         {
             if (Map == null) return;
             is_dead = true;
-            Map.RemoveActor(this);
+            Map.Despawn(this);
+        }
+
+        public void SetCollision(bool c)
+        {
+            ignores_collision = !c;
         }
 
         public string GetInspectDescription(IOpalGameActor observer)

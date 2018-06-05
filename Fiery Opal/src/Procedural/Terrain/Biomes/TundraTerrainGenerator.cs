@@ -1,15 +1,7 @@
-﻿using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
-using SadConsole;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
-    public class SnowSkeleton : DirtSkeleton
-    {
-        public override string DefaultName => "Snow Ground";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["SnowForeground"], Palette.Terrain["SnowBackground"], '.');
-    }
-
     public class TundraTerrainGenerator : BiomeTerrainGenerator
     {
         protected TundraTerrainGenerator(WorldTile worldPos) : base(worldPos) { }
@@ -18,7 +10,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         {
             base.Generate(m);
 
-            Tiles.Iter((s, x, y, t) =>
+            Workspace.Iter((s, x, y, t) =>
             {
                 s.SetTile(x, y, OpalTile.GetRefTile<SnowSkeleton>());
                 return false;
