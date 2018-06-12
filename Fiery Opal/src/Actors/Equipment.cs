@@ -1,5 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -103,7 +102,7 @@ namespace FieryOpal.Src.Actors
             return Slots[eq.SlotType].IsEquiped(eq);
         }
 
-        public IEnumerable<IEquipable> GetEquipedItems()
+        public IEnumerable<IEquipable> GetContents()
         {
             return Slots.Values.SelectMany(s => s.GetEquipedItems());
         }

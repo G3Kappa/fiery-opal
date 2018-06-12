@@ -15,7 +15,7 @@ namespace FieryOpal.Src.Actors
             Inventory = new PersonalInventory(10, this);
             Equipment = new PersonalEquipment((t) =>
             {
-                switch(t)
+                switch (t)
                 {
                     case EquipmentSlotType.Arm:
                         return 2;

@@ -3,7 +3,9 @@ using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace FieryOpal.Src
 {
@@ -50,7 +52,7 @@ namespace FieryOpal.Src
         /// <param name="new_map">The new OpalLocalMap.</param>
         /// <param name="new_spawn">The spawn coordinates.</param>
         /// <returns></returns>
-        bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn);
+        bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile=true);
 
         bool OnBump(IOpalGameActor other);
     }
@@ -277,7 +279,7 @@ namespace FieryOpal.Src
             return ret;
         }
 
-        public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn)
+        public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile=true)
         {
             map?.Despawn(this);
 
@@ -289,9 +291,17 @@ namespace FieryOpal.Src
             }
 
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
-            bool ret = tile == null || !tile.Properties.IsBlock;
+            bool ret = tile != null && !tile.Properties.IsBlock 
+                && !new_map.ActorsAt(new_spawn.X, new_spawn.Y).Any(a =>
+            {
+                if(this is DecorationBase)
+                {
+                    return a is DecorationBase;
+                }
+                return a is OpalActorBase;
+            });
 
-            if (!ret) new_spawn = new_map.FirstAccessibleTileAround(new_spawn);
+            if (!ret && check_tile) new_spawn = new_map.FirstAccessibleTileAround(new_spawn, !(this is DecorationBase));
 
             map = new_map;
             localPosition = new_spawn;
@@ -313,7 +323,7 @@ namespace FieryOpal.Src
 
         public override bool Equals(object obj)
         {
-            if (!(obj is OpalActorBase)) return false;
+            if (!typeof(OpalActorBase).IsAssignableFrom(obj.GetType())) return false;
             return (obj as OpalActorBase).Handle == Handle;
         }
 
@@ -324,9 +334,8 @@ namespace FieryOpal.Src
 
         public void Kill()
         {
-            if (Map == null) return;
             is_dead = true;
-            Map.Despawn(this);
+            Map?.Despawn(this);
         }
 
         public void SetCollision(bool c)
@@ -337,6 +346,28 @@ namespace FieryOpal.Src
         public string GetInspectDescription(IOpalGameActor observer)
         {
             return "TODO: CHANGE ME";
+        }
+
+        private static Dictionary<string, Type> ActorClasses = new Dictionary<string, Type>();
+        public static void PreloadActorClasses(string subNamespace)
+        {
+
+            Type[] typelist = Util.GetTypesInNamespace(Assembly.GetExecutingAssembly(), "FieryOpal.Src.Actors" + (subNamespace.Length == 0 ? "" : "." + subNamespace));
+            foreach (Type t in typelist)
+            {
+                if (t.IsAbstract || !typeof(OpalActorBase).IsAssignableFrom(t)) continue;
+                ActorClasses[t.Name.ToLower()] = t;
+                Util.Log("OpalActorBase.PreloadActorClasses: Preloaded {0}.".Fmt(t.Name), true, Palette.Ui["BoringMessage"]);
+            }
+        }
+
+        public static OpalActorBase MakeFromClassName(string className)
+        {
+            if (ActorClasses.ContainsKey(className.ToLower()))
+            {
+                return Activator.CreateInstance(ActorClasses[className.ToLower()]) as OpalActorBase;
+            }
+            return null;
         }
     }
     public abstract class LightSourceBase : OpalActorBase, ILightSource

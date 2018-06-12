@@ -1,12 +1,8 @@
-﻿using FieryOpal.src.Ui;
-using FieryOpal.Src.Procedural;
-using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Dialogs;
+﻿using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -124,7 +120,7 @@ namespace FieryOpal.Src.Actors
         public Projectile(OpalLocalMap m, Point spawnPos, Vector2 direction, Weapon spawner, DamageType dt)
         {
             Direction = direction;
-            ChangeLocalMap(m, spawnPos);
+            ChangeLocalMap(m, spawnPos, false);
             DamageKind = dt;
             FiredFrom = spawner;
         }
@@ -155,7 +151,7 @@ namespace FieryOpal.Src.Actors
                     Kill();
                     break;
                 case DamageType.Piercing:
-                    foreach(var victim in actors)
+                    foreach (var victim in actors)
                     {
                         victim.ReceiveDamage(CalcDamage(CalcPartHit(victim)));
                     }
@@ -175,7 +171,7 @@ namespace FieryOpal.Src.Actors
     {
         public float BranchingRadius { get; }
 
-        public Lightning(OpalLocalMap m, Point spawnPos, Vector2 direction, Freezzino spawner, float branchRadius=2.5f) 
+        public Lightning(OpalLocalMap m, Point spawnPos, Vector2 direction, Freezzino spawner, float branchRadius = 2.5f)
             : base(m, spawnPos, direction, spawner, DamageType.Piercing)
         {
             Graphics = FirstPersonGraphics = new ColoredGlyph(
@@ -194,7 +190,7 @@ namespace FieryOpal.Src.Actors
                 .Where(a => a is TurnTakingActor && !(a is Projectile))
                 .Select(a => a as TurnTakingActor)
                 .ToList();
-            
+
             foreach (var a in base.ProcessTurn(turn, energy)) yield return a;
             yield return () => { Kill(); return HitDelay; };
         }
@@ -202,9 +198,9 @@ namespace FieryOpal.Src.Actors
         public override void ApplyDamage(List<TurnTakingActor> actors)
         {
             var branchTargets = Map.ActorsWithinRing(LocalPosition.X, LocalPosition.Y, (int)BranchingRadius, 1)
-                .Where(a => 
-                a is TurnTakingActor 
-                && Map.ActorsAt(a.LocalPosition.X, a.LocalPosition.Y).Where(b => b is Lightning).Count() == 0 
+                .Where(a =>
+                a is TurnTakingActor
+                && Map.ActorsAt(a.LocalPosition.X, a.LocalPosition.Y).Where(b => b is Lightning).Count() == 0
                 && a.LocalPosition != FiredFrom.Owner.LocalPosition
                 && !actors.Contains(a)
                 && Util.BresenhamLine(LocalPosition, a.LocalPosition).All(p => !Map.TileAt(p).Properties.IsBlock)
@@ -215,7 +211,7 @@ namespace FieryOpal.Src.Actors
             {
                 var target = Util.Choose(branchTargets);
                 var line = Util.BresenhamLine(LocalPosition, target.LocalPosition);
-                foreach(Point p in line)
+                foreach (Point p in line)
                 {
                     var child = new Lightning(Map, p, (p - LocalPosition).ToVector2(), (Freezzino)FiredFrom, BranchingRadius);
                 }
@@ -271,7 +267,7 @@ namespace FieryOpal.Src.Actors
             }
         }
 
-        public Freezzino(int baseRayLen = 5) : base(DefaultName, MakeViewSprite())
+        public Freezzino(int baseRayLen) : base(DefaultName, MakeViewSprite())
         {
             Graphics = FirstPersonGraphics = new ColoredGlyph(
                 new Cell(Color.Cyan, Color.Blue, ViewGraphics.SpritesheetIndex)
@@ -279,6 +275,12 @@ namespace FieryOpal.Src.Actors
             Graphics.GlyphCharacter = 'W';
             FirstPersonVerticalOffset = -2f;
             BaseRayLength = baseRayLen;
+            Name = "Freezzino";
+        }
+
+        public Freezzino() : this(5)
+        {
+
         }
     }
 }

@@ -1,8 +1,7 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Ui;
 using SadConsole;
 
-namespace FieryOpal.src.Actors.Decorations
+namespace FieryOpal.Src.Actors.Decorations
 {
     class Boulders : DecorationBase
     {

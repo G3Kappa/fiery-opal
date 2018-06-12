@@ -1,4 +1,4 @@
-﻿using FieryOpal.src.Procedural.Terrain.Dungeons;
+﻿using FieryOpal.Src.Procedural.Terrain.Dungeons;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
@@ -50,7 +50,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             Instances.Clear();
             var prevInst = GetInstance(0, parent);
             var vaultGen = new CavesVaultGenerator(prevInst);
-            m.CallLocalGenerator(vaultGen);
+            m.CallLocalGenerator(vaultGen, false);
             prevInst.ConnectedInstances.Add(vaultGen.EntrancePortal.FromInstance);
 
             for (int i = 1; i < Depth - 1; ++i)

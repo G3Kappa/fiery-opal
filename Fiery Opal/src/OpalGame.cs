@@ -71,10 +71,10 @@ namespace FieryOpal.Src
                     w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)), Player.Brain.TileMemory);
 
                     var rc = w.Viewport as RaycastViewport;
-                    if(rc != null && wasDirty)
+                    if (rc != null && wasDirty)
                     {
-                        var weaps = Player.Equipment.GetEquipedItems().Where(i => i is Weapon).Select(i => i as Weapon);
-                        foreach(var weapon in weaps)
+                        var weaps = Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
+                        foreach (var weapon in weaps)
                         {
                             weapon.ViewGraphics.DrawOnto(w);
                         }

@@ -46,24 +46,15 @@ namespace FieryOpal.Src.Procedural.Terrain.Tiles
             return Instances.Values.Where(ts => ts.DefaultName.Equals(name, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
         }
 
-        private static Type[] GetTypesInNamespace(Assembly assembly, string nameSpace)
-        {
-            return
-              assembly.GetTypes()
-                      .Where(t => String.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
-                      .ToArray();
-        }
-
         public static void PreloadAllSkeletons()
         {
-            Type[] typelist = GetTypesInNamespace(Assembly.GetExecutingAssembly(), "FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons");
-            foreach(Type t in typelist)
+            Type[] typelist = Util.GetTypesInNamespace(Assembly.GetExecutingAssembly(), "FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons");
+            foreach (Type t in typelist)
             {
                 if (t.IsAbstract) continue;
                 var instance = Get(t, (TileSkeleton)Activator.CreateInstance(t));
                 Util.Log("TileSkeleton.PreloadAllSkeletons: Preloaded {0} ({1}).".Fmt(t.Name, instance.DefaultName), true, Palette.Ui["BoringMessage"]);
             }
-
         }
 
         public void Dispose()

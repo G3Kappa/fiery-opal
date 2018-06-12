@@ -87,9 +87,6 @@ namespace FieryOpal.Src.Actors
 
             Body.Inventory.Store(new Journal());
             Body.Inventory.Store(new WorldMap());
-            var f = new Freezzino();
-            f.Own(Body);
-            Body.Inventory.Store(f);
 
             Body.Inventory.ItemStored += (item) => Util.Log(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
             Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
@@ -161,7 +158,7 @@ namespace FieryOpal.Src.Actors
             });
         }
 
-        private void Interact()
+        public void Interact()
         {
             var interaction_rect = new Rectangle(
                 Body.LocalPosition - new Point(1),
@@ -229,7 +226,7 @@ namespace FieryOpal.Src.Actors
             dialog.Show();
         }
 
-        private void OpenInventory()
+        public void OpenInventory()
         {
             if (isHandlingDialog) return;
 
@@ -239,7 +236,7 @@ namespace FieryOpal.Src.Actors
             inventory_window.Show();
         }
 
-        private void Turn(float angle)
+        public void Turn(float angle)
         {
             Body.EnqueuedActions.Enqueue(() =>
             {
@@ -252,7 +249,7 @@ namespace FieryOpal.Src.Actors
             InputHandled();
         }
 
-        private void Wait(float turns)
+        public void Wait(float turns)
         {
             if (turns <= 0f) return;
 
@@ -264,7 +261,7 @@ namespace FieryOpal.Src.Actors
             InputHandled("FlagRaycastViewportForRedraw");
         }
 
-        private void MoveRelative(int x, int y)
+        public void MoveRelative(int x, int y)
         {
             Point to = new Point();
             if (x == 0 && y == -1) to = Util.NormalizedStep(Body.LookingAt);
@@ -281,11 +278,11 @@ namespace FieryOpal.Src.Actors
             InputHandled("FlagRaycastViewportForRedraw");
         }
 
-        private void Attack()
+        public void Attack()
         {
             Body.EnqueuedActions.Enqueue(() =>
             {
-                var weaps = Body.Equipment.GetEquipedItems().Where(i => i is Weapon).Select(i => i as Weapon).ToList();
+                var weaps = Body.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon).ToList();
                 if (weaps.Count == 0)
                 {
                     // Todo log

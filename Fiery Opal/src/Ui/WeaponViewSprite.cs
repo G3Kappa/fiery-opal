@@ -1,14 +1,7 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Ui;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using SadConsole;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.Ui
+namespace FieryOpal.Src.Ui
 {
     /// <summary>
     /// Defines the properties for the "viewmodel" of a given weapon.
@@ -32,7 +25,7 @@ namespace FieryOpal.src.Ui
         /// <summary>
         /// An X,Y vector that scales the viewmodel relative to its centered position.
         /// </summary>
-        public Vector2 Scale  { get; set; }
+        public Vector2 Scale { get; set; }
 
         /// <summary>
         /// An RGB color that is multiplied onto the grayscale sprite, leaving any non-grey pixels untouched.

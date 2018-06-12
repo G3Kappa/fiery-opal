@@ -1,6 +1,4 @@
-﻿using FieryOpal.Src.Actors;
-using FieryOpal.Src.Procedural.Terrain.Tiles;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole.Controls;
 using System;
@@ -27,6 +25,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         protected bool CallDelegate(string[] args, ref int exitCode)
         {
+            if (args.Length == 0) return false;
             if (!Delegates.ContainsKey(args[0])) return false;
             exitCode = Delegates[args[0]].Execute(args.Skip(1).ToArray());
             return true;
@@ -59,6 +58,11 @@ namespace FieryOpal.Src.Ui.Dialogs
 
             RegisterDelegate("rect", new CommandRect());
             RegisterDelegate("spawn", new CommandSpawn());
+            RegisterDelegate("log", new CommandLog());
+            RegisterDelegate("run", new CommandDoFile());
+            RegisterDelegate("store", new CommandStoreItem());
+            RegisterDelegate("equip", new CommandEquipItem());
+            RegisterDelegate("unequip", new CommandUnequipItem());
 
             var noclip = new CommandNoclip();
             RegisterDelegate("noclip", noclip);
@@ -79,13 +83,37 @@ namespace FieryOpal.Src.Ui.Dialogs
             base.Update(time);
         }
 
+        private static IEnumerable<string> SplitArgs(string str)
+        {
+            bool insideQuotes = false;
+            string s = "";
+            for (int i = 0; i < str.Length; ++i)
+            {
+                if (!insideQuotes && str[i] == ' ')
+                {
+                    if (s.Trim().Length > 0) yield return s.Trim();
+                    s = "";
+                }
+                else if (str[i] == '"')
+                {
+                    if (i == 0 || i > 0 && str[i - 1] != '\\')
+                    {
+                        insideQuotes = !insideQuotes;
+                        continue; //Don't append these quotes
+                    }
+                }
+                s += str[i];
+            }
+            if (s.Trim().Length > 0) yield return s.Trim();
+        }
+
         protected string Exec(string str, ref int exitCode)
         {
             CmdHistory.Push(str);
-            var args = str.Split(' ');
+            var args = SplitArgs(str).ToArray();
 
             exitCode = -1;
-            if(CallDelegate(args, ref exitCode))
+            if (CallDelegate(args, ref exitCode))
             {
                 return "Exit Code: {0}".Fmt(exitCode);
             }
@@ -140,186 +168,10 @@ namespace FieryOpal.Src.Ui.Dialogs
             CmdHistoryIndex = -1;
             base.Hide();
         }
-    }
 
-    public abstract class CommandDelegate
-    {
-        public string Cmd { get; set; }
-        public Type[] Signature { get; }
-
-        public CommandDelegate(Type[] signature)
+        public IEnumerable<CommandDelegate> GetRegisteredDelegates()
         {
-            Signature = signature;
-        }
-
-        public virtual string GetHelpText()
-        {
-            string types = String.Join(" ", Signature.Select(t => t.Name).ToArray());
-            return "Usage: {0} {1}".Fmt(Cmd, types);
-        }
-
-        protected abstract object ParseArgument(Type T, string str);
-        protected abstract int ExecInternal(object[] args);
-
-        public int Execute(params string[] args)
-        {
-            if (args.Length != Signature.Length)
-            {
-                Util.Log(GetHelpText(), true, Palette.Ui["InfoMessage"]);
-                return -1;
-            }
-
-            object[] arguments = new object[Signature.Length];
-            for (int i = 0; i < Signature.Length; ++i)
-            {
-                object arg = null;
-                if ((arg = ParseArgument(Signature[i], args[i])) == null)
-                {
-                    Util.Log(GetHelpText(), true, Palette.Ui["InfoMessage"]);
-                    return -2;
-                }
-                arguments[i] = arg;
-            }
-
-            return ExecInternal(arguments);
-        }
-    }
-
-    public class CommandRect : CommandDelegate
-    {
-        public static Type[] _Signature = new[] {
-            typeof(int), // X (relative to player)
-            typeof(int), // Y (relative to player)
-            typeof(int), // Width
-            typeof(int), // Height
-            typeof(TileSkeleton), // Tile Skeleton name
-        };
-
-        public CommandRect() : base(_Signature)
-        {
-
-        }
-
-        protected override int ExecInternal(object[] args)
-        {
-            int x = Nexus.Player.LocalPosition.X + (int)args[0];
-            int y = Nexus.Player.LocalPosition.Y + (int)args[1];
-            int w = (int)args[2];
-            int h = (int)args[3];
-            OpalTile tile = ((TileSkeleton)args[4]).Make(OpalTile.GetFirstFreeId());
-
-            Nexus.Player.Map.Iter((s, mx, my, t) =>
-            {
-                s.SetTile(mx, my, tile);
-                if(tile is IInteractive) tile = ((TileSkeleton)args[4]).Make(OpalTile.GetFirstFreeId());
-                return false;
-            }, new Rectangle(x, y, w, h));
-
-            return 0;
-        }
-
-        protected override object ParseArgument(Type T, string str)
-        {
-            if (T == typeof(int))
-            {
-                int parsed = 0;
-                if (!int.TryParse(str, out parsed)) return null;
-                return parsed;
-            }
-            else if (T == typeof(TileSkeleton))
-            {
-                TileSkeleton ts = TileSkeleton.FromName(str);
-                if(ts == null)
-                {
-                    Util.Log("Unknown tile.", true);
-                }
-                return ts;
-            }
-
-            return null;
-        }
-    }
-
-    public class CommandNoclip : CommandDelegate
-    {
-        public static Type[] _Signature = new Type[0];
-
-        public CommandNoclip() : base(_Signature)
-        {
-
-        }
-
-        protected override int ExecInternal(object[] args)
-        {
-            Nexus.Player.SetCollision(Nexus.Player.IgnoresCollision);
-            Util.Log(
-                ("-- " + (!Nexus.Player.IgnoresCollision ? "Enabled " : "Disabled") + " collision.").ToColoredString(Palette.Ui["DebugMessage"]),
-                false
-            );
-            return 0;
-        }
-
-        protected override object ParseArgument(Type T, string str)
-        {
-            return null;
-        }
-    }
-
-    public class CommandTogglefog : CommandDelegate
-    {
-        public static Type[] _Signature = new Type[0];
-
-        public CommandTogglefog() : base(_Signature)
-        {
-
-        }
-
-        protected override int ExecInternal(object[] args)
-        {
-            Nexus.Player.Brain.TileMemory.Toggle();
-            Util.Log(
-                ("-- " + (Nexus.Player.Brain.TileMemory.IsEnabled ? "Enabled " : "Disabled") + " fog.").ToColoredString(Palette.Ui["DebugMessage"]),
-                false
-            );
-            return 0;
-        }
-
-        protected override object ParseArgument(Type T, string str)
-        {
-            return null;
-        }
-    }
-
-    public class CommandSpawn : CommandDelegate
-    {
-        public static Type[] _Signature = new Type[1] { typeof(int) };
-
-        public CommandSpawn() : base(_Signature)
-        {
-
-        }
-
-        protected override int ExecInternal(object[] args)
-        {
-            int qty = (int)args[0];
-            for(int i = 0; i < qty; ++i)
-            {
-                Humanoid h = new Humanoid();
-                h.ChangeLocalMap(Nexus.Player.Map, Nexus.Player.LocalPosition);
-            }
-            return 0;
-        }
-
-        protected override object ParseArgument(Type T, string str)
-        {
-            try
-            {
-                return int.Parse(str);
-            }
-            catch(FormatException e)
-            {
-                return null;
-            }
+            return Delegates.Values;
         }
     }
 }

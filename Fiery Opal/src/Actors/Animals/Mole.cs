@@ -1,9 +1,8 @@
-﻿using FieryOpal.Src.Actors;
-using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 
-namespace FieryOpal.src.Actors.Animals
+namespace FieryOpal.Src.Actors.Animals
 {
     class Mole : TurnTakingActor
     {

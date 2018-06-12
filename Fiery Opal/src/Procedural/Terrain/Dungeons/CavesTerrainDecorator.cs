@@ -1,14 +1,12 @@
-﻿using FieryOpal.src.Actors.Animals;
-using FieryOpal.src.Actors.Decorations;
-using FieryOpal.Src;
+﻿using FieryOpal.Src.Actors.Animals;
+using FieryOpal.Src.Actors.Decorations;
 using FieryOpal.Src.Lib;
-using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FieryOpal.src.Procedural.Terrain.Dungeons
+namespace FieryOpal.Src.Procedural.Terrain.Dungeons
 {
     public class CavesTerrainDecorator : TerrainDecoratorBase
     {

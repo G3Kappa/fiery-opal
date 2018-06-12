@@ -1,9 +1,8 @@
-﻿using FieryOpal.Src;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.src.Procedural.CellularAutomata
+namespace FieryOpal.Src.Procedural.CellularAutomata
 {
 
     class CellularAutomation<T>

@@ -1,10 +1,8 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Procedural;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Linq;
 
-namespace FieryOpal.src.Procedural.Terrain.Dungeons
+namespace FieryOpal.Src.Procedural.Terrain.Dungeons
 {
     /// <summary>
     /// Generates an entrance vault for a dungeon.

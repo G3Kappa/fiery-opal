@@ -66,7 +66,7 @@ namespace FieryOpal.Src
             {
                 // If the player is dead allow no further processing of turns.
                 // Unless they somehow come back to life, that is.
-                if(!actions.ContainsKey(Nexus.Player.Handle))
+                if (!actions.ContainsKey(Nexus.Player.Handle))
                 {
                     Util.Log("You died.", false);
                     return;

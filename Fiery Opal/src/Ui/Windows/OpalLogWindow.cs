@@ -2,6 +2,7 @@
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace FieryOpal.Src.Ui.Windows
@@ -9,19 +10,13 @@ namespace FieryOpal.Src.Ui.Windows
     public class OpalLogWindow : OpalConsoleWindow
     {
         protected List<Tuple<ColoredString, bool>> LastShownMessages;
-        public readonly int LastShownMessagesCap;
-        public readonly int LastShownMessagesDumpAmount;
 
         public bool DebugMode { get; set; } = true;
         protected List<Regex> SuppressedMessagesRegexps;
 
-        public OpalLogWindow(int w, int h, int last_shown_cap = 500, int dump_amount = 100, Font f = null) : base(w, h, "Log", f)
+        public OpalLogWindow(int w, int h, Font f = null) : base(w, h, "Log", f)
         {
-            if (dump_amount > last_shown_cap) throw new ArgumentOutOfRangeException("dump_amount");
-
-            LastShownMessagesCap = last_shown_cap;
-            LastShownMessagesDumpAmount = dump_amount;
-            LastShownMessages = new List<Tuple<ColoredString, bool>>(LastShownMessagesCap);
+            LastShownMessages = new List<Tuple<ColoredString, bool>>();
             SuppressedMessagesRegexps = new List<Regex>();
 #if DEBUG
             DebugMode = true;
@@ -79,13 +74,21 @@ namespace FieryOpal.Src.Ui.Windows
                 LastShownMessages.RemoveAt(LastShownMessages.Count - 1);
             }
             LastShownMessages.Add(tup);
+            DumpToFile(tup);
+        }
 
-            if (LastShownMessages.Count >= LastShownMessagesCap)
+        private static string SessionFileName = "";
+        public void DumpToFile(Tuple<ColoredString, bool> tup)
+        {
+            if (SessionFileName == "")
             {
-                // TODO: Dump `LastShownMessagesDumpAmount` messages to disk.
-                LastShownMessages.RemoveRange(0, LastShownMessagesDumpAmount);
-                Log(new ColoredString(string.Format("Log: Dumped last {0} shown messages.", LastShownMessagesDumpAmount), new Cell(debug_foreground, debug_background)), true);
+                SessionFileName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".log";
             }
+
+            Color debug_foreground = Palette.Ui["DebugMessage"];
+            Color debug_background = Palette.Ui["DefaultBackground"];
+
+            File.AppendAllText("cfg/log/" + SessionFileName, tup.Item1.ToString() + Environment.NewLine);
         }
 
         public void LoadSuppressionRules(InitConfigInfo init)

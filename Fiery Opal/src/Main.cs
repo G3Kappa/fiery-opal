@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework;
 
 namespace FieryOpal
 {
-    class Nexus
+    public static class Nexus
     {
 
         public static int Width { get; private set; }
@@ -62,7 +62,11 @@ namespace FieryOpal
         {
             System.IO.Directory.CreateDirectory("./save");
             System.IO.Directory.CreateDirectory("./cfg");
+            System.IO.Directory.CreateDirectory("./cfg/log");
             System.IO.Directory.CreateDirectory("./cfg/locale");
+            System.IO.Directory.CreateDirectory("./cfg/scripts");
+            System.IO.Directory.CreateDirectory("./cfg/keybinds");
+            System.IO.Directory.CreateDirectory("./cfg/palettes");
             System.IO.Directory.CreateDirectory("./gfx");
             System.IO.Directory.CreateDirectory("./gfx/extra");
         }
@@ -80,7 +84,12 @@ namespace FieryOpal
             GameInstance = new OpalGame(world);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
 
+            TypeConversionHelper<object>.RegisterDefaultConversions();
             TileSkeleton.PreloadAllSkeletons();
+            OpalActorBase.PreloadActorClasses("");
+            OpalActorBase.PreloadActorClasses("Animals");
+            OpalActorBase.PreloadActorClasses("Decorations");
+            LuaVM.Init();
 
             Util.Log(Util.Str("WelcomeMessage"), false);
         }

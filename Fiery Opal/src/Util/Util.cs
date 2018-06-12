@@ -1,8 +1,8 @@
-﻿using FieryOpal.Src.Actors;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using static FieryOpal.Src.Procedural.GenUtil;
 
 namespace FieryOpal.Src
@@ -80,6 +80,14 @@ namespace FieryOpal.Src
         public static T LoadContent<T>(string name)
         {
             return SadConsole.Game.Instance.Content.Load<T>(name);
+        }
+
+        public static Type[] GetTypesInNamespace(Assembly assembly, string nameSpace)
+        {
+            return
+              assembly.GetTypes()
+                      .Where(t => String.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
+                      .ToArray();
         }
     }
 

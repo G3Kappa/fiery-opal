@@ -1,10 +1,4 @@
-﻿using FieryOpal.Src.Procedural;
-using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Dialogs;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using SadConsole;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace FieryOpal.Src.Actors

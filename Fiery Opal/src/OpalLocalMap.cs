@@ -90,6 +90,8 @@ namespace FieryOpal.Src
         public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
 
+        public List<ILocalFeatureGenerator> FeatureGenerators { get; private set; } = new List<ILocalFeatureGenerator>();
+
         public Soundtrack.TrackName Soundtrack { get; set; } = Src.Soundtrack.TrackName.No_Track;
 
         public WorldTile ParentRegion;
@@ -106,57 +108,77 @@ namespace FieryOpal.Src
             Name = name;
         }
 
+        private Object actorsLock = new Object();
         public IOpalGameActor FindActorByHandle(Guid handle)
         {
-            foreach (var a in Actors)
+            lock (actorsLock)
             {
-                if (a.Handle == handle) return a;
+                foreach (var a in Actors)
+                {
+                    if (a.Handle == handle) return a;
+                }
             }
             return null;
         }
 
         public bool Spawn(IOpalGameActor actor)
         {
-            if (Actors.Contains(actor)) return false;
-            Actors.Add(actor);
-            NotifyActorMoved(actor, new Point(-1, -1));
+            lock (actorsLock)
+            {
+                if (Actors.Contains(actor)) return false;
+                Actors.Add(actor);
+                NotifyActorMoved(actor, new Point(-1, -1));
+            }
             return true;
         }
 
         public void SpawnMany(IEnumerable<IOpalGameActor> actors)
         {
-            foreach (var actor in actors)
+            lock (actorsLock)
             {
-                Spawn(actor);
+                foreach (var actor in actors)
+                {
+                    Spawn(actor);
+                }
             }
         }
 
         public bool Despawn(IOpalGameActor actor)
         {
-            if (!Actors.Contains(actor)) return false;
-            Actors.Remove(actor);
-            NotifyActorMoved(actor, new Point(-2, -2));
+            lock (actorsLock)
+            {
+                if (!Actors.Contains(actor)) return false;
+                NotifyActorMoved(actor, new Point(-2, -2));
+                Actors.Remove(actor);
+            }
             return true;
         }
 
         public void DespawnAll()
         {
-            foreach (var actor in Actors.ToList())
+            lock (actorsLock)
             {
-                Despawn(actor);
+                foreach (var actor in Actors.ToList())
+                {
+                    Despawn(actor);
+                }
             }
         }
 
         public void DespawnMany(IEnumerable<IOpalGameActor> actors)
         {
-            foreach (var actor in actors)
+            lock (actorsLock)
             {
-                Despawn(actor);
+                foreach (var actor in actors)
+                {
+                    Despawn(actor);
+                }
             }
         }
 
-        public void CallLocalGenerator(ILocalFeatureGenerator gen)
+        public void CallLocalGenerator(ILocalFeatureGenerator gen, bool remember=true)
         {
+            if(remember) FeatureGenerators.Add(gen);
             gen.Generate(this);
             Iter((self, x, y, t) =>
             {
@@ -197,6 +219,8 @@ namespace FieryOpal.Src
 
         public virtual void GenerateAnew(params ILocalFeatureGenerator[] generators)
         {
+            var actors = actorsAtHashmap.SelectMany(a => a.Value).Where(a => !(a is DecorationBase)).ToList();
+            FeatureGenerators.Clear();
             Iter((self, x, y, t) =>
             {
                 self.TileAt(x, y)?.Dispose();
@@ -208,6 +232,16 @@ namespace FieryOpal.Src
             {
                 CallLocalGenerator(gen);
             }
+
+            foreach (var a in actors)
+            {
+                a.MoveTo(FirstAccessibleTileAround(a.LocalPosition), true);
+            }
+        }
+
+        public void GenerateAnew()
+        {
+            GenerateAnew(FeatureGenerators.ToArray());
         }
 
         public void GenerateWorldFeatures()
@@ -284,9 +318,12 @@ namespace FieryOpal.Src
 
         public void Update(TimeSpan delta)
         {
-            foreach (var actor in Actors)
+            lock (actorsLock)
             {
-                actor.Update(delta);
+                foreach (var actor in Actors)
+                {
+                    actor.Update(delta);
+                }
             }
         }
 
@@ -347,14 +384,17 @@ namespace FieryOpal.Src
 
         public IEnumerable<IOpalGameActor> ActorsAt(int x, int y)
         {
-            if (x < 0 || y < 0 || x >= Width || y >= Height)
+            lock (actorsLock)
             {
-                return new List<IOpalGameActor>();
-            }
-            var p = new Point(x, y);
-            if (actorsAtHashmap.ContainsKey(p))
-            {
-                return actorsAtHashmap[p];
+                if (x < 0 || y < 0 || x >= Width || y >= Height)
+                {
+                    return new List<IOpalGameActor>();
+                }
+                var p = new Point(x, y);
+                if (actorsAtHashmap.ContainsKey(p))
+                {
+                    return actorsAtHashmap[p];
+                }
             }
             return new List<IOpalGameActor>();
         }
@@ -386,7 +426,10 @@ namespace FieryOpal.Src
             Rectangle r;
             if (!R.HasValue)
             {
-                foreach (var actor in Actors) yield return actor;
+                lock(actorsLock)
+                {
+                    foreach (var actor in Actors) yield return actor;
+                }
                 yield break;
             }
             else r = R.Value;
@@ -434,21 +477,27 @@ namespace FieryOpal.Src
                 }
             }
         }
-        public Point FirstAccessibleTileAround(Point xy)
+        public Point FirstAccessibleTileAround(Point xy, bool ignoreDecorations=true)
         {
             int r = 0;
             IEnumerable<Tuple<OpalTile, Point>> tiles_in_ring;
 
+            var validTile = (Func<Point,bool>)((Point p) =>
+            {
+                var t = TileAt(xy);
+                return !t.Properties.BlocksMovement
+                         && !ActorsAt(p.X, p.Y)
+                         .Any(
+                            a => (!(a is IDecoration) || (!ignoreDecorations && a is IDecoration) || (a as IDecoration).BlocksMovement)
+                         );
+            });
+
+            if (validTile(xy)) return xy;
+
             do
             {
-                tiles_in_ring = TilesWithinRing(xy.X, xy.Y, ++r, r - 1)
-                    .Where(
-                    t => !t.Item1.Properties.BlocksMovement
-                         && !ActorsAt(t.Item2.X, t.Item2.Y)
-                         .Any(
-                            a => !(a is IDecoration) || (a as IDecoration).BlocksMovement
-                         )
-                    );
+                tiles_in_ring = TilesWithinRing(xy.X, xy.Y, ++r, r - 2)
+                    .Where(t => validTile(t.Item2));
 
                 if (r >= Width / 2)
                 {

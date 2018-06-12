@@ -1,5 +1,4 @@
-﻿using FieryOpal.src.Ui;
-using FieryOpal.Src.Actors;
+﻿using FieryOpal.Src.Actors;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;

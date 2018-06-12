@@ -1,11 +1,8 @@
-﻿using FieryOpal.Src;
-using FieryOpal.Src.Procedural;
-using FieryOpal.Src.Procedural.Terrain;
-using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using Microsoft.Xna.Framework;
 using System.Linq;
 
-namespace FieryOpal.src.Procedural.Terrain.Dungeons
+namespace FieryOpal.Src.Procedural.Terrain.Dungeons
 {
     public class CavesTerrainGenerator : TerrainGeneratorBase
     {

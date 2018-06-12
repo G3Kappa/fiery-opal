@@ -42,6 +42,12 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="cfg\scripts\Weapons.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="cfg\scripts\MapRegen.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="cfg\soundtrack.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -69,6 +75,8 @@
     <Compile Include="src\Actors\PlayerControlledAI.cs" />
     <Compile Include="src\Actors\TurnTakingActor.cs" />
     <Compile Include="src\Actors\TurnTakingAI.cs" />
+    <Compile Include="src\CommandDelegate.cs" />
+    <Compile Include="src\LuaIntegration.cs" />
     <Compile Include="src\ConfigParser.cs" />
     <Compile Include="src\lib\Convolutional\ConvNetSharp.Core\Fluent\Extensions.cs" />
     <Compile Include="src\lib\Convolutional\ConvNetSharp.Core\Fluent\FluentNet.cs" />
@@ -248,6 +256,9 @@
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\DesktopGL\MonoGame.Framework.dll</HintPath>
     </Reference>
+    <Reference Include="MoonSharp.Interpreter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=921e73ce94aa17f8, processorArchitecture=MSIL">
+      <HintPath>..\packages\MoonSharp.2.0.0.0\lib\net40-client\MoonSharp.Interpreter.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -404,6 +415,9 @@
     <Content Include="todo\AI.txt" />
     <Content Include="todo\Lore.txt" />
     <Content Include="todo\Dungeons.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="cfg\log\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
