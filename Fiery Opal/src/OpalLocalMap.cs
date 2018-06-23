@@ -1,5 +1,6 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Procedural.Terrain.Biomes;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
@@ -108,6 +109,17 @@ namespace FieryOpal.Src
             Name = name;
         }
 
+        public float[,] DistanceTransform(Func<Tuple<OpalTile, Point>, bool> predicate)
+        {
+            bool[,] tiles = new bool[Width, Height];
+            Iter((s, x, y, t) =>
+            {
+                tiles[x, y] = predicate(new Tuple<OpalTile, Point>(t, new Point(x, y)));
+                return false;
+            });
+            return tiles.DistanceTransform().Normalize((float)Math.Sqrt(Width * Width + Height * Height));
+        }
+
         private Object actorsLock = new Object();
         public IOpalGameActor FindActorByHandle(Guid handle)
         {
@@ -149,7 +161,6 @@ namespace FieryOpal.Src
             {
                 if (!Actors.Contains(actor)) return false;
                 NotifyActorMoved(actor, new Point(-2, -2));
-                Actors.Remove(actor);
             }
             return true;
         }
@@ -200,7 +211,7 @@ namespace FieryOpal.Src
                 {
                     if (t.Properties.IsBlock)
                     {
-                        Util.Log(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
+                        Util.LogText(String.Format("Decoration spawned at invalid location! ({0}, {1})", x, y), true);
                     }
                     else decor.ChangeLocalMap(self, new Point(x, y));
                 }
@@ -232,6 +243,7 @@ namespace FieryOpal.Src
             {
                 CallLocalGenerator(gen);
             }
+            CallLocalGenerator(new BiomeTransitioner(ParentRegion));
 
             foreach (var a in actors)
             {
@@ -296,24 +308,33 @@ namespace FieryOpal.Src
             while (true);
         }
 
-        public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1)
+        public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1, bool killDecorations=false)
         {
-            DrawShape(Util.BresenhamLine(start, end, thickness), newTile);
+            DrawShape(Util.BresenhamLine(start, end, thickness), newTile, killDecorations);
         }
 
-        public void DrawDisc(Point center, int radius, OpalTile newTile)
+        public void DrawDisc(Point center, int radius, OpalTile newTile, bool killDecorations = false)
         {
-            DrawShape(Util.Disc(center, radius), newTile);
+            DrawShape(Util.Disc(center, radius), newTile, killDecorations);
         }
 
-        public void DrawCurve(Point p1, Point p2, Point p3, Point p4, OpalTile newTile, int thickness = 1, int n = 5)
+        public void DrawCurve(Point p1, Point p2, Point p3, Point p4, OpalTile newTile, int thickness = 1, int n = 5, bool killDecorations = false)
         {
-            DrawShape(Util.CubicBezier(p1, p2, p3, p4, thickness: thickness, n: n), newTile);
+            DrawShape(Util.CubicBezier(p1, p2, p3, p4, thickness: thickness, n: n), newTile, killDecorations);
         }
 
-        public void DrawShape(IEnumerable<Point> points, OpalTile brush)
+        public void DrawShape(IEnumerable<Point> points, OpalTile brush, bool killDecorations = false)
         {
-            foreach (var p in points) SetTile(p.X, p.Y, brush);
+            foreach (var p in points)
+            {
+                SetTile(p.X, p.Y, brush);
+                if(killDecorations)
+                {
+                    ActorsAt(p.X, p.Y)
+                        .Where(a => typeof(IDecoration).IsAssignableFrom(a.GetType()))
+                        .ForEach(a => (a as OpalActorBase).Kill());
+                }
+            }
         }
 
         public void Update(TimeSpan delta)
@@ -364,10 +385,11 @@ namespace FieryOpal.Src
             if (oldPos == new Point(-2, -2)) /* Actor died */
             {
                 actorsAtHashmap[actor.LocalPosition].Remove(actor);
+                Actors.Remove(actor);
                 return;
             }
 
-            if (oldPos != new Point(-1, -1) /* Actor is from another map */ && actorsAtHashmap.ContainsKey(oldPos))
+            if (oldPos != new Point(-1, -1) && actorsAtHashmap.ContainsKey(oldPos) /* Actor is from this map */ )
             {
                 actorsAtHashmap[oldPos].Remove(actor);
                 if (actorsAtHashmap[oldPos].Count == 0)
@@ -375,6 +397,7 @@ namespace FieryOpal.Src
                     actorsAtHashmap.Remove(oldPos);
                 }
             }
+
             if (!actorsAtHashmap.ContainsKey(actor.LocalPosition))
             {
                 actorsAtHashmap[actor.LocalPosition] = new List<IOpalGameActor>();
@@ -463,7 +486,7 @@ namespace FieryOpal.Src
             foreach (var t in TilesWithin(new Rectangle(x - r1, y - r1, r1 * 2, r1 * 2)))
             {
                 double dist = Math.Sqrt(Math.Pow(t.Item2.X - x, 2) + Math.Pow(t.Item2.Y - y, 2));
-                var actors = ActorsAt(t.Item2.X, t.Item2.Y);
+                var actors = ActorsAt(t.Item2.X, t.Item2.Y).ToList();
                 if (dist <= r1 && dist > r2 && actors.Count() > 0)
                 {
                     foreach (var act in actors)
@@ -501,7 +524,7 @@ namespace FieryOpal.Src
 
                 if (r >= Width / 2)
                 {
-                    Util.Log("No accessible tile around {0}!".Fmt(xy), true);
+                    Util.LogText("No accessible tile around {0}!".Fmt(xy), true);
                     return new Point(0, 0);
                 }
             }

@@ -33,10 +33,15 @@ namespace FieryOpal.Src.Actors
 
     public class WanderingBrain : TurnBasedAI
     {
-        public WanderingBrain(TurnTakingActor actor) : base(actor) { }
+        public float MoveDelay { get; }
+
+        public WanderingBrain(TurnTakingActor actor, float moveDelay=1.0f) : base(actor)
+        {
+            MoveDelay = moveDelay;
+        }
         public override IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy)
         {
-            yield return () => { Body.MoveTo(Util.RandomUnitPoint()); return 1.0f; };
+            yield return () => { Body.MoveTo(Util.RandomUnitPoint()); return MoveDelay; };
         }
     }
 

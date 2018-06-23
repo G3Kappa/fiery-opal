@@ -14,7 +14,7 @@ namespace FieryOpal.Src.Actors
 
         public Plant()
         {
-            PossibleGlyphs = new[] { 5, 6, 23, 24 };
+            PossibleGlyphs = new[] { 6, 23, 24 };
             PossibleColors = new[] {
                 Palette.Vegetation["GenericPlant1"],
                 Palette.Vegetation["GenericPlant2"],
@@ -30,7 +30,7 @@ namespace FieryOpal.Src.Actors
                 };
             }
 
-            FirstPersonVerticalOffset = 4.5f * -3 / 2f;
+            FirstPersonVerticalOffset = -7f;
             FirstPersonScale = new Vector2(.5f, 1 / 3f);
 
             SetGraphics();
@@ -39,6 +39,21 @@ namespace FieryOpal.Src.Actors
         protected void SetGraphics()
         {
             Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(PossibleColors[Util.Rng.Next(PossibleColors.Length)], Color.Transparent, PossibleGlyphs[Util.Rng.Next(PossibleGlyphs.Length)]));
+        }
+    }
+
+    public class Pine : Plant
+    {
+        public Pine()
+        {
+            PossibleGlyphs = new[] { 6 };
+            PossibleColors = new[] {
+                Palette.Vegetation["GenericPlant2"],
+            };
+            FirstPersonVerticalOffset = -14f;
+            FirstPersonScale = new Vector2(.25f, 1 / 4f);
+
+            SetGraphics();
         }
     }
 
@@ -65,6 +80,19 @@ namespace FieryOpal.Src.Actors
             {
                 FirstPersonVerticalOffset += .5f;
             }
+        }
+    }
+
+    public class RedSapling : Sapling
+    {
+        public RedSapling() : base()
+        {
+            PossibleColors = new[] {
+                Palette.Vegetation["GenericPlant4"],
+                Palette.Vegetation["GenericPlant5"],
+                Palette.Vegetation["GenericPlant6"],
+            };
+            SetGraphics();
         }
     }
 

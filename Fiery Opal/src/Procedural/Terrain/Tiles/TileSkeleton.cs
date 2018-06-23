@@ -53,7 +53,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Tiles
             {
                 if (t.IsAbstract) continue;
                 var instance = Get(t, (TileSkeleton)Activator.CreateInstance(t));
-                Util.Log("TileSkeleton.PreloadAllSkeletons: Preloaded {0} ({1}).".Fmt(t.Name, instance.DefaultName), true, Palette.Ui["BoringMessage"]);
+                Util.LogText("TileSkeleton.PreloadAllSkeletons: Preloaded {0} ({1}).".Fmt(t.Name, instance.DefaultName), true, Palette.Ui["BoringMessage"]);
             }
         }
 

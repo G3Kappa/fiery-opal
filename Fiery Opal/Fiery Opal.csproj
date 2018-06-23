@@ -14,6 +14,8 @@
     <FileAlignment>512</FileAlignment>
     <MonoGamePlatform>DesktopGL</MonoGamePlatform>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +44,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="app.config" />
+    <None Include="cfg\scripts\cstest.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="cfg\scripts\Weapons.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -68,6 +74,7 @@
     <Compile Include="src\Actors\Furniture.cs" />
     <Compile Include="src\Actors\Humanoid.cs" />
     <Compile Include="src\Actors\Equipment.cs" />
+    <Compile Include="src\Actors\ServerControlledAI.cs" />
     <Compile Include="src\Actors\Weapon.cs" />
     <Compile Include="src\Actors\ItemContainer.cs" />
     <Compile Include="src\Actors\Item.cs" />
@@ -76,6 +83,7 @@
     <Compile Include="src\Actors\TurnTakingActor.cs" />
     <Compile Include="src\Actors\TurnTakingAI.cs" />
     <Compile Include="src\CommandDelegate.cs" />
+    <Compile Include="src\lib\LaplaceTransform.cs" />
     <Compile Include="src\LuaIntegration.cs" />
     <Compile Include="src\ConfigParser.cs" />
     <Compile Include="src\lib\Convolutional\ConvNetSharp.Core\Fluent\Extensions.cs" />
@@ -150,11 +158,15 @@
     <Compile Include="src\lib\Convolutional\ConvNetSharp.Volume\VolumeStorage.cs" />
     <Compile Include="src\lib\PoissonDisk.cs" />
     <Compile Include="src\lib\Voronoi.cs" />
+    <Compile Include="src\Multiplayer\Client.cs" />
+    <Compile Include="src\Multiplayer\CommandDelegates.cs" />
+    <Compile Include="src\Multiplayer\Server.cs" />
     <Compile Include="src\Procedural\BasicBuildingDesigner.cs" />
     <Compile Include="src\Procedural\BasicBuildingGenerator.cs" />
     <Compile Include="src\Procedural\BasicRoomDesigner.cs" />
     <Compile Include="src\Procedural\BasicTerrainDecorator.cs" />
     <Compile Include="src\Procedural\CellularAutomata.cs" />
+    <Compile Include="src\Procedural\Terrain\Biomes\BiomeTransitioner.cs" />
     <Compile Include="src\Procedural\Terrain\Dungeons\CavesTerrainDecorator.cs" />
     <Compile Include="src\Procedural\Terrain\Dungeons\CavesTerrainGenerator.cs" />
     <Compile Include="src\Procedural\Terrain\Dungeons\CavesVaultGenerator.cs" />
@@ -196,7 +208,7 @@
     <Compile Include="src\Procedural\ILocalFeatureGenerator.cs" />
     <Compile Include="src\Keybind.cs" />
     <Compile Include="src\lib\SimplexNoise.cs" />
-    <Compile Include="src\Main.cs" />
+    <Compile Include="src\Nexus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\OpalActor.cs" />
     <Compile Include="src\OpalGame.cs" />
@@ -267,6 +279,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
+    <Reference Include="ZedGraph, Version=5.1.7.430, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZedGraph.5.1.7\lib\net35-Client\ZedGraph.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icon.ico" />
@@ -412,6 +427,7 @@
     <Content Include="gfx\Weapons.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="License-LGPL.txt" />
     <Content Include="todo\AI.txt" />
     <Content Include="todo\Lore.txt" />
     <Content Include="todo\Dungeons.txt" />
@@ -421,6 +437,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
+  <Import Project="..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets" Condition="Exists('..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

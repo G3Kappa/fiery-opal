@@ -334,7 +334,7 @@ namespace FieryOpal.Src.Procedural
                 }
                 if (!at_least_one_match)
                 {
-                    Util.Log(String.Format("MatrixReplacement.SlideAcross  : No matches for {0}.", DebugName), true);
+                    Util.LogText(String.Format("MatrixReplacement.SlideAcross  : No matches for {0}.", DebugName), true);
                 }
                 return at_least_one_match;
             }

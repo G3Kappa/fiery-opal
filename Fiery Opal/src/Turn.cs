@@ -31,6 +31,7 @@ namespace FieryOpal.Src
     public class TurnManager
     {
         public float CurrentTime { get; private set; } = 0f; // CurrentTurn + (.0f -> 1f)
+        public float CurrentPlayerDelay { get; private set; } = 0f;
         public int CurrentTurn => (int)CurrentTime;
 
         public float TimeDilation { get; private set; } = 1 / 40f;
@@ -62,13 +63,16 @@ namespace FieryOpal.Src
                 }
             }
 
+            CurrentTime -= TimeDilation;
+
+            var accKeys = Accumulator.Keys.ToList();
             for (float t = 0; t < 1; t += TimeDilation)
             {
                 // If the player is dead allow no further processing of turns.
                 // Unless they somehow come back to life, that is.
                 if (!actions.ContainsKey(Nexus.Player.Handle))
                 {
-                    Util.Log("You died.", false);
+                    Util.LogText("You died.", false);
                     return;
                 }
 
@@ -76,21 +80,28 @@ namespace FieryOpal.Src
                 {
                     // If the player has no more actions to perform but hasn't completed their turn yet,
                     // end the current turn now and let them make another move.
-                    return;
+                    break;
                 }
+
+                foreach(var key in accKeys)
+                {
+                    Accumulator[key] = Math.Max(Accumulator[key] - TimeDilation, 0);
+                }
+
                 foreach (var kvp in actions)
                 {
-                    if (Accumulator[kvp.Key] <= t && kvp.Value.Count > 0)
-                    {
-                        var cost = kvp.Value.Dequeue().Invoke();
-                        Accumulator[kvp.Key] += cost * TimeDilation;
-                    }
-                    else Accumulator[kvp.Key] = Math.Max(Accumulator[kvp.Key] - TimeDilation, 0);
+                    if (kvp.Value.Count == 0) continue;
+                    if (Accumulator[kvp.Key] > 0) continue;
+
+                    var cost = kvp.Value.Dequeue().Invoke();
+                    Accumulator[kvp.Key] += cost + TimeDilation * (cost - 1);
                 }
+
                 CurrentTime = (float)Math.Round(CurrentTime + TimeDilation, 3);
             }
 
-            // If some actions are left uninvoked, discard them. The AI will re-evaluate.
+            CurrentPlayerDelay = Accumulator[Nexus.Player.Handle];
+            if (CurrentPlayerDelay > 0) BeginTurn(map);
         }
     }
 }

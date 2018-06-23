@@ -48,7 +48,7 @@ namespace FieryOpal.Src.Actors
             bool ret = a.Equipment.TryEquip(this, a);
             if (a.IsPlayer)
             {
-                Util.Log((ret ? Nexus.Locale.Translation["Weapon_EquipedSuccess"] : Nexus.Locale.Translation["Weapon_EquipedFailure"]).Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
+                Util.LogText((ret ? Nexus.Locale.Translation["Weapon_EquipedSuccess"] : Nexus.Locale.Translation["Weapon_EquipedFailure"]).Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
             }
             if (ret)
             {
@@ -65,7 +65,7 @@ namespace FieryOpal.Src.Actors
             bool ret = a.Equipment.TryUnequip(this, a);
             if (a.IsPlayer)
             {
-                Util.Log((ret ? Nexus.Locale.Translation["Weapon_UnequipedSuccess"] : Nexus.Locale.Translation["Weapon_UnequipedFailure"]).Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
+                Util.LogText((ret ? Nexus.Locale.Translation["Weapon_UnequipedSuccess"] : Nexus.Locale.Translation["Weapon_UnequipedFailure"]).Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
             }
             if (ret)
             {
@@ -93,7 +93,7 @@ namespace FieryOpal.Src.Actors
         {
             if ((holder as TurnTakingActor)?.Equipment.IsEquiped(this) ?? false)
             {
-                Util.Log(Nexus.Locale.Translation["Equipment_CannotDrop"].Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
+                Util.LogText(Nexus.Locale.Translation["Equipment_CannotDrop"].Fmt(ItemInfo.Name), false, Palette.Ui["BoringMessage"]);
                 return;
             }
             base.DropFrom(holder);
@@ -135,14 +135,15 @@ namespace FieryOpal.Src.Actors
             if (actorsHere.Count == 0) yield break;
             yield return () =>
             {
-                ApplyDamage(actorsHere);
+                ApplyDamage(actorsHere, false);
                 return HitDelay;
             };
         }
 
-        public virtual void ApplyDamage(List<TurnTakingActor> actors)
+        public virtual void ApplyDamage(List<TurnTakingActor> actors, bool hurtOwner = false)
         {
-            actors = actors.Where(a => !a.IsDead).ToList(); // Since this action was enqueued, some targets might have died in the meantime. 
+            actors = actors.Where(a => !a.IsDead).ToList(); // Since this action was enqueued, some targets might have died in the meantime.
+            if (!hurtOwner) actors.Remove(FiredFrom.Owner as TurnTakingActor);
             switch (DamageKind)
             {
                 case DamageType.Impact:
@@ -195,7 +196,7 @@ namespace FieryOpal.Src.Actors
             yield return () => { Kill(); return HitDelay; };
         }
 
-        public override void ApplyDamage(List<TurnTakingActor> actors)
+        public override void ApplyDamage(List<TurnTakingActor> actors, bool hurtOwner = false)
         {
             var branchTargets = Map.ActorsWithinRing(LocalPosition.X, LocalPosition.Y, (int)BranchingRadius, 1)
                 .Where(a =>
@@ -217,8 +218,8 @@ namespace FieryOpal.Src.Actors
                 }
             }
 
-            Util.Log("Hit", false);
-            base.ApplyDamage(actors);
+            Util.LogText("Hit", false);
+            base.ApplyDamage(actors, hurtOwner);
         }
 
         public override int CalcDamage(EquipmentSlotType partHit)

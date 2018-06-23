@@ -59,6 +59,7 @@ namespace FieryOpal.Src.Ui
 
         private Font GetFontByDist(float perpDist, ICustomSpritesheet thing)
         {
+            return thing.Spritesheet;
             if (perpDist / ViewDistance > .4f)
             {
                 return Nexus.Fonts.MainFont;

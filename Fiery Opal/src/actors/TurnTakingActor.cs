@@ -31,7 +31,7 @@ namespace FieryOpal.Src.Actors
             Health -= damage;
             if (Health <= 0)
             {
-                Util.Log(Nexus.Locale.Translation["Actor_Died"].Fmt(Name), false);
+                Util.LogText(Nexus.Locale.Translation["Actor_Died"].Fmt(Name), false);
                 Kill();
             }
             else if (Health > MaxHealth) Health = MaxHealth;

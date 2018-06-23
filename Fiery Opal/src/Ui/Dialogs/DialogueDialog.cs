@@ -37,7 +37,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         {
             if (Controls.Count == 0)
             {
-                Util.Log("Tried to display a DialogueDialog with no options!", true);
+                Util.LogText("Tried to display a DialogueDialog with no options!", true);
                 return;
             }
             base.Show(modal);

@@ -75,10 +75,14 @@ namespace FieryOpal.Src
             Cmd = name;
         }
 
+        public string GetSignatureString(string join=", ")
+        {
+            return String.Join(join, Signature.Select(t => t.Name).ToArray());
+        }
+
         public virtual string GetHelpText()
         {
-            string types = String.Join(" ", Signature.Select(t => t.Name).ToArray());
-            return "Usage: {0} {1}".Fmt(Cmd, types);
+            return "Usage: {0} {1}".Fmt(Cmd, GetSignatureString());
         }
 
         protected abstract dynamic ParseArgument(Type T, string str);
@@ -88,7 +92,7 @@ namespace FieryOpal.Src
         {
             if (args.Length != Signature.Length)
             {
-                Util.Log(GetHelpText(), true, Palette.Ui["InfoMessage"]);
+                Util.LogText(GetHelpText(), true, Palette.Ui["InfoMessage"]);
                 return -1;
             }
 
@@ -98,7 +102,7 @@ namespace FieryOpal.Src
                 object arg = null;
                 if ((arg = ParseArgument(Signature[i], args[i])) == null)
                 {
-                    Util.Log(GetHelpText(), true, Palette.Ui["InfoMessage"]);
+                    Util.LogText(GetHelpText(), true, Palette.Ui["InfoMessage"]);
                     return -2;
                 }
                 arguments[i] = arg;
@@ -226,7 +230,7 @@ namespace FieryOpal.Src
                 OpalActorBase h = OpalActorBase.MakeFromClassName(className);
                 if (h == null)
                 {
-                    Util.Log("Unknown actor class.", true);
+                    Util.LogText("Unknown actor class.", true);
                     return 1;
                 }
                 Point pos = Nexus.Player.LocalPosition + new Point(x, y);
@@ -259,7 +263,7 @@ namespace FieryOpal.Src
 
         protected override int ExecInternal(object[] args)
         {
-            Util.Log((string)args[0], (bool)args[1]);
+            Util.LogText((string)args[0], (bool)args[1]);
             return 0;
         }
 
@@ -331,7 +335,7 @@ namespace FieryOpal.Src
                 OpalActorBase h = OpalActorBase.MakeFromClassName((string)args[0]);
                 if (h == null || !typeof(OpalActorBase).IsAssignableFrom(h.GetType()))
                 {
-                    Util.Log("Unknown actor class or actor class is not an item.", true);
+                    Util.LogText("Unknown actor class or actor class is not an item.", true);
                     return -1;
                 }
             (h as Item).InteractWith(Nexus.Player);
@@ -370,19 +374,19 @@ namespace FieryOpal.Src
                 {
                     if (!(item is IEquipable))
                     {
-                        Util.Log("Item is not equipable.", true);
+                        Util.LogText("Item is not equipable.", true);
                         return -2;
                     }
 
                     if(!Nexus.Player.Equipment.TryEquip((item as IEquipable), Nexus.Player))
                     {
-                        Util.Log("That item is already equiped.", true);
+                        Util.LogText("That item is already equiped.", true);
                         return -3;
                     }
                     return 0;
                 }
             }
-            Util.Log("The player's inventory contains no items with that name.", true);
+            Util.LogText("The player's inventory contains no items with that name.", true);
             return -1;
         }
 
@@ -412,13 +416,13 @@ namespace FieryOpal.Src
                 {
                     if (!Nexus.Player.Equipment.TryUnequip(ieq, Nexus.Player))
                     {
-                        Util.Log("That item is not equiped right now.", true);
+                        Util.LogText("That item is not equiped right now.", true);
                         return -2;
                     }
                     return 0;
                 }
             }
-            Util.Log("The player has no equiped items with that name.", true);
+            Util.LogText("The player has no equiped items with that name.", true);
             return -1;
         }
 

@@ -29,7 +29,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         private bool VillagesNearby(WorldTile t)
         {
-            var neighbours = t.ParentWorld.RegionsWithin(
+            var neighbours = t.ParentWorld.RegionsWithinRect(
                 new Rectangle(t.WorldPosition - new Point(2), new Point(5))
             );
             return neighbours.Any(n => n.FeatureGenerators.Any(x => x is VillageFeatureGenerator));
@@ -46,7 +46,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             while (!ValidRegion(w.RegionAt(c.X, c.Y)) && --start_tries > 0);
             if (start_tries < 0)
             {
-                Util.Log("WorldFeatureGenerator: Could not place village.", true);
+                Util.LogText("WorldFeatureGenerator: Could not place village.", true);
                 yield break;
             }
             yield return c;

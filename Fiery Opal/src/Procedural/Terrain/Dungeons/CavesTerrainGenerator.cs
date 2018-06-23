@@ -60,13 +60,13 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             {
                 if ((float)cellsFilled / (Workspace.Width * Workspace.Height) >= .2f)
                 {
-                    Util.Log("CavesTerrainGenerator.Generate: Too many unconnected areas, regenerating terrain.", true);
+                    Util.LogText("CavesTerrainGenerator.Generate: Too many unconnected areas, regenerating terrain.", true);
                     Generate(m);
                     return;
                 }
                 else
                 {
-                    Util.Log("CavesTerrainGenerator.Generate: Filled {0} unconnected areas, for a total of {1} out of {2} map cells filled."
+                    Util.LogText("CavesTerrainGenerator.Generate: Filled {0} unconnected areas, for a total of {1} out of {2} map cells filled."
                         .Fmt(areasFilled, cellsFilled, Workspace.Width * Workspace.Height), true);
                 }
             }

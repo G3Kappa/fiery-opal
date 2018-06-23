@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Actors;
+﻿using FieryOpal.src.Multiplayer;
+using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
 using Microsoft.Xna.Framework;
@@ -70,6 +71,8 @@ namespace FieryOpal.Src
             Delegates.Add(new CommandStoreItem("store"));
             Delegates.Add(new CommandEquipItem("equip"));
             Delegates.Add(new CommandUnequipItem("unequip"));
+            Delegates.Add(new CommandStartServer("startsv"));
+            Delegates.Add(new CommandStartClient("connect"));
 
             UserData.RegisterType<TurnTakingActor>();
             UserData.RegisterType<OpalActorBase>();
@@ -117,7 +120,11 @@ namespace FieryOpal.Src
             catch (Exception e)
             {
                 Util.Err(e.Message, false);
+#if DEBUG
+                throw e;
+#else
                 return null;
+#endif
             }
         }
     }

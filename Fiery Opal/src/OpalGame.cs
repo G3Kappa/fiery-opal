@@ -98,7 +98,9 @@ namespace FieryOpal.Src
                             OpalInfoWindow.GameInfo info = new OpalInfoWindow.GameInfo
                             {
                                 Player = Player,
-                                CurrentTurnTime = TurnManager.CurrentTime
+                                CurrentTurnTime = TurnManager.CurrentTime,
+                                CurrentPlayerDelay = TurnManager.CurrentPlayerDelay,
+                                FramesPerSecond = (int)Util.Framerate
                             };
 
                             info_window.ReceiveInfoUpdateFromGame(Handle, ref info);

@@ -1,5 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.src.Multiplayer;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using SadConsole;
 using SadConsole.Controls;
 using System;
 using System.Collections.Generic;
@@ -26,6 +28,20 @@ namespace FieryOpal.Src.Ui.Dialogs
         protected bool CallDelegate(string[] args, ref int exitCode)
         {
             if (args.Length == 0) return false;
+            if(new[] { "h", "help" }.Contains(args[0].ToLower()))
+            {
+                Color d_fore = Palette.Ui["DefaultForeground"];
+                Color b_fore = Palette.Ui["BoringMessage"];
+                Color back = Palette.Ui["DefaultBackground"];
+
+                foreach (var s in Delegates.Keys)
+                {
+                    Util.Log(new ColoredString(s, d_fore, back) + new ColoredString("({0})".Fmt(Delegates[s].GetSignatureString()), b_fore, back), false);
+                }
+                exitCode = 0;
+                return true;
+            }
+
             if (!Delegates.ContainsKey(args[0])) return false;
             exitCode = Delegates[args[0]].Execute(args.Skip(1).ToArray());
             return true;
@@ -63,6 +79,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             RegisterDelegate("store", new CommandStoreItem());
             RegisterDelegate("equip", new CommandEquipItem());
             RegisterDelegate("unequip", new CommandUnequipItem());
+            RegisterDelegate("startsv", new CommandStartServer());
+            RegisterDelegate("connect", new CommandStartClient());
 
             var noclip = new CommandNoclip();
             RegisterDelegate("noclip", noclip);
@@ -89,10 +107,11 @@ namespace FieryOpal.Src.Ui.Dialogs
             string s = "";
             for (int i = 0; i < str.Length; ++i)
             {
-                if (!insideQuotes && str[i] == ' ')
+                if (!insideQuotes && (str[i] == ' ' || str[i] == ',') )
                 {
                     if (s.Trim().Length > 0) yield return s.Trim();
                     s = "";
+                    continue;
                 }
                 else if (str[i] == '"')
                 {
@@ -128,9 +147,14 @@ namespace FieryOpal.Src.Ui.Dialogs
                 Input.ProcessKeyboard(info);
 
                 Util.LogCmd(Input.Text);
-                int exitCode = 0;
-                var msg = Exec(Input.Text, ref exitCode);
-                Util.Log(msg, false, exitCode == 0 ? Palette.Ui["BoringMessage"] : Palette.Ui["ErrorMessage"]);
+                var commands = Input.Text.Split('&');
+                foreach(var c in commands)
+                {
+                    int exitCode = 0;
+                    var msg = Exec(c.Trim(), ref exitCode);
+                    Util.LogText(msg, false, exitCode == 0 ? Palette.Ui["BoringMessage"] : Palette.Ui["ErrorMessage"]);
+                }
+
                 Input.Text = "";
 
                 Hide();

@@ -175,7 +175,7 @@ namespace FieryOpal.Src.Actors
                 DateTime now = DateTime.Now;
                 var newMap = holder.Map.ParentRegion.ParentWorld.RegionAt(vwp.CursorPosition.X, vwp.CursorPosition.Y).LocalMap;
                 holder.ChangeLocalMap(newMap, newMap.FirstAccessibleTileAround(new Point(newMap.Width / 2, newMap.Height / 2)));
-                Util.Log(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), true);
+                Util.LogText(String.Format("Map successfully generated. ({0:0.00}s)", (DateTime.Now - now).TotalSeconds), true);
                 scroll.Hide();
             });
 

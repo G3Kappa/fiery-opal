@@ -91,24 +91,29 @@ namespace FieryOpal.Src.Procedural.Worldgen
             while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .75f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
             if (start_tries < 0)
             {
-                Util.Log("WorldFeatureGenerator: Could not place river.", true);
+                Util.LogText("WorldFeatureGenerator: Could not place river.", true);
                 yield break;
             }
             yield return p;
 
-            // Find the local minima of the elevation map from the starting point
-            // and yield each traversed tile.
+            // Find the local minima of the distance transform of the world (sea/inland) from the starting point
+            // and yield each traversed tile. Stop early if we reach the sea.
+            var dt = w.SeaDT;
             do
             {
-                var regions = w.RegionsWithin(new Rectangle(p.X - 1, p.Y - 1, 3, 3)).Where(r => r.WorldPosition.SquaredEuclidianDistance(p) < 2);
+                var regions = dt.ElementsWithinRect(new Rectangle(p.X - 1, p.Y - 1, 3, 3)).Where(r => r.Item2.SquaredEuclidianDistance(p) < 2)
+                    .Select(r => new Tuple<float, Point>(
+                        (float)Math.Pow(dt[r.Item2.X, r.Item2.Y], 1 / Math.Pow(w.RegionAt(r.Item2.X, r.Item2.Y).GenInfo.Elevation, 3)),
+                        r.Item2
+                    )).ToList();
 
-                // If any neighbour is a river, stop here and become its affluent.
-                if (regions.Any(x => HasRiver(x)))
+                // If any neighbour is a river, stop here and become an affluent.
+                if (regions.Any(r => HasRiver(w.RegionAt(r.Item2.X, r.Item2.Y))))
                 {
                     break;
                 }
 
-                q = regions.MinBy(x => x.GenInfo.Elevation + x.WorldPosition.X / 1000f + (ValidRegion(x) ? 0 : 1f)).WorldPosition;
+                q = regions.MinBy(r => r.Item1).Item2;
                 if (q == p || !ValidRegion(w.RegionAt(q.X, q.Y))) break;
                 yield return q;
                 p = q;
@@ -144,7 +149,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
         private IEnumerable<Point> GetEdges(WorldTile parent)
         {
             var p = parent.WorldPosition;
-            var edges = parent.ParentWorld.RegionsWithin(
+            var edges = parent.ParentWorld.RegionsWithinRect(
                 new Rectangle(p.X - 1, p.Y - 1, 3, 3)
             )
             .Where(
@@ -175,14 +180,14 @@ namespace FieryOpal.Src.Procedural.Worldgen
             {
                 Point p1 = NormalizeEdge(edges[0], m);
                 Point p2 = NormalizeEdge(edges[1], m);
-                m.DrawCurve(p1, center, center, p2, tileref, Thickness, 100);
+                m.DrawCurve(p1, center, center, p2, tileref, Thickness, 100, true);
             }
             else if (edges.Count > 0)
             {
                 foreach (var edge in edges)
                 {
                     Point norm = NormalizeEdge(edge, m);
-                    m.DrawLine(norm, center - new Point(edge.X >= 0 ? Thickness / 2 : 0, edge.Y >= 0 ? Thickness / 2 : 0), tileref, Thickness);
+                    m.DrawLine(norm, center - new Point(edge.X >= 0 ? Thickness / 2 : 0, edge.Y >= 0 ? Thickness / 2 : 0), tileref, Thickness, true);
                 }
             }
         }

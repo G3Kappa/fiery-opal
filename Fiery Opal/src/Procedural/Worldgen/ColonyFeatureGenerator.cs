@@ -32,7 +32,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             while (!ValidRegion(w.RegionAt(c.X, c.Y)) && --start_tries > 0);
             if (start_tries < 0)
             {
-                Util.Log("WorldFeatureGenerator: Could not place colony.", true);
+                Util.LogText("WorldFeatureGenerator: Could not place colony.", true);
                 yield break;
             }
 

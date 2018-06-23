@@ -169,7 +169,7 @@ namespace FieryOpal.Src
             {
                 yield return p;
             }
-            Util.Log(String.Format("INCLUDED: \"{0}\".", path), true);
+            Util.LogText(String.Format("INCLUDED: \"{0}\".", path), true);
         }
 
         protected override T BuildRepresentation(Tuple<string, string>[] tokens)
@@ -260,10 +260,14 @@ namespace FieryOpal.Src
         public int WorldWidth { get; set; } = 100;
         public int WorldHeight { get; set; } = 100;
 
+        public int FPSCap { get; set; } = 60;
+
         public string DefaultFontPath { get; set; } = "gfx/Taffer.font";
         public string Locale { get; set; } = "cfg/locale/en_US.cfg";
 
         public Dictionary<string, string> Suppress { get; set; } = new Dictionary<string, string>();
+
+        public int? RngSeed { get; set; } = null;
     }
 
     public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
@@ -295,7 +299,9 @@ namespace FieryOpal.Src
                     TryGetValue(key, out value);
                     return value;
                 }
-                return DefaultValueDelegate(key);
+                K def = DefaultValueDelegate(key);
+                Add(key, def);
+                return def;
             }
             set
             {

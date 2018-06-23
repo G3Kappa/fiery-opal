@@ -1,3 +1,4 @@
+using FieryOpal.src.Multiplayer;
 using FieryOpal.Src;
 using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
@@ -26,6 +27,9 @@ namespace FieryOpal
 
         public static InitConfigInfo InitInfo { get; set; }
 
+        public static OpalServer GameServer { get; set; }
+        public static OpalClient GameClient { get; set; }
+
         static void Main(string[] args)
         {
             CreatePaths();
@@ -46,16 +50,22 @@ namespace FieryOpal
 
         private static void Update(GameTime time)
         {
-            Util.Update(time);
             OpalDialog.Update(time);
             Keybind.Update();
             mainGameWindowManager.Update(time);
         }
 
+
+        private static double dAcc = 0d;
         private static void Draw(GameTime time)
         {
-            mainGameWindowManager.Draw(time);
-            OpalDialog.Draw(time);
+            if((dAcc += time.ElapsedGameTime.TotalMilliseconds) >= (1d / InitInfo.FPSCap))
+            {
+                Util.UpdateFramerate((int)dAcc);
+                mainGameWindowManager.Draw(time);
+                OpalDialog.Draw(time);
+                dAcc = 0d;
+            }
         }
 
         private static void CreatePaths()
@@ -79,6 +89,9 @@ namespace FieryOpal
             PaletteInfo = Util.LoadDefaultPaletteConfig();
             Palette.LoadDefaults(PaletteInfo);
 
+            InitInfo.RngSeed = InitInfo.RngSeed ?? Util.Rng.Next();
+            Util.SeedRng(InitInfo.RngSeed.Value);
+
             World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
             world.Generate();
             GameInstance = new OpalGame(world);
@@ -91,7 +104,7 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("Decorations");
             LuaVM.Init();
 
-            Util.Log(Util.Str("WelcomeMessage"), false);
+            Util.LogText(Util.Str("WelcomeMessage"), false);
         }
     }
 }

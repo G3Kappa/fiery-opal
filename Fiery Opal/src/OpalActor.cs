@@ -146,7 +146,6 @@ namespace FieryOpal.Src
         public virtual void Update(TimeSpan delta)
         {
             if (Map == null) return;
-            if (IsDead) Map.Despawn(this);
         }
 
 
@@ -168,7 +167,7 @@ namespace FieryOpal.Src
                 {
                     if (IsPlayer)
                     {
-                        Util.Log("The void lies there.", false);
+                        Util.LogText("The void lies there.", false);
                     }
                     return false;
                 }
@@ -243,7 +242,6 @@ namespace FieryOpal.Src
 
             if (map == null)
             {
-                localPosition = new_p;
                 return true;
             }
 
@@ -307,7 +305,6 @@ namespace FieryOpal.Src
             localPosition = new_spawn;
             map.Spawn(this);
             MapChanged?.Invoke(this, map);
-            map.NotifyActorMoved(this, new_spawn);
 
             if (IsPlayer)
             {
@@ -357,7 +354,7 @@ namespace FieryOpal.Src
             {
                 if (t.IsAbstract || !typeof(OpalActorBase).IsAssignableFrom(t)) continue;
                 ActorClasses[t.Name.ToLower()] = t;
-                Util.Log("OpalActorBase.PreloadActorClasses: Preloaded {0}.".Fmt(t.Name), true, Palette.Ui["BoringMessage"]);
+                Util.LogText("OpalActorBase.PreloadActorClasses: Preloaded {0}.".Fmt(t.Name), true, Palette.Ui["BoringMessage"]);
             }
         }
 

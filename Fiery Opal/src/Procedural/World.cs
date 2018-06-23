@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src.Procedural
 {
@@ -249,26 +250,30 @@ namespace FieryOpal.Src.Procedural
             if (x < 0 || y < 0 || x >= Width || y >= Height) return null;
             return Regions[x, y];
         }
-        public IEnumerable<WorldTile> RegionsWithin(Rectangle? R, bool yield_null = false)
-        {
-            Rectangle r;
-            if (!R.HasValue)
-            {
-                r = new Rectangle(0, 0, Width, Height);
-            }
-            else r = R.Value;
 
-            for (int x = r.X; x < r.Width + r.X; ++x)
+        private float[,] m_SeaDT;
+        public float[,] SeaDT {
+            get => m_SeaDT ?? (m_SeaDT = DistanceTransform(t => !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)).Pow(.25f));
+        }
+
+        public float[,] DistanceTransform(Predicate<WorldTile> predicate)
+        {
+            bool[,] mask = new bool[Width, Height];
+
+            for (int x = 0; x < Width; ++x)
             {
-                for (int y = r.Y; y < r.Height + r.Y; ++y)
+                for (int y = 0; y < Height; ++y)
                 {
-                    WorldTile t = RegionAt(x, y);
-                    if ((!yield_null && t != null) || yield_null)
-                    {
-                        yield return t;
-                    }
+                    mask[x, y] = predicate(Regions[x, y]);
                 }
             }
+
+            return mask.DistanceTransform().Normalize((float)Math.Sqrt(Width * Width + Height * Height));
+        }
+
+        public IEnumerable<WorldTile> RegionsWithinRect(Rectangle? R, bool yield_null = false)
+        {
+            return Regions.ElementsWithinRect(R, yield_null).Select(t => t.Item1);
         }
 
         public int Width { get; }
@@ -283,7 +288,7 @@ namespace FieryOpal.Src.Procedural
 
         private IEnumerable<WorldFeatureGenerator> GetWFGs()
         {
-            int n_rivers = Util.Rng.Next((int)(Width * Height * .006f));
+            int n_rivers = Util.Rng.Next((int)(Width * Height * .003f));
             for (int i = 0; i < n_rivers; ++i)
                 yield return new RiverFeatureGenerator(
                     (b) => b.AverageTemperature >= BiomeHeatType.Cold
@@ -368,6 +373,7 @@ namespace FieryOpal.Src.Procedural
                     r.Graphics = t.Key.OverrideGraphics(r) ?? r.Graphics;
                 }
             }
+
         }
 
         private float[,] GenerateTemperatureMap()

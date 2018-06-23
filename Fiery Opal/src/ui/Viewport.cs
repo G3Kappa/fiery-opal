@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Procedural;
+﻿using FieryOpal.src.lib;
+using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
@@ -24,13 +25,17 @@ namespace FieryOpal.Src.Ui
         public override int TargetWidth => Target?.Width ?? -1;
         public override int TargetHeight => Target?.Height ?? -1;
 
-        private Dictionary<Guid, Point> LastKnownPos = new Dictionary<Guid, Point>();
+        private Dictionary<IOpalGameActor, Point> LastKnownPos = new Dictionary<IOpalGameActor, Point>();
         private string CurrentMapName = "";
 
         public LocalMapViewport(OpalLocalMap target, Rectangle view_area)
         {
             ViewArea = view_area;
             Target = target;
+            Nexus.Player.MapChanged += (e, eh) => {
+                LastKnownPos.Clear();
+                CurrentMapName = Target.Name;
+            };
         }
 
         private void PrintFog(SadConsole.Console surface, Point p)
@@ -45,12 +50,6 @@ namespace FieryOpal.Src.Ui
 
         public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
-            if (Target.Name != CurrentMapName)
-            {
-                LastKnownPos.Clear();
-                CurrentMapName = Target.Name;
-            }
-
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
             foreach (var tuple in tiles)
@@ -61,6 +60,7 @@ namespace FieryOpal.Src.Ui
                 {
                     continue;
                 }
+
                 if (!fog.KnowsOf(tuple.Item2))
                 {
                     PrintFog(surface, pos + targetArea.Location);
@@ -77,7 +77,13 @@ namespace FieryOpal.Src.Ui
             }
 
             var actors = Target.ActorsWithin(ViewArea).ToList();
-            foreach (var k in LastKnownPos.Keys) actors.Add(Target.FindActorByHandle(k));
+            foreach (var k in LastKnownPos.Keys)
+            {
+                if(!(k as OpalActorBase)?.IsDead ?? true)
+                    actors.Add(k);
+            }
+            actors.Remove(Nexus.Player);
+            actors.Add(Nexus.Player);
             foreach (var act in actors)
             {
                 if (act == null) continue;
@@ -87,9 +93,9 @@ namespace FieryOpal.Src.Ui
                 bool knowsOf = fog.KnowsOf(act.LocalPosition);
 
                 // If we have seen this actor, but they're out of view, draw them at the last position we know of.
-                if (LastKnownPos.ContainsKey(act.Handle) && !canSee)
+                if (LastKnownPos.ContainsKey(act) && !canSee)
                 {
-                    var p = LastKnownPos[act.Handle] - vw;
+                    var p = LastKnownPos[act] - vw;
                     if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
 
                     surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
@@ -103,7 +109,7 @@ namespace FieryOpal.Src.Ui
                 else if (canSee)
                 {
                     if (!act.Visible) continue;
-                    LastKnownPos[act.Handle] = act.LocalPosition;
+                    LastKnownPos[act] = act.LocalPosition;
 
                     Point p = act.LocalPosition - vw;
                     if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
@@ -135,7 +141,7 @@ namespace FieryOpal.Src.Ui
         public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
             surface.Clear();
-            var regions = Target.RegionsWithin(ViewArea);
+            var regions = Target.RegionsWithinRect(ViewArea);
             foreach (var t in regions)
             {
                 if (t == null) continue;
@@ -144,6 +150,7 @@ namespace FieryOpal.Src.Ui
                 if (targetArea.X + pos.X >= targetArea.Width || targetArea.Y + pos.Y >= targetArea.Height) continue;
 
                 surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, t.Graphics);
+
                 if (Markers.ContainsKey(t.WorldPosition))
                 {
                     var v = Markers[t.WorldPosition];

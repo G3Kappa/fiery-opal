@@ -99,7 +99,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
                 if (valid_stair_tiles.Count == 0)
                 {
                     p.FromPos = Point.Zero;
-                    Util.Log("DungeonInstance: Unable to place downstairs.", true);
+                    Util.LogText("DungeonInstance: Unable to place downstairs.", true);
                 }
                 else p.FromPos = Util.Choose(valid_stair_tiles);
 

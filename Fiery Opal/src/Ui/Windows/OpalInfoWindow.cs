@@ -12,7 +12,8 @@ namespace FieryOpal.Src.Ui.Windows
         public struct GameInfo
         {
             public TurnTakingActor Player;
-            public float CurrentTurnTime;
+            public float CurrentTurnTime, CurrentPlayerDelay;
+            public int FramesPerSecond;
         }
 
         protected List<WindowManager> ConnectedWindowManagers = new List<WindowManager>();
@@ -92,8 +93,12 @@ namespace FieryOpal.Src.Ui.Windows
         public void ReceiveInfoUpdateFromGame(Guid game_handle, ref GameInfo info)
         {
             Clear();
-            Print(0, 0, String.Format("T{0}: {1:0.00}", (char)255, info.CurrentTurnTime));
-            Print(0, 1, String.Format("XY: ({0}, {1})", info.Player.LocalPosition.X, info.Player.LocalPosition.Y));
+            Print(0, 0, String.Format("FPS: {0}/{1}", info.FramesPerSecond, Nexus.InitInfo.FPSCap));
+            Print(0, 2, String.Format("TIME:  {1:0.00}{0} {2:0.00}{3}       ", (char)255, info.CurrentTurnTime, info.CurrentPlayerDelay, 'D'));
+            Print(0, 3, String.Format("W XY: ({0}, {1})", info.Player.Map?.ParentRegion?.WorldPosition.X, info.Player.Map?.ParentRegion?.WorldPosition.Y));
+            Print(0, 4, String.Format("L XY: ({0}, {1})", info.Player.LocalPosition.X, info.Player.LocalPosition.Y));
+            Print(0, 6, String.Format("RNG Seed: {0}", Nexus.InitInfo.RngSeed?.ToString() ?? "None"));
+            Print(0, 7, "Biome: {0}".Fmt(Nexus.Player.Map?.ParentRegion?.Biome?.Type.ToString() ?? "None"));
         }
     }
 }

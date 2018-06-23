@@ -60,7 +60,7 @@ namespace FieryOpal.Src.Procedural.CellularAutomata
                 }
             }
 
-            protected Dictionary<int, Action<Point>> Reactions;
+            protected Dictionary<int, Action<Point>> Reactions = new Dictionary<int, Action<Point>>();
 
             public Cell(CellState baseState)
             {

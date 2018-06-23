@@ -9,14 +9,14 @@ namespace FieryOpal.Src
 {
     public static partial class Util
     {
-        public static Random Rng { get; } = new Random(0);
+        public static Random Rng { get; private set; } = new Random();
 
         private static double framerate = 0;
         public static double Framerate => framerate;
 
         public static T Choose<T>(IList<T> from)
         {
-            return from[Rng.Next(from.Count)];
+            return from.Count == 0 ? default(T) : from[Rng.Next(from.Count)];
         }
 
         public static IEnumerable<T> ChooseN<T>(IList<T> from, int n)
@@ -30,6 +30,11 @@ namespace FieryOpal.Src
             }
         }
 
+        public static void SeedRng(int seed)
+        {
+            Rng = new Random(seed);
+        }
+
         public static bool? RandomTernary()
         {
             var r = Rng.NextDouble();
@@ -38,9 +43,9 @@ namespace FieryOpal.Src
             return new bool?();
         }
 
-        public static void Update(GameTime gt)
+        public static void UpdateFramerate(int millis)
         {
-            framerate = (1 / gt.ElapsedGameTime.TotalSeconds);
+            framerate = (1000d / millis);
         }
 
         public static bool OOB(int x, int y, int w, int h, int min_x = 0, int min_y = 0)
@@ -126,7 +131,7 @@ namespace FieryOpal.Src
                     if (!m.SlideAcross(tiles, stride, zero, one, shuffle: shuffle, randomize_order: randomize_order) && break_early)
                     {
                         done.Add(i);
-                        Util.Log(String.Format("MatrixReplacement[].SlideAcross: Matrix done in {0} out of {1} epochs.", k + 1, epochs), true);
+                        Util.LogText(String.Format("MatrixReplacement[].SlideAcross: Matrix done in {0} out of {1} epochs.", k + 1, epochs), true);
                     }
                 }
             }
@@ -151,6 +156,168 @@ namespace FieryOpal.Src
             {
                 yield return new Tuple<T, T>(list[i - 1], list[i]);
             }
+        }
+
+        static float[] dt(float[] f, int n)
+        {
+            float[] d = new float[n];
+            int[] v = new int[n];
+            float[] z = new float[n + 1];
+            int k = 0;
+            v[0] = 0;
+            z[0] = float.NegativeInfinity;
+            z[1] = float.PositiveInfinity;
+            for (int q = 1; q <= n - 1; q++)
+            {
+                float s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+                while (s <= z[k])
+                {
+                    k--;
+                    s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+                }
+                k++;
+                v[k] = q;
+                z[k] = s;
+                z[k + 1] = float.PositiveInfinity;
+            }
+
+            k = 0;
+            for (int q = 0; q <= n - 1; q++)
+            {
+                while (z[k + 1] < q)
+                    k++;
+                d[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
+            }
+
+            return d;
+        }
+
+        /* dt of 2d function using squared distance */
+        static void dt(ref float[,] im)
+        {
+            int width = im.GetLength(0);
+            int height = im.GetLength(1);
+            float[] f = new float[Math.Max(width, height)];
+
+            // transform along columns
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    f[y] = im[x, y];
+                }
+                float[] d = dt(f, height);
+                for (int y = 0; y < height; y++)
+                {
+                    im[x, y] = d[y];
+                }
+            }
+
+            // transform along rows
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    f[x] = im[x, y];
+                }
+                float[] d = dt(f, width);
+
+                for (int x = 0; x < width; x++)
+                {
+                    im[x, y] = d[x];
+                }
+            }
+        }
+
+        public static float[,] DistanceTransform(this bool[,] arr)
+        {
+            float[,] im = new float[arr.GetLength(0), arr.GetLength(1)];
+            int m = arr.GetLength(0) * arr.GetLength(1);
+            for (int i = 0; i < arr.GetLength(0); ++i)
+            {
+                for (int j = 0; j < arr.GetLength(1); ++j)
+                {
+                    im[i, j] = arr[i, j] ? m : 0f;
+                }
+            }
+            dt(ref im);
+            return im;
+        }
+
+        public static float[,] DistanceTransform(this float[,] arr, Func<int, int, float> threshold)
+        {
+            float[,] im = new float[arr.GetLength(0), arr.GetLength(1)];
+            int m = arr.GetLength(0) * arr.GetLength(1);
+            for (int i = 0; i < arr.GetLength(0); ++i)
+            {
+                for (int j = 0; j < arr.GetLength(1); ++j)
+                {
+                    im[i, j] = arr[i, j] > threshold(i, j) ? m : 0f;
+                }
+            }
+            dt(ref im);
+            return im;
+        }
+
+        public static float[,] Normalize(this float[,] arr, float factor)
+        {
+            float[,] ret = new float[arr.GetLength(0), arr.GetLength(1)];
+            arr.DeepClone(ref ret);
+
+            for (int x = 0; x < arr.GetLength(0); ++x)
+            {
+                for (int y = 0; y < arr.GetLength(1); ++y)
+                {
+                    ret[x, y] = arr[x, y] / factor;
+                }
+            }
+
+            return ret;
+        }
+
+        public static float[,] Pow(this float[,] arr, float factor)
+        {
+            float[,] ret = new float[arr.GetLength(0), arr.GetLength(1)];
+            arr.DeepClone(ref ret);
+
+            for (int x = 0; x < arr.GetLength(0); ++x)
+            {
+                for (int y = 0; y < arr.GetLength(1); ++y)
+                {
+                    ret[x, y] = (float)Math.Pow(arr[x, y], factor);
+                }
+            }
+
+            return ret;
+        }
+
+        public static IEnumerable<Tuple<T, Point>> ElementsWithinRect<T>(this T[,] arr, Rectangle? R, bool yield_null = false)
+        {
+            Rectangle r;
+            if (!R.HasValue)
+            {
+                r = new Rectangle(0, 0, arr.GetLength(0), arr.GetLength(1));
+            }
+            else r = R.Value;
+
+            for (int x = r.X; x < r.Width + r.X; ++x)
+            {
+                for (int y = r.Y; y < r.Height + r.Y; ++y)
+                {
+                    if (Util.OOB(x, y, arr.GetLength(0), arr.GetLength(1))) continue;
+
+                    T t = arr[x, y];
+                    if ((!yield_null && t != null) || yield_null)
+                    {
+                        yield return new Tuple<T, Point>(t, new Point(x, y));
+                    }
+                }
+            }
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> en, Action<T> act)
+        {
+            foreach (var e in en.ToList()) act(e);
         }
 
         public static Color ChangeValue(this Color c, int r = -1, int g = -1, int b = -1, int a = -1)

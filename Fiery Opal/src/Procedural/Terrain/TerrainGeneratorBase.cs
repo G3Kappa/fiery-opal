@@ -29,7 +29,7 @@ namespace FieryOpal.Src.Procedural.Terrain
 
         public OpalTile Get(int x, int y)
         {
-            return (OpalTile)(Workspace.TileAt(x, y)?.Clone() ?? OpalTile.GetRefTile<DirtSkeleton>().Clone()); // Since we don't alter individual tiles, we only need to clone them when requested.
+            return (OpalTile)(Workspace.TileAt(x, y)?.Clone() ?? null);
         }
 
         public IDecoration GetDecoration(int x, int y)

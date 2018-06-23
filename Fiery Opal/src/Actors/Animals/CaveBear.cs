@@ -11,7 +11,7 @@ namespace FieryOpal.Src.Actors.Animals
         public CaveBear() : base()
         {
             Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Creatures["CaveBear"], Color.Transparent, 'B'));
-            Brain = new WanderingBrain(this);
+            Brain = new WanderingBrain(this, 4.0f);
             Name = "Cave Bear";
 
             Inventory = new PersonalInventory(0, this);

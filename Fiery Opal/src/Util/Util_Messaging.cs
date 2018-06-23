@@ -3,6 +3,7 @@ using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace FieryOpal.Src
@@ -11,18 +12,31 @@ namespace FieryOpal.Src
     {
         public static readonly MessagePipeline<OpalConsoleWindow> GlobalLogPipeline = new MessagePipeline<OpalConsoleWindow>();
 
+        private static IEnumerable<string> SplitLogString(String msg)
+        {
+            var split = msg.Split('\n');
+            foreach (string s in split) yield return s;
+        }
+
         public static void Log(ColoredString msg, bool debug)
         {
             GlobalLogPipeline.BroadcastLogMessage(null, msg, debug);
         }
 
+        public static void LogBadge(string badge, string msg, bool debug, Color? fg = null, Color? bg = null)
+        {
+            Color fore = fg.HasValue ? fg.Value : (debug ? Palette.Ui["BoringMessage"] : Palette.Ui["DefaultForeground"]);
+            Color back = bg.HasValue ? bg.Value : Palette.Ui["DefaultBackground"];
 
-        public static void Log(String msg, bool debug, Color? fg = null, Color? bg = null)
+            ColoredString header = new ColoredString(badge, back, fore);
+            Log(header + new ColoredString(" " + msg, fore, back), debug);
+        }
+
+        public static void LogText(String msg, bool debug, Color? fg = null, Color? bg = null)
         {
             if (msg.Contains("\n"))
             {
-                var split = msg.Split('\n');
-                foreach (string s in split) Log(s, debug, fg, bg);
+                SplitLogString(msg).ForEach(s => LogText(s, debug, fg, bg));
                 return;
             }
 
@@ -34,54 +48,44 @@ namespace FieryOpal.Src
 
         public static void Err(String msg, bool debug = false)
         {
-            if (msg.Contains("\n"))
-            {
-                var split = msg.Split('\n');
-                foreach (string s in split) Log(s, debug);
-                return;
-            }
-
             Color fore = Palette.Ui["ErrorMessage"];
             Color back = Palette.Ui["DefaultBackground"];
-
-            if (!debug)
-            {
-                ColoredString header = new ColoredString("ERR: ", fore, back);
-                msg = header + msg;
-            }
-
-            GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
+            LogBadge("ERR :", msg, debug, fore, back);
         }
 
         public static void Warn(String msg, bool debug = false)
         {
-            if (msg.Contains("\n"))
-            {
-                var split = msg.Split('\n');
-                foreach (string s in split) Log(s, debug);
-                return;
-            }
-
             Color fore = Palette.Ui["WarningMessage"];
             Color back = Palette.Ui["DefaultBackground"];
-
-            if (!debug)
-            {
-                ColoredString header = new ColoredString("WARN: ", fore, back);
-                msg = header + msg;
-            }
-
-            GlobalLogPipeline.BroadcastLogMessage(null, new ColoredString(msg, fore, back), debug);
+            LogBadge("WARN :", msg, debug, fore, back);
         }
 
         public static void LogCmd(String msg)
         {
             Color fore = Palette.Ui["DebugMessage"];
             Color back = Palette.Ui["DefaultBackground"];
+            LogBadge("CMD >", msg, false, fore, back);
+        }
 
-            ColoredString header = new ColoredString("CMD>", back, fore);
+        public static void LogServer(String msg, bool debug = false)
+        {
+            Color fore = Palette.Ui["ServerMessage"];
+            Color back = Palette.Ui["DefaultBackground"];
+            LogBadge("SERV:", msg, false, fore, back);
+        }
 
-            GlobalLogPipeline.BroadcastLogMessage(null, header + new ColoredString(msg, Palette.DefaultTextStyle), false);
+        public static void LogClient(String msg, bool debug = false)
+        {
+            Color fore = Palette.Ui["ClientMessage"];
+            Color back = Palette.Ui["DefaultBackground"];
+            LogBadge("CLNT:", msg, false, fore, back);
+        }
+
+        public static void LogChat(String msg, bool debug = false)
+        {
+            Color fore = Palette.Ui["ChatMessage"];
+            Color back = Palette.Ui["DefaultBackground"];
+            LogBadge("CHAT:", msg, false, fore, back);
         }
 
         public static string Str(string s, params object[] args)

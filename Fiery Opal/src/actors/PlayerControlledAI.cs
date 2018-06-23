@@ -88,8 +88,8 @@ namespace FieryOpal.Src.Actors
             Body.Inventory.Store(new Journal());
             Body.Inventory.Store(new WorldMap());
 
-            Body.Inventory.ItemStored += (item) => Util.Log(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
-            Body.Inventory.ItemRetrieved += (item) => Util.Log(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
+            Body.Inventory.ItemStored += (item) => Util.LogText(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
+            Body.Inventory.ItemRetrieved += (item) => Util.LogText(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
         }
 
         public void BindKeys()
@@ -110,14 +110,24 @@ namespace FieryOpal.Src.Actors
 #if DEBUG
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press, "Debug: Destroy Wall"), (info) =>
             {
-                Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<DirtSkeleton>());
-                InputHandled("FlagRaycastViewportForRedraw");
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<DirtSkeleton>());
+
+                    InputHandled("FlagRaycastViewportForRedraw");
+                    return 0f;
+                });
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "Debug: Make Wall"), (info) =>
             {
-                Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<NaturalWallSkeleton>());
-                InputHandled("FlagRaycastViewportForRedraw");
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<NaturalWallSkeleton>());
+
+                    InputHandled("FlagRaycastViewportForRedraw");
+                    return 0f;
+                });
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Debug: Wait 50 turns", true), (info) =>
@@ -127,17 +137,27 @@ namespace FieryOpal.Src.Actors
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Open CLI"), (info) =>
             {
-                var cli = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Nexus.Width * .4f), 4));
-                cli.Position = new Point(0, 0);
-                OpalDialog.LendKeyboardFocus(cli);
-                cli.Show();
-                cli.Closed += (e, eh) =>
+                Body.EnqueuedActions.Enqueue(() =>
                 {
+                    var cli = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Nexus.Width * .4f), 4));
+                    cli.Position = new Point(0, 0);
+
+                    cli.Closed += (e, eh) =>
+                    {
+                        Body.EnqueuedActions.Enqueue(() =>
+                        {
+                            InputHandled("FlagRaycastViewportForRedraw");
+                            return 0f;
+                        });
+                    };
+
+                    OpalDialog.LendKeyboardFocus(cli);
+                    cli.Show();
                     InputHandled("FlagRaycastViewportForRedraw");
-                };
+                    return 0f;
+                });
             });
 #endif
-
         }
 
         public override IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy)
@@ -241,19 +261,16 @@ namespace FieryOpal.Src.Actors
             Body.EnqueuedActions.Enqueue(() =>
             {
                 Body.Turn(angle);
-                // Here "PlayerInputHandled" isn't received in time for the rotation update,
-                // but the parameterless call will fix everything harmlessly.
-                InputHandled("UpdateRaycastWindowRotation");
-                return 1 / 20f;
+                return .25f;
             });
-            InputHandled();
+            InputHandled("FlagRaycastViewportForRedraw");
         }
 
         public void Wait(float turns)
         {
             if (turns <= 0f) return;
 
-            Body.EnqueuedActions.Enqueue(() => { return turns; });
+            Body.EnqueuedActions.Enqueue(() => { return 1; });
             for (int i = 0; i < (int)turns - 1; ++i)
             {
                 InputHandled();
@@ -272,7 +289,7 @@ namespace FieryOpal.Src.Actors
             Body.EnqueuedActions.Enqueue(() =>
             {
                 Body.MoveTo(to);
-                return 1 / 4f;
+                return 1f;
             });
 
             InputHandled("FlagRaycastViewportForRedraw");
