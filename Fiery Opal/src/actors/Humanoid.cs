@@ -12,6 +12,8 @@ namespace FieryOpal.Src.Actors
             Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Creatures["Humanoid"], Color.Transparent, '@'));
             Brain = new WanderingBrain(this);
 
+            Name = "Dude";
+
             Inventory = new PersonalInventory(10, this);
             Equipment = new PersonalEquipment((t) =>
             {

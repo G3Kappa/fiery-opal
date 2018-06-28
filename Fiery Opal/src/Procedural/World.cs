@@ -252,7 +252,8 @@ namespace FieryOpal.Src.Procedural
         }
 
         private float[,] m_SeaDT;
-        public float[,] SeaDT {
+        public float[,] SeaDT
+        {
             get => m_SeaDT ?? (m_SeaDT = DistanceTransform(t => !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)).Pow(.25f));
         }
 

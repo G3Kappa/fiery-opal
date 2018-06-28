@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using SadConsole;
 
 namespace FieryOpal.Src.Ui
@@ -35,6 +36,26 @@ namespace FieryOpal.Src.Ui
         public WeaponViewSprite()
         {
             Spritesheet = Nexus.Fonts.Spritesheets["Weapons"];
+        }
+
+
+        private Texture2D _texture;
+        public Texture2D AsTexture2D()
+        {
+            if (_texture != null) return _texture;
+
+            var font = Nexus.Fonts.Spritesheets["Weapons"];
+
+            Color[,] pixels = FontTextureCache.GetRecoloredPixels(
+                                    font,
+                                    SpritesheetIndex,
+                                    Color,
+                                    Color.Transparent
+                                );
+
+            _texture = new Texture2D(Global.GraphicsDevice, pixels.GetLength(0), pixels.GetLength(1));
+            _texture.SetData(pixels.Flatten());
+            return _texture;
         }
 
         public void DrawOnto(SadConsole.Console surface)

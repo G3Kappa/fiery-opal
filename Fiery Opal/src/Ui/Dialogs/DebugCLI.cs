@@ -1,4 +1,4 @@
-﻿using FieryOpal.src.Multiplayer;
+﻿using FieryOpal.Src.Multiplayer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -28,7 +28,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         protected bool CallDelegate(string[] args, ref int exitCode)
         {
             if (args.Length == 0) return false;
-            if(new[] { "h", "help" }.Contains(args[0].ToLower()))
+            if (new[] { "h", "help", "aiut" }.Contains(args[0].ToLower()))
             {
                 Color d_fore = Palette.Ui["DefaultForeground"];
                 Color b_fore = Palette.Ui["BoringMessage"];
@@ -61,7 +61,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             Input.DisableMouse = true;
             Input.ExclusiveFocus = true;
             Input.UseKeyboard = false;
-            var InputStyle = new SadConsole.Cell(Palette.DefaultTextStyle.Foreground, DefaultPalette["ShadeLight"].ChangeValue(-1, -1, -1, 192));
+            var InputStyle = new Cell(Palette.DefaultTextStyle.Foreground, DefaultPalette["ShadeLight"].ChangeValue(-1, -1, -1, 192));
             Input.Theme = new SadConsole.Themes.InputBoxTheme()
             {
                 Focused = InputStyle,
@@ -81,6 +81,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             RegisterDelegate("unequip", new CommandUnequipItem());
             RegisterDelegate("startsv", new CommandStartServer());
             RegisterDelegate("connect", new CommandStartClient());
+            RegisterDelegate("say", new CommandSendChatMsg());
+            RegisterDelegate("tr", new CommandTestRaycaster());
 
             var noclip = new CommandNoclip();
             RegisterDelegate("noclip", noclip);
@@ -89,11 +91,6 @@ namespace FieryOpal.Src.Ui.Dialogs
             var tfog = new CommandTogglefog();
             RegisterDelegate("togglefog", tfog);
             RegisterDelegate("tf", tfog);
-        }
-
-        protected override void BindKeys()
-        {
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Hide debug CLI"), (e) => Hide());
         }
 
         public override void Update(TimeSpan time)
@@ -107,7 +104,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             string s = "";
             for (int i = 0; i < str.Length; ++i)
             {
-                if (!insideQuotes && (str[i] == ' ' || str[i] == ',') )
+                if (!insideQuotes && (str[i] == ' ' || str[i] == ','))
                 {
                     if (s.Trim().Length > 0) yield return s.Trim();
                     s = "";
@@ -134,6 +131,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             exitCode = -1;
             if (CallDelegate(args, ref exitCode))
             {
+                if (exitCode == 0 && !Delegates[args[0]].PrintZeroExitCode)
+                    return "";
                 return "Exit Code: {0}".Fmt(exitCode);
             }
             return "Unknown command";
@@ -146,13 +145,20 @@ namespace FieryOpal.Src.Ui.Dialogs
                 Input.DisableKeyboard = true;
                 Input.ProcessKeyboard(info);
 
-                Util.LogCmd(Input.Text);
+                if(!Input.Text.StartsWith("!")) Util.LogCmd(Input.Text);
+
                 var commands = Input.Text.Split('&');
-                foreach(var c in commands)
+                foreach (var c in commands)
                 {
                     int exitCode = 0;
-                    var msg = Exec(c.Trim(), ref exitCode);
-                    Util.LogText(msg, false, exitCode == 0 ? Palette.Ui["BoringMessage"] : Palette.Ui["ErrorMessage"]);
+                    var msg = Exec(c.Trim().TrimStart('!'), ref exitCode);
+                    if (msg.Length == 0) continue;
+
+                    if (exitCode == 0)
+                    {
+                        Util.LogText(msg, false, Palette.Ui["BoringMessage"]);
+                    }
+                    else Util.Err(msg);
                 }
 
                 Input.Text = "";
@@ -190,7 +196,20 @@ namespace FieryOpal.Src.Ui.Dialogs
         public override void Hide()
         {
             CmdHistoryIndex = -1;
+            Keybind.PopState();
             base.Hide();
+        }
+
+        protected override void BindKeys()
+        {
+            base.BindKeys();
+            Keybind.BindKey(
+                new Keybind.KeybindInfo(Keys.V, Keybind.KeypressState.Press, "Debug CLI: Paste", true),
+                (info) =>
+                {
+                    Input.Text += System.Windows.Forms.Clipboard.GetText();
+                }
+            );
         }
 
         public IEnumerable<CommandDelegate> GetRegisteredDelegates()

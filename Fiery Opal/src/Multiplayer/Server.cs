@@ -1,7 +1,5 @@
 ﻿using FieryOpal.Src;
 using FieryOpal.Src.Actors;
-using Microsoft.Xna.Framework;
-using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,47 +7,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.Multiplayer
+namespace FieryOpal.Src.Multiplayer
 {
-    public enum ClientMsgType
-    {
-        Invalid = 0,
-        ClientConnected = 1,
-        Chat = 2
-    }
-
-    public struct ClientPacket
-    {
-        private static ClientMsgType[] MsgLookup = (ClientMsgType[])Enum.GetValues(typeof(ClientMsgType));
-
-        public ClientMsgType Type => RawData[0] < MsgLookup.Length ? MsgLookup[RawData[0]] : ClientMsgType.Invalid;
-        public byte[] RawData { get; }
-        public string StringData => Encoding.ASCII.GetString(RawData).Substring(1).TrimEnd('\0');
-        public IPEndPoint Sender;
-
-        public ClientPacket(byte[] data, EndPoint sender)
-        {
-            RawData = data;
-            Sender = (IPEndPoint)sender;
-        }
-
-        public ClientPacket(ClientMsgType type, string data, EndPoint sender)
-        {
-            RawData = new byte[String.IsNullOrEmpty(data) ? 1 : data.Length + 2];
-            RawData[0] = (byte)Array.IndexOf(MsgLookup, type);
-            if(!String.IsNullOrEmpty(data)) Encoding.ASCII.GetBytes(data).CopyTo(RawData, 1);
-            Sender = (IPEndPoint)sender;
-        }
-    }
-
-    public delegate ServerPacket ClientMessageHandler(ClientPacket msg);
-
     public class ClientHandler : IPipelineSubscriber<ClientHandler>
     {
-        protected TcpClient Client { get; }
+        public TcpClient Client { get; }
         protected OpalServerBase Server { get; }
+
+        private object StreamLock = new object();
 
         public Guid Handle { get; }
 
@@ -62,12 +28,13 @@ namespace FieryOpal.src.Multiplayer
 
         public void Start()
         {
-            Thread handlerThread = new Thread(() => {
+            Thread handlerThread = new Thread(() =>
+            {
                 while (Server.IsRunning)
                 {
                     NetworkStream stream = Client.GetStream();
 
-                    Byte[] buffer = new Byte[256]; int b = 0;
+                    Byte[] buffer = new Byte[1024]; int b = 0;
                     try
                     {
                         while ((b = stream.Read(buffer, 0, buffer.Length)) != 0)
@@ -76,19 +43,28 @@ namespace FieryOpal.src.Multiplayer
                             Server.ClientMsgHandlers[packet.Type].ForEach(h =>
                             {
                                 var reply = h(packet);
-                                if (reply.Type == ServerMessage.Invalid) return;
+                                if (reply.Type == ServerMsgType.Invalid) return;
 
-                                if(reply.IsBroadcast)
+                                if (reply.IsBroadcast)
                                 {
                                     Server.Broadcast(reply); // Make sure everyone gets the same reply
                                 }
-                                else stream.Write(reply.RawData, 0, reply.RawData.Length);
+                                else
+                                {
+                                    lock (StreamLock) stream.Write(reply.RawData, 0, reply.RawData.Length);
+                                }
                             });
                         }
                     }
                     catch (System.IO.IOException e)
                     {
                         Util.LogServer("Client forcibly closed the connection. (IP: {0}) ".Fmt(Client.Client.RemoteEndPoint.ToString()), true);
+                        Server.ClientPipeline.Broadcast(null, (ch) =>
+                        {
+                            Server.ClientPipeline.Unsubscribe(this);
+                            return "UnsubscribeCrashedClient";
+                        });
+                        Server.Broadcast(new ServerPacket(ServerMsgType.ClientDisconnected, Client.Client.RemoteEndPoint.ToString()));
                         break;
                     }
                 }
@@ -101,7 +77,7 @@ namespace FieryOpal.src.Multiplayer
 
         public void Write(ServerPacket p)
         {
-            Client.GetStream().Write(p.RawData, 0, p.RawData.Length);
+            lock (StreamLock) Client.GetStream().Write(p.RawData, 0, p.RawData.Length);
         }
 
         public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<ClientHandler, string> msg, bool is_broadcast)
@@ -127,7 +103,7 @@ namespace FieryOpal.src.Multiplayer
             ClientPipeline = new MessagePipeline<ClientHandler>();
         }
 
-        public virtual void Start(int maxConnections=0)
+        public virtual void Start(int maxConnections = 0)
         {
             IsRunning = true;
             if (maxConnections <= 0) Listener.Start();
@@ -169,21 +145,37 @@ namespace FieryOpal.src.Multiplayer
 
     public class OpalServer : OpalServerBase
     {
-        public List<TurnTakingActor> Players { get; }
         public int MaxPlayers { get; }
 
         public OpalServer(int port, int maxPlayers) : base(port)
         {
-            Players = new List<TurnTakingActor>((MaxPlayers = maxPlayers));
-
             RegisterHandler(ClientMsgType.Chat, (p) =>
             {
-                return new ServerPacket(ServerMessage.Chat, "{0}: {1}".Fmt(p.Sender.ToString(), p.StringData));
+                return new ServerPacket(ServerMsgType.Chat, p.StringData);
             });
 
             RegisterHandler(ClientMsgType.ClientConnected, (p) =>
             {
-                return new ServerPacket(ServerMessage.Chat, "{0} has entered the game.".Fmt(p.StringData));
+                return new ServerPacket(ServerMsgType.Chat, "{0} has entered the game.".Fmt(p.StringData));
+            });
+
+            RegisterHandler(ClientMsgType.ClientConnected, (p) =>
+            {
+                return new ServerPacket(ServerMsgType.ClientConnected, "{0}\x1{1}".Fmt(p.StringData, p.Sender.ToString()));
+            });
+
+            RegisterHandler(ClientMsgType.ClientDisconnected, (p) =>
+            {
+                ClientPipeline.Broadcast(null, (ch) =>
+                {
+                    if(ch.Client.Client.RemoteEndPoint == p.Sender)
+                    {
+                        ClientPipeline.Unsubscribe(ch);
+                    }
+                    return "UnsubscribeDroppedClient";
+                });
+
+                return new ServerPacket(ServerMsgType.ClientDisconnected, p.Sender.ToString());
             });
         }
 

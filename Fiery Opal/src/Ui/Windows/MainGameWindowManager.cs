@@ -17,7 +17,8 @@ namespace FieryOpal.Src.Ui.Windows
             // FPVFont is smaller than the main font, so we need to multiply
             // the size of the raycast window by the correct amount as to fill
             // all the available space.
-            Vector2 font_ratio = Nexus.Fonts.MainFont.Size.ToVector2() / Nexus.Fonts.FirstPersonViewportFont.Size.ToVector2();
+            // EDIT: FPVFont no longer exists, so this is no longer a ratio a the division is no longer required.
+            Vector2 font_ratio = Nexus.Fonts.MainFont.Size.ToVector2();
 
             // The layout is defined in the [0, 1] range.
             Vector2 tdPos = new Vector2(0, 0f);
@@ -47,7 +48,7 @@ namespace FieryOpal.Src.Ui.Windows
                 (int)(fpSize.X * w), (int)(fpSize.Y * h),
                 g,
                 raycastViewport,
-                Nexus.Fonts.FirstPersonViewportFont
+                null
             );
             FirstPersonWindow.Position = new Point((int)(fpPos.X * w), (int)(fpPos.Y * h));
             RegisterWindow(FirstPersonWindow);
@@ -78,6 +79,7 @@ namespace FieryOpal.Src.Ui.Windows
             Game = g;
 
             CreateLayout(w, h, g);
+            Game.Player.ChangeLocalMap(Game.World.RegionAt(0, 0).LocalMap, new Point(0, 0));
 
             PlayerControlledAI player_brain = new PlayerControlledAI(Game.Player, Nexus.Keys.GetPlayerKeybinds());
             player_brain.InternalMessagePipeline.Subscribe(Game);

@@ -35,7 +35,7 @@ namespace FieryOpal.Src.Actors
     {
         public float MoveDelay { get; }
 
-        public WanderingBrain(TurnTakingActor actor, float moveDelay=1.0f) : base(actor)
+        public WanderingBrain(TurnTakingActor actor, float moveDelay = 1.0f) : base(actor)
         {
             MoveDelay = moveDelay;
         }

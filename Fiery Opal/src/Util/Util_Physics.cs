@@ -191,6 +191,11 @@ namespace FieryOpal.Src
             return Math.Sqrt(Math.Pow(w.X - v.X, 2) + Math.Pow(w.Y - v.Y, 2));
         }
 
+        public static double ManhattanDist(this Point v, Point w)
+        {
+            return (v.X - w.X) + (v.Y - w.Y);
+        }
+
         public static float SquaredEuclidianDistance(this Point p, Point q)
         {
             return (q.X - p.X) * (q.X - p.X) + (q.Y - p.Y) * (q.Y - p.Y);

@@ -1,4 +1,4 @@
-using FieryOpal.src.Multiplayer;
+using FieryOpal.Src.Multiplayer;
 using FieryOpal.Src;
 using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
@@ -24,6 +24,8 @@ namespace FieryOpal
         public static PaletteConfigInfo PaletteInfo { get; private set; }
         public static OpalGame GameInstance { get; private set; }
         public static TurnTakingActor Player => GameInstance.Player;
+        public static DebugCLI DebugCLI { get; private set; }
+
 
         public static InitConfigInfo InitInfo { get; set; }
 
@@ -43,9 +45,9 @@ namespace FieryOpal
             SadConsole.Game.OnDraw = Draw;
 
             Keybind.PushState();
+            Keybind.PushState();
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
-            Keybind.PopState();
         }
 
         private static void Update(GameTime time)
@@ -59,7 +61,7 @@ namespace FieryOpal
         private static double dAcc = 0d;
         private static void Draw(GameTime time)
         {
-            if((dAcc += time.ElapsedGameTime.TotalMilliseconds) >= (1d / InitInfo.FPSCap))
+            if ((dAcc += time.ElapsedGameTime.TotalMilliseconds) >= (1d / InitInfo.FPSCap))
             {
                 Util.UpdateFramerate((int)dAcc);
                 mainGameWindowManager.Draw(time);
@@ -92,6 +94,9 @@ namespace FieryOpal
             InitInfo.RngSeed = InitInfo.RngSeed ?? Util.Rng.Next();
             Util.SeedRng(InitInfo.RngSeed.Value);
 
+            DebugCLI = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Width * .4f), 4));
+            DebugCLI.Position = new Point(0, 0);
+
             World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
             world.Generate();
             GameInstance = new OpalGame(world);
@@ -102,6 +107,7 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("");
             OpalActorBase.PreloadActorClasses("Animals");
             OpalActorBase.PreloadActorClasses("Decorations");
+            OpalActorBase.PreloadActorClasses("Environment");
             LuaVM.Init();
 
             Util.LogText(Util.Str("WelcomeMessage"), false);

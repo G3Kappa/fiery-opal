@@ -3,6 +3,7 @@ using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
+using SadConsole;
 using System;
 using System.Linq;
 
@@ -45,7 +46,6 @@ namespace FieryOpal.Src
 
                 old_map?.Dispose();
             };
-            Player.ChangeLocalMap(World.RegionAt(0, 0).LocalMap, new Point(0, 0));
         }
 
         public virtual void Update(TimeSpan delta)
@@ -69,20 +69,23 @@ namespace FieryOpal.Src
                     }
                     bool wasDirty = (w.Viewport as RaycastViewport)?.Dirty ?? false;
                     w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)), Player.Brain.TileMemory);
-
                     var rc = w.Viewport as RaycastViewport;
-                    if (rc != null && wasDirty)
+                    if (rc != null)
                     {
+                        Global.DrawCalls.Add(new DrawCallTexture(rc.RenderSurface, w.Position.ToVector2()));
+                        if (!wasDirty) return "ViewportRefresh";
                         var weaps = Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
                         foreach (var weapon in weaps)
                         {
-                            weapon.ViewGraphics.DrawOnto(w);
+                            // TODO draw pixelwise
+                            Global.DrawCalls.Add(new DrawCallTexture(weapon.ViewGraphics.AsTexture2D(), w.Position.ToVector2()));
                         }
                     }
                     return "ViewportRefresh";
                 }
                 ));
         }
+
         public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalGame, string> msg, bool is_broadcast)
         {
             string performed_action = msg(this);

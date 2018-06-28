@@ -16,13 +16,6 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
                 s.SetTile(x, y, OpalTile.GetRefTile<GrassSkeleton>());
                 return false;
             });
-
-            var poisson = Lib.PoissonDiskSampler.SampleRectangle(Vector2.Zero, new Vector2(m.Width, m.Height), 3.33f);
-            foreach(Vector2 v in poisson)
-            {
-                Actors.Plant tree = new Actors.Pine();
-                tree.ChangeLocalMap(Workspace, v.ToPoint(), true);
-            }
         }
     }
 }

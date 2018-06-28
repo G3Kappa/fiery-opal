@@ -1,13 +1,24 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
+using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace FieryOpal.Src
 {
-    class Raycaster
+    public static class Raycaster
     {
-        private static void CalcStep(Vector2 rayDir, Vector2 position, Vector2 mapPos, Vector2 deltaDist, ref Vector2 stepDir, ref Vector2 sideDist)
+        public struct RayInfo
         {
+            public float ProjectedDistance;
+            public List<Vector2> PointsTraversed;
+            public bool SideHit;
+            public Vector2 LastPointTraversed;
+        }
+
+        private static void CalcStep(Vector2 rayDir, Vector2 position, Vector2 deltaDist, ref Vector2 stepDir, ref Vector2 sideDist)
+        {
+            Vector2 mapPos = position.ToPoint().ToVector2();
             if (rayDir.X < 0)
             {
                 stepDir.X = -1;
@@ -30,11 +41,13 @@ namespace FieryOpal.Src
             }
         }
 
-        private static bool DDA(OpalLocalMap target, Vector2 deltaDist, Vector2 stepDir, ref Vector2 mapPos, ref Vector2 sideDist, TileMemory fog = null)
+        private static List<Vector2> DDA(OpalLocalMap target, Vector2 deltaDist, Vector2 stepDir, Vector2 pos, Vector2 sideDist, out bool side)
         {
             // Wall hit? Side hit?
-            bool side = false;
             //perform DDA
+            List<Vector2> traversed = new List<Vector2>();
+            Vector2 mapPos = pos.ToPoint().ToVector2();
+            traversed.Add(pos);
             while (true)
             {
                 //jump to next map square, OR in x-direction, OR in y-direction
@@ -50,36 +63,32 @@ namespace FieryOpal.Src
                     mapPos.Y += stepDir.Y;
                     side = true;
                 }
-                var t = target.TileAt((int)mapPos.X, (int)mapPos.Y);
-                if (fog != null)
+
+                traversed.Add(mapPos);
+                if (Util.OOB((int)mapPos.X, (int)mapPos.Y, target.Width, target.Height))
                 {
-                    fog.See(new Point((int)mapPos.X, (int)mapPos.Y));
-                    fog.Learn(new Point((int)mapPos.X, (int)mapPos.Y));
+                    break;
                 }
+
+
                 //Check if ray has hit a wall
-                if (t == null || t.Properties.IsBlock)
-                {
-                    return side;
-                }
-                // Check if it hit a decoration that should render as a wall
-                var decos = target.ActorsAt((int)mapPos.X, (int)mapPos.Y).Where(d => d is DecorationBase && (d as DecorationBase).DisplayAsBlock);
-                if (decos.Count() > 0)
-                {
-                    return side;
-                }
+                var t = target.TileAt(mapPos.ToPoint());
+                if (t?.Properties.IsBlock ?? false) break;
+
+                // Check if it hit a decoration that should render as a block
+                var decos = target.ActorsAt(mapPos.ToPoint())
+                    .Where(d => 
+                        d is DecorationBase 
+                        && (d as DecorationBase).DisplayAsBlock
+                    )
+                ;
+                if (decos.Count() > 0) break;
             }
+
+            return traversed;
         }
 
-        /// <summary>
-        /// Casts a ray and returns the distance from that ray to the nearest solid object.
-        /// </summary>
-        /// <param name="target">The map in which the ray is going to be cast.</param>
-        /// <param name="position">The initial position of the ray.</param>
-        /// <param name="mapPos">The initial map location of the ray (position rounded down). Will later reflect where the ray stopped.</param>
-        /// <param name="rayDir">A vector indicating the direction of the ray.</param>
-        /// <param name="side">Did we hit a wall straight-on or from the side?</param>
-        /// <returns>The distance from the nearest perpendicular wall OR solid actor.</returns>
-        public static float CastRay(OpalLocalMap target, Vector2 position, ref Vector2 mapPos, Vector2 rayDir, ref bool side, TileMemory fog = null)
+        public static RayInfo CastRay(OpalLocalMap target, Vector2 position, Vector2 rayDir)
         {
             //length of ray from current position to next x or y-side
             Vector2 sideDist = new Vector2();
@@ -87,24 +96,38 @@ namespace FieryOpal.Src
             Vector2 stepDir = new Vector2();
             //length of ray from one x or y-side to next x or y-side
             Vector2 deltaDist = new Vector2(Math.Abs(1 / rayDir.X), Math.Abs(1 / rayDir.Y));
-            float perpWallDist;
-
-            if (fog != null)
-            {
-                // See this position now since the ray won't
-                fog.See(position.ToPoint());
-                fog.Learn(position.ToPoint());
-            }
 
             // Calculate stepDir and initial sideDist
-            CalcStep(rayDir, position, mapPos, deltaDist, ref stepDir, ref sideDist);
+            CalcStep(rayDir, position, deltaDist, ref stepDir, ref sideDist);
             // Perform DDA
-            side = DDA(target, deltaDist, stepDir, ref mapPos, ref sideDist, fog);
+            List<Vector2> traversed = DDA(target, deltaDist, stepDir, position, sideDist, out bool side);
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-            if (!side) perpWallDist = (mapPos.X - position.X + (1 - stepDir.X) / 2) / rayDir.X;
-            else perpWallDist = (mapPos.Y - position.Y + (1 - stepDir.Y) / 2) / rayDir.Y;
+            float perpWallDist; Vector2 last = traversed.Last();
+            if (!side) perpWallDist = (last.X - position.X + (1 - stepDir.X) / 2) / rayDir.X;
+            else       perpWallDist = (last.Y - position.Y + (1 - stepDir.Y) / 2) / rayDir.Y;
 
-            return perpWallDist;
+            if(Util.OOB((int)last.X, (int)last.Y, target.Width, target.Height))
+            {
+                traversed.RemoveAt(traversed.Count - 1);
+            }
+
+            return new RayInfo()
+            {
+                ProjectedDistance = perpWallDist,
+                PointsTraversed = traversed,
+                SideHit = side,
+                LastPointTraversed = last
+            };
+        }
+
+        public static bool IsLineObstructed(OpalLocalMap target, Vector2 a, Vector2 b)
+        {
+            Vector2 mapPos = b.ToPoint().ToVector2();
+
+            double angle = Math.Atan2((a - b).Y, (a - b).X);
+            Vector2 rayDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+            var info = CastRay(target, b, rayDir);
+            return a.Dist(info.LastPointTraversed) < a.Dist(b);
         }
     }
 }

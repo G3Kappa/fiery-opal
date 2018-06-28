@@ -1,5 +1,4 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
-using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -22,7 +21,7 @@ namespace FieryOpal.Src.Actors
 
         Interact = 7,
         OpenInventory = 8,
-        Attack = 9
+        Attack = 9,
     }
 
     public class PlayerActionsKeyConfiguration
@@ -107,27 +106,15 @@ namespace FieryOpal.Src.Actors
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Interact), (info) => { Interact(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Attack), (info) => { Attack(); });
-#if DEBUG
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F, Keybind.KeypressState.Press, "Debug: Destroy Wall"), (info) =>
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.L, Keybind.KeypressState.Press, "First Person: Toggle Labels"), (info) =>
             {
                 Body.EnqueuedActions.Enqueue(() =>
                 {
-                    Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<DirtSkeleton>());
-
                     InputHandled("FlagRaycastViewportForRedraw");
                     return 0f;
                 });
-            });
-
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.G, Keybind.KeypressState.Press, "Debug: Make Wall"), (info) =>
-            {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    Body.Map.SetTile(Body.LocalPosition.X + Body.LookingAt.UnitX(), Body.LocalPosition.Y + Body.LookingAt.UnitY(), OpalTile.GetRefTile<NaturalWallSkeleton>());
-
-                    InputHandled("FlagRaycastViewportForRedraw");
-                    return 0f;
-                });
+                InputHandled("ToggleRaycastLabelView");
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Debug: Wait 50 turns", true), (info) =>
@@ -135,29 +122,61 @@ namespace FieryOpal.Src.Actors
                 Wait(50);
             });
 
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Open CLI"), (info) =>
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F5, Keybind.KeypressState.Press, "Debug: Toggle rendering of terrain grid", true), (info) =>
             {
                 Body.EnqueuedActions.Enqueue(() =>
                 {
-                    var cli = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Nexus.Width * .4f), 4));
-                    cli.Position = new Point(0, 0);
-
-                    cli.Closed += (e, eh) =>
-                    {
-                        Body.EnqueuedActions.Enqueue(() =>
-                        {
-                            InputHandled("FlagRaycastViewportForRedraw");
-                            return 0f;
-                        });
-                    };
-
-                    OpalDialog.LendKeyboardFocus(cli);
-                    cli.Show();
-                    InputHandled("FlagRaycastViewportForRedraw");
+                    InputHandled("ToggleTerrainGrid");
                     return 0f;
                 });
+                InputHandled();
             });
-#endif
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F5, Keybind.KeypressState.Press, "Debug: Toggle rendering of boundary boxes", false, true), (info) =>
+            {
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    InputHandled("ToggleActorBoundaryBoxes");
+                    return 0f;
+                });
+                InputHandled();
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F6, Keybind.KeypressState.Press, "Debug: Toggle rendering of ambient shading", true), (info) =>
+            {
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    InputHandled("ToggleAmbientShading");
+                    return 0f;
+                });
+                InputHandled();
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F6, Keybind.KeypressState.Press, "Debug: Toggle rendering of lighting system", false, true), (info) =>
+            {
+                Body.EnqueuedActions.Enqueue(() =>
+                {
+                    InputHandled("ToggleLighting");
+                    return 0f;
+                });
+                InputHandled();
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Show CLI"), (info) =>
+            {
+                Keybind.PushState();
+                Nexus.DebugCLI.Show();
+                Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Hide CLI"), (_info) =>
+                {
+                    Nexus.DebugCLI.Hide();
+                    Body.EnqueuedActions.Enqueue(() =>
+                    {
+                        InputHandled("FlagRaycastViewportForRedraw");
+                        return 0f;
+                    });
+                    InputHandled();
+                });
+            });
         }
 
         public override IEnumerable<TurnBasedAction> GiveAdvice(int turn, float energy)
@@ -291,7 +310,6 @@ namespace FieryOpal.Src.Actors
                 Body.MoveTo(to);
                 return 1f;
             });
-
             InputHandled("FlagRaycastViewportForRedraw");
         }
 

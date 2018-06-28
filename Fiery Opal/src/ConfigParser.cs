@@ -238,7 +238,6 @@ namespace FieryOpal.Src
 
     public class FontConfigInfo
     {
-        public Font FirstPersonViewportFont { get; set; }
         public Font MainFont { get; set; }
         public Dictionary<string, Font> Spritesheets { get; set; } = new Dictionary<string, Font>();
     }

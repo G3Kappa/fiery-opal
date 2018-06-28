@@ -29,6 +29,9 @@ namespace FieryOpal.Src
         string Name { get; }
     }
 
+
+    public delegate void ActorMovedEventHandler(IOpalGameActor a, Point oldPos, bool mapChanged=false);
+    public delegate void MapChangedEventHandler(IOpalGameActor a, OpalLocalMap oldMap);
     public interface IOpalGameActor : ICustomSpritesheet, INamedObject
     {
         Guid Handle { get; }
@@ -45,6 +48,8 @@ namespace FieryOpal.Src
 
         bool CanMove { get; }
         bool MoveTo(Point rel, bool absolute);
+        event ActorMovedEventHandler PositionChanged;
+        event MapChangedEventHandler MapChanged;
 
         /// <summary>
         /// Removes the actor from the current map and spawns it at the given coordinates on another map.
@@ -52,7 +57,7 @@ namespace FieryOpal.Src
         /// <param name="new_map">The new OpalLocalMap.</param>
         /// <param name="new_spawn">The spawn coordinates.</param>
         /// <returns></returns>
-        bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile=true);
+        bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile = true);
 
         bool OnBump(IOpalGameActor other);
     }
@@ -65,13 +70,6 @@ namespace FieryOpal.Src
     public interface IDecoration : IOpalGameActor
     {
         bool BlocksMovement { get; }
-    }
-
-    public interface ILightSource : IOpalGameActor
-    {
-        Color LightColor { get; }
-        float LightIntensity { get; }
-        float LightRadius { get; }
     }
 
     public interface IInteractive : INamedObject
@@ -153,11 +151,12 @@ namespace FieryOpal.Src
         {
             var newPos = new Point();
             var ret = CanMoveTo(p, ref newPos, absolute);
+            var oldPos = localPosition;
             if (ret)
             {
-                var oldPos = localPosition;
                 localPosition = newPos;
                 map.NotifyActorMoved(this, oldPos);
+                PositionChanged?.Invoke(this, oldPos);
             }
             else if (!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
             {
@@ -216,7 +215,10 @@ namespace FieryOpal.Src
 
                     var t = new_region.LocalMap.TileAt(new_spawn);
                     if (!t.Properties.BlocksMovement || IgnoresCollision)
+                    {
                         ChangeLocalMap(new_region.LocalMap, new_spawn);
+                        PositionChanged?.Invoke(this, oldPos, true);
+                    }
                     else if (IsPlayer)
                         Util.Log(Util.Str("Actor_CannotChangeRegion", t.Name).ToColoredString(Palette.Ui["BoringMessage"]), false);
                 }
@@ -277,22 +279,23 @@ namespace FieryOpal.Src
             return ret;
         }
 
-        public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile=true)
+        public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile = true)
         {
-            map?.Despawn(this);
+            var oldMap = map;
+            oldMap?.Despawn(this);
 
             if (new_map == null)
             {
+                MapChanged?.Invoke(this, oldMap);
                 map = null;
-                MapChanged?.Invoke(this, map);
                 return true;
             }
 
             var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
-            bool ret = tile != null && !tile.Properties.IsBlock 
+            bool ret = tile != null && !tile.Properties.IsBlock
                 && !new_map.ActorsAt(new_spawn.X, new_spawn.Y).Any(a =>
             {
-                if(this is DecorationBase)
+                if (this is DecorationBase)
                 {
                     return a is DecorationBase;
                 }
@@ -304,7 +307,7 @@ namespace FieryOpal.Src
             map = new_map;
             localPosition = new_spawn;
             map.Spawn(this);
-            MapChanged?.Invoke(this, map);
+            MapChanged?.Invoke(this, oldMap);
 
             if (IsPlayer)
             {
@@ -314,9 +317,10 @@ namespace FieryOpal.Src
             return true;
         }
 
-        public event Action<OpalActorBase, OpalLocalMap> MapChanged;
+        public event ActorMovedEventHandler PositionChanged;
+        public event MapChangedEventHandler MapChanged;
 
-        public virtual bool OnBump(IOpalGameActor other) { return false; }
+        public virtual bool OnBump(IOpalGameActor other) { return IgnoresCollision; }
 
         public override bool Equals(object obj)
         {
@@ -365,23 +369,6 @@ namespace FieryOpal.Src
                 return Activator.CreateInstance(ActorClasses[className.ToLower()]) as OpalActorBase;
             }
             return null;
-        }
-    }
-    public abstract class LightSourceBase : OpalActorBase, ILightSource
-    {
-        protected Color lightColor = Color.Gold;
-        public Color LightColor => lightColor;
-        public float LightIntensity => 1f;
-        public float LightRadius => 3f;
-
-        public LightSourceBase()
-        {
-            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Gold, Color.Transparent, 'L'));
-        }
-
-        public void SetColor(Color c)
-        {
-            lightColor = c;
         }
     }
     public abstract class DecorationBase : OpalActorBase, IDecoration

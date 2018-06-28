@@ -50,8 +50,8 @@ namespace FieryOpal.Src.Actors
             PossibleColors = new[] {
                 Palette.Vegetation["GenericPlant2"],
             };
-            FirstPersonVerticalOffset = -14f;
-            FirstPersonScale = new Vector2(.25f, 1 / 4f);
+            FirstPersonVerticalOffset = -0;
+            FirstPersonScale = new Vector2(1, 1);
 
             SetGraphics();
         }

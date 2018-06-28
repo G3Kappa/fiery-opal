@@ -1,8 +1,6 @@
-﻿using FieryOpal.src.lib;
-using FieryOpal.Src.Procedural;
+﻿using FieryOpal.Src.Procedural;
 using Microsoft.Xna.Framework;
 using SadConsole;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,16 +24,12 @@ namespace FieryOpal.Src.Ui
         public override int TargetHeight => Target?.Height ?? -1;
 
         private Dictionary<IOpalGameActor, Point> LastKnownPos = new Dictionary<IOpalGameActor, Point>();
-        private string CurrentMapName = "";
 
+        private OpalLocalMap lastTarget;
         public LocalMapViewport(OpalLocalMap target, Rectangle view_area)
         {
             ViewArea = view_area;
-            Target = target;
-            Nexus.Player.MapChanged += (e, eh) => {
-                LastKnownPos.Clear();
-                CurrentMapName = Target.Name;
-            };
+            Target = lastTarget = target;
         }
 
         private void PrintFog(SadConsole.Console surface, Point p)
@@ -48,8 +42,21 @@ namespace FieryOpal.Src.Ui
             Print(surf, Rectangle.Empty, fog);
         }
 
+        private Cell ShadeCell(Cell c, Point p)
+        {
+            Color fg = Target.Lighting.Shade(c.Foreground, p);
+            Color bg = Target.Lighting.Shade(c.Background, p);
+            return new Cell(fg, bg, c.Glyph);
+        }
+
         public override void Print(SadConsole.Console surface, Rectangle targetArea, TileMemory fog = null)
         {
+            if(lastTarget != Target)
+            {
+                LastKnownPos.Clear();
+                lastTarget = Target;
+            }
+
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
             foreach (var tuple in tiles)
@@ -72,16 +79,17 @@ namespace FieryOpal.Src.Ui
                 }
                 else
                 {
-                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, tuple.Item1.Graphics);
+                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(tuple.Item1.Graphics, tuple.Item2));
                 }
             }
 
             var actors = Target.ActorsWithin(ViewArea).ToList();
             foreach (var k in LastKnownPos.Keys)
             {
-                if(!(k as OpalActorBase)?.IsDead ?? true)
+                if (!(k as OpalActorBase)?.IsDead ?? true)
                     actors.Add(k);
             }
+            // Make sure that the player is always drawn last
             actors.Remove(Nexus.Player);
             actors.Add(Nexus.Player);
             foreach (var act in actors)
@@ -114,7 +122,7 @@ namespace FieryOpal.Src.Ui
                     Point p = act.LocalPosition - vw;
                     if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
 
-                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Foreground);
+                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, Target.Lighting.Shade(act.Graphics.Foreground, act.LocalPosition));
                     surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
                 }
             }

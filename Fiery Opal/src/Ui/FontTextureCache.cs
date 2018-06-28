@@ -141,6 +141,23 @@ namespace FieryOpal.Src.Ui
             CachedFonts[f.Name].GlyphPixels[glyph].DeepClone(ref pixels);
         }
 
+        public static Color[,] MakeLabel(Font f, string text, Color fg, Color bg)
+        {
+            Color[,] ret = new Color[text.Length * f.Size.X, f.Size.Y];
+            for (int i = 0; i < text.Length; i++)
+            {
+                Color[,] pixels = GetRecoloredPixels(f, (byte)text[i], fg, bg);
+                for (int x = 0; x < f.Size.X; x++)
+                {
+                    for (int y = 0; y < f.Size.Y; y++)
+                    {
+                        ret[i * f.Size.X + x, y] = pixels[x, y];
+                    }
+                }
+            }
+            return ret;
+        }
+
         public static byte GetGlyphByBrightness(Font f, float brightness)
         {
             if (brightness < 0 || brightness >= 1)

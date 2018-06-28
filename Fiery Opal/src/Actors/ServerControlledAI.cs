@@ -1,12 +1,5 @@
-﻿using FieryOpal.src.Multiplayer;
-using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
-using FieryOpal.Src.Ui;
-using FieryOpal.Src.Ui.Dialogs;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using System;
+﻿using FieryOpal.Src.Multiplayer;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FieryOpal.Src.Actors
 {

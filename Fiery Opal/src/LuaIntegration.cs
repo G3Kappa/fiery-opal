@@ -1,4 +1,4 @@
-﻿using FieryOpal.src.Multiplayer;
+﻿using FieryOpal.Src.Multiplayer;
 using FieryOpal.Src.Actors;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
@@ -49,7 +49,7 @@ namespace FieryOpal.Src
 #endif
             );
 
-            foreach(var t in GetInternalObjects())
+            foreach (var t in GetInternalObjects())
             {
                 yield return t;
             }

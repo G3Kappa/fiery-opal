@@ -2,12 +2,9 @@
 using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
-using MoonSharp.Interpreter;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace FieryOpal.Src
 {
@@ -68,14 +65,16 @@ namespace FieryOpal.Src
     {
         public string Cmd { get; set; }
         public Type[] Signature { get; }
+        public bool PrintZeroExitCode { get; protected set; }
 
         public CommandDelegate(String name, Type[] signature)
         {
             Signature = signature;
             Cmd = name;
+            PrintZeroExitCode = true;
         }
 
-        public string GetSignatureString(string join=", ")
+        public string GetSignatureString(string join = ", ")
         {
             return String.Join(join, Signature.Select(t => t.Name).ToArray());
         }
@@ -90,7 +89,23 @@ namespace FieryOpal.Src
 
         public int Execute(params string[] args)
         {
-            if (args.Length != Signature.Length)
+            if(args.Length > Signature.Length && Signature[Signature.Length - 1] == typeof(string))
+            {
+                string[] newArgs = new string[Signature.Length];
+                for(int i = 0; i < newArgs.Length - 1; ++i)
+                {
+                    newArgs[i] = args[i];
+                }
+
+                string s = "";
+                for (int i = 0; i < args.Length - Signature.Length + 1; i++)
+                {
+                    s += args[Signature.Length + i - 1] + " ";
+                }
+                newArgs[newArgs.Length - 1] = s.TrimEnd();
+                args = newArgs;
+            }
+            else if (args.Length != Signature.Length)
             {
                 Util.LogText(GetHelpText(), true, Palette.Ui["InfoMessage"]);
                 return -1;
@@ -293,7 +308,7 @@ namespace FieryOpal.Src
         {
             bool async = (bool)args[1];
 
-            if(async)
+            if (async)
             {
                 Thread runner = new Thread(
                     () => LuaVM.DoFile((string)args[0])
@@ -378,7 +393,7 @@ namespace FieryOpal.Src
                         return -2;
                     }
 
-                    if(!Nexus.Player.Equipment.TryEquip((item as IEquipable), Nexus.Player))
+                    if (!Nexus.Player.Equipment.TryEquip((item as IEquipable), Nexus.Player))
                     {
                         Util.LogText("That item is already equiped.", true);
                         return -3;
@@ -433,4 +448,40 @@ namespace FieryOpal.Src
 
     }
 
+    public class CommandTestRaycaster : CommandDelegate
+    {
+        public static Type[] _Signature = new Type[0] { };
+
+        public CommandTestRaycaster(string name = "tr") : base(name, _Signature)
+        {
+
+        }
+
+        protected Point? a, b;
+
+        protected override int ExecInternal(object[] args)
+        {
+            if(a == null)
+            {
+                a = Nexus.Player.LocalPosition;
+                Util.LogText("Saved A ({0})".Fmt(a), true);
+            }
+            else if(b == null)
+            {
+                b = Nexus.Player.LocalPosition;
+                Util.LogText("Saved B ({0})".Fmt(b), true);
+                bool obstructed = Raycaster.IsLineObstructed(Nexus.Player.Map, a.Value.ToVector2(), b.Value.ToVector2());
+                Util.LogText("There's {0} between A and B".Fmt(obstructed ? "a wall" : "nothing"), true);
+                a = b = null;
+            }
+
+            return 0;
+        }
+
+        protected override dynamic ParseArgument(Type T, string str)
+        {
+            return str;
+        }
+
+    }
 }

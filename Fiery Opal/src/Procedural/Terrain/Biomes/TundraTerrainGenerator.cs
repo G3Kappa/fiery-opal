@@ -60,7 +60,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
                 {
                     s.SetTile(x, y, OpalTile.GetRefTile<NaturalWallSkeleton>());
                 }
-                else if(wallDt[x, y] + (dirtNoise[x, y] - .5) / 4 < .1f)
+                else if (wallDt[x, y] + (dirtNoise[x, y] - .5) / 4 < .1f)
                 {
                     s.SetTile(x, y, OpalTile.GetRefTile<DirtSkeleton>());
 

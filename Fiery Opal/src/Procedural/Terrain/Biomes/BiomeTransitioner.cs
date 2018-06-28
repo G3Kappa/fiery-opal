@@ -1,8 +1,5 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
@@ -26,11 +23,11 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
         private static Tuple<Rectangle, Rectangle> GetTransitionRects(Point outer, Point inner)
         {
             Rectangle innerRect, outerRect;
-            if(outer.Y == inner.Y)
+            if (outer.Y == inner.Y)
             {
                 innerRect = new Rectangle(WorldTile.REGION_WIDTH - TRANSITION_W, 0, TRANSITION_W, WorldTile.REGION_HEIGHT);
                 outerRect = new Rectangle(0, 0, TRANSITION_W, WorldTile.REGION_HEIGHT);
-                if(outer.X < inner.X)
+                if (outer.X < inner.X)
                 {
                     var temp = innerRect;
                     innerRect = outerRect;

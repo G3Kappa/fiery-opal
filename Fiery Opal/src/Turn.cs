@@ -70,20 +70,22 @@ namespace FieryOpal.Src
             {
                 // If the player is dead allow no further processing of turns.
                 // Unless they somehow come back to life, that is.
-                if (!actions.ContainsKey(Nexus.Player.Handle))
+                if (Nexus.Player.IsDead)
                 {
                     Util.LogText("You died.", false);
                     return;
                 }
 
-                if (actions[Nexus.Player.Handle].Count == 0 && Accumulator[Nexus.Player.Handle] == .0f)
+                // If the player's key is not contained in actions, it might be
+                // that they just left the map while the turn hasn't finished.
+                if (actions.ContainsKey(Nexus.Player.Handle) && actions[Nexus.Player.Handle].Count == 0 && Accumulator[Nexus.Player.Handle] == .0f)
                 {
                     // If the player has no more actions to perform but hasn't completed their turn yet,
                     // end the current turn now and let them make another move.
                     break;
                 }
 
-                foreach(var key in accKeys)
+                foreach (var key in accKeys)
                 {
                     Accumulator[key] = Math.Max(Accumulator[key] - TimeDilation, 0);
                 }

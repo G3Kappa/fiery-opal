@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Actors.Environment;
+using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -171,6 +172,7 @@ namespace FieryOpal.Src.Actors
     public class Lightning : Projectile
     {
         public float BranchingRadius { get; }
+        private RadialLightEmitter LightEmitter { get; }
 
         public Lightning(OpalLocalMap m, Point spawnPos, Vector2 direction, Freezzino spawner, float branchRadius = 2.5f)
             : base(m, spawnPos, direction, spawner, DamageType.Piercing)
@@ -180,6 +182,17 @@ namespace FieryOpal.Src.Actors
             );
 
             BranchingRadius = branchRadius;
+
+            LightEmitter = new RadialLightEmitter();
+            LightEmitter.LightIntensity = 1f;
+            LightEmitter.LightRadius = .75f;
+            LightEmitter.LightColor = Color.Cyan;
+            LightEmitter.ChangeLocalMap(m, spawnPos, false);
+
+            m.ActorDespawned += (_, a) =>
+            {
+                if (a == this) m.Despawn(LightEmitter);
+            };
         }
 
         public override float TurnPriority { get; set; } = 0f;
@@ -196,35 +209,9 @@ namespace FieryOpal.Src.Actors
             yield return () => { Kill(); return HitDelay; };
         }
 
-        public override void ApplyDamage(List<TurnTakingActor> actors, bool hurtOwner = false)
-        {
-            var branchTargets = Map.ActorsWithinRing(LocalPosition.X, LocalPosition.Y, (int)BranchingRadius, 1)
-                .Where(a =>
-                a is TurnTakingActor
-                && Map.ActorsAt(a.LocalPosition.X, a.LocalPosition.Y).Where(b => b is Lightning).Count() == 0
-                && a.LocalPosition != FiredFrom.Owner.LocalPosition
-                && !actors.Contains(a)
-                && Util.BresenhamLine(LocalPosition, a.LocalPosition).All(p => !Map.TileAt(p).Properties.IsBlock)
-                )
-                .ToList();
-
-            if (branchTargets.Count > 0)
-            {
-                var target = Util.Choose(branchTargets);
-                var line = Util.BresenhamLine(LocalPosition, target.LocalPosition);
-                foreach (Point p in line)
-                {
-                    var child = new Lightning(Map, p, (p - LocalPosition).ToVector2(), (Freezzino)FiredFrom, BranchingRadius);
-                }
-            }
-
-            Util.LogText("Hit", false);
-            base.ApplyDamage(actors, hurtOwner);
-        }
-
         public override int CalcDamage(EquipmentSlotType partHit)
         {
-            return 7;
+            return 999;
         }
 
         public override EquipmentSlotType CalcPartHit(TurnTakingActor a)

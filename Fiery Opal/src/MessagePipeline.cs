@@ -2,6 +2,7 @@
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src
 {
@@ -87,7 +88,7 @@ namespace FieryOpal.Src
 
         public void Broadcast(T sender, Func<T, string> action)
         {
-            foreach (IPipelineSubscriber<T> sub in Subscribers.Values)
+            foreach (IPipelineSubscriber<T> sub in Subscribers.Values.ToList())
             {
                 Guid from = sender == null ? Guid.Empty : sender.Handle;
                 sub.ReceiveMessage(Handle, from, action, true);

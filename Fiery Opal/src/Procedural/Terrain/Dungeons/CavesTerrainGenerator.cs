@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
+﻿using FieryOpal.Src.Procedural.Terrain.Tiles;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using Microsoft.Xna.Framework;
 using System.Linq;
 
@@ -82,6 +83,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
                 randomize_order: true
             );
 
+            m.CeilingTile = TileSkeleton.Get<NaturalWallSkeleton>();
             m.Soundtrack = Soundtrack.TrackName.Caves;
         }
 

@@ -119,6 +119,27 @@ namespace FieryOpal.Src
             }
         }
 
+        public static T[] ToArray<T>(this T reference, int size, bool clone=false)
+        {
+            T[] arr = new T[size];
+            clone = clone && typeof(ICloneable).IsAssignableFrom(typeof(T));
+            if(clone)
+            {
+                var cref = (ICloneable)reference;
+                for (int i = 0; i < size; ++i)
+                {
+                    arr[i] = (T)cref.Clone();
+                }
+            }
+
+            for(int i = 0; i < size; ++i)
+            {
+                arr[i] = reference;
+            }
+
+            return arr;
+        }
+
         public static void SlideAcross(this IEnumerable<MatrixReplacement> mr, OpalLocalMap tiles, Point stride, MRRule zero, MRRule one, int epochs = 1, bool break_early = true, bool shuffle = false, bool randomize_order = false)
         {
             List<int> done = new List<int>();
@@ -323,6 +344,14 @@ namespace FieryOpal.Src
         public static Color ChangeValue(this Color c, int r = -1, int g = -1, int b = -1, int a = -1)
         {
             return new Color((byte)(r >= 0 ? r : c.R), (byte)(g >= 0 ? g : c.G), (byte)(b >= 0 ? b : c.B), (byte)(a >= 0 ? a : c.A));
+        }
+
+        public static T[,] ResizeNearestNeighbor<T>(this T[,] source, int newWidth, int newHeight)
+        {
+            T[,] ret = new T[newWidth, newHeight];
+            int width = source.GetLength(0);
+            int height = source.GetLength(1);
+            return ret;
         }
     }
 }

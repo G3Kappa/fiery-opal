@@ -1,60 +1,29 @@
 ﻿using FieryOpal.Src;
+using FieryOpal.Src.Actors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace FieryOpal.src.Multiplayer
+namespace FieryOpal.Src.Multiplayer
 {
-    public delegate ClientPacket ServerMessageHandler(ServerPacket msg);
-    public enum ServerMessage
-    {
-        Invalid = 0,
-        Chat = 1,
-        ClientDropped = 2,
-    }
-
-    public struct ServerPacket
-    {
-        private static ServerMessage[] MsgLookup = (ServerMessage[])Enum.GetValues(typeof(ServerMessage));
-
-        public ServerMessage Type => (uint)RawData[0] < MsgLookup.Length ? MsgLookup[(uint)RawData[0]] : ServerMessage.Invalid;
-        public bool IsBroadcast => new[] { ServerMessage.Chat, ServerMessage.ClientDropped }.Contains(Type);
-        public byte[] RawData { get; }
-        public string StringData => Encoding.ASCII.GetString(RawData).Substring(1).TrimEnd('\0');
-
-        public ServerPacket(byte[] data)
-        {
-            RawData = data;
-        }
-
-        public ServerPacket(ServerMessage type, string data)
-        {
-            RawData = new byte[String.IsNullOrEmpty(data) ? 1 : data.Length + 2];
-            RawData[0] = (byte)Array.IndexOf(MsgLookup, type);
-            if(!String.IsNullOrEmpty(data)) Encoding.ASCII.GetBytes(data).CopyTo(RawData, 1);
-        }
-    }
-
     public abstract class OpalClientBase
     {
         protected TcpClient Client { get; }
-        protected DefaultDictionary<ServerMessage, List<ServerMessageHandler>> ServerMsgHandlers;
+        protected DefaultDictionary<ServerMsgType, List<ServerMessageHandler>> ServerMsgHandlers;
 
-        public Queue<ClientPacket> EnqueuedPackets;
         public bool IsRunning { get; private set; }
+        private object StreamLock = new object();
 
         public OpalClientBase()
         {
             Client = new TcpClient();
-            ServerMsgHandlers = new DefaultDictionary<ServerMessage, List<ServerMessageHandler>>((_) => new List<ServerMessageHandler>());
-            EnqueuedPackets = new Queue<ClientPacket>();
+            ServerMsgHandlers = new DefaultDictionary<ServerMsgType, List<ServerMessageHandler>>((_) => new List<ServerMessageHandler>());
         }
 
-        public void Connect(string serverHostname, int port, string playerName="Player")
+        public void Connect(string serverHostname, int port, string playerName = "Player")
         {
             try
             {
@@ -71,9 +40,9 @@ namespace FieryOpal.src.Multiplayer
             {
                 NetworkStream stream = Client.GetStream();
                 var hello = new ClientPacket(ClientMsgType.ClientConnected, playerName, null);
-                stream.Write(hello.RawData, 0, hello.RawData.Length);
+                lock(StreamLock) stream.Write(hello.RawData, 0, hello.RawData.Length);
 
-                Byte[] buffer = new Byte[256]; int b = 0;
+                Byte[] buffer = new Byte[1024]; int b = 0;
                 try
                 {
                     while ((b = stream.Read(buffer, 0, buffer.Length)) != 0)
@@ -82,15 +51,9 @@ namespace FieryOpal.src.Multiplayer
                         ServerMsgHandlers[packet.Type].ForEach(h =>
                         {
                             var reply = h(packet);
-                            if (reply.Type == ClientMsgType.Invalid) return;
-                            stream.Write(reply.RawData, 0, reply.RawData.Length);
+                            if (reply.Type == ClientMsgType.Ok) return;
+                            lock (StreamLock) stream.Write(reply.RawData, 0, reply.RawData.Length);
                         });
-
-                        while (EnqueuedPackets.Count > 0)
-                        {
-                            var reply = EnqueuedPackets.Dequeue();
-                            stream.Write(reply.RawData, 0, reply.RawData.Length);
-                        }
                     }
                 }
                 catch (System.IO.IOException e)
@@ -102,17 +65,22 @@ namespace FieryOpal.src.Multiplayer
             IsRunning = false;
         }
 
-        public void SendChatMsg(string msg)
+        public void Write(ClientPacket p)
         {
-            EnqueuedPackets.Enqueue(new ClientPacket(ClientMsgType.Chat, msg, null));
+            lock (StreamLock) Client.GetStream().Write(p.RawData, 0, p.RawData.Length);
         }
 
-        public void RegisterHandler(ServerMessage type, ServerMessageHandler handler)
+        public void SendChatMsg(string msg)
+        {
+            Write(new ClientPacket(ClientMsgType.Chat, "{0}: {1}".Fmt(Nexus.Player.Name, msg), null));
+        }
+
+        public void RegisterHandler(ServerMsgType type, ServerMessageHandler handler)
         {
             ServerMsgHandlers[type].Add(handler);
         }
 
-        public void UnregisterHandler(ServerMessage type, ServerMessageHandler handler)
+        public void UnregisterHandler(ServerMsgType type, ServerMessageHandler handler)
         {
             ServerMsgHandlers[type].Remove(handler);
         }
@@ -120,12 +88,54 @@ namespace FieryOpal.src.Multiplayer
 
     public class OpalClient : OpalClientBase
     {
+        protected Dictionary<string, TurnTakingActor> OtherPlayers = new Dictionary<string, TurnTakingActor>();
+
         public OpalClient() : base()
         {
-            RegisterHandler(ServerMessage.Chat, (msg) =>
+            RegisterHandler(ServerMsgType.Chat, (msg) =>
             {
                 Util.LogChat(msg.StringData);
-                return new ClientPacket(ClientMsgType.Invalid, null, null);
+
+                return new ClientPacket(ClientMsgType.Ok, null, null);
+            });
+
+            RegisterHandler(ServerMsgType.ClientConnected, (msg) =>
+            {
+                var args = msg.StringData.Split('\x1');
+                // If it was us, don't spawn a new player.
+                if (args[1].Equals(Client.Client.LocalEndPoint.ToString()))
+                {
+                    Nexus.Player.Name = args[0];
+                    return new ClientPacket(ClientMsgType.Ok, null, null);
+                }
+
+                Humanoid player = new Humanoid();
+                player.Name = args[0];
+                player.Brain = new ServerControlledAI(player, this);
+                OtherPlayers[args[1]] = player;
+                player.ChangeLocalMap(Nexus.Player.Map, Nexus.Player.LocalPosition);
+
+                return new ClientPacket(ClientMsgType.Ok, null, null);
+            });
+
+            RegisterHandler(ServerMsgType.ClientDisconnected, (msg) =>
+            {
+                var key = msg.StringData;
+                // If it was us, warn the player.
+                if (key.Equals(Client.Client.LocalEndPoint.ToString()))
+                {
+                    // TODO
+                    return new ClientPacket(ClientMsgType.Ok, null, null);
+                }
+                // If we never spawned this player, no biggie at this point.
+                if(!OtherPlayers.ContainsKey(key))
+                {
+                    return new ClientPacket(ClientMsgType.Ok, null, null);
+                }
+                OtherPlayers[key].Kill();
+                Util.LogClient("{0} had an aneurysm.".Fmt(OtherPlayers[key].Name), true);
+                OtherPlayers.Remove(key);
+                return new ClientPacket(ClientMsgType.Ok, null, null);
             });
         }
     }

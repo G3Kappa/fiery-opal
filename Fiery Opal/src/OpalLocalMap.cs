@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Environment;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Procedural.Terrain.Biomes;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
@@ -90,12 +91,19 @@ namespace FieryOpal.Src
 
         public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
+        public TileSkeleton CeilingTile { get; set; }
 
         public List<ILocalFeatureGenerator> FeatureGenerators { get; private set; } = new List<ILocalFeatureGenerator>();
 
         public Soundtrack.TrackName Soundtrack { get; set; } = Src.Soundtrack.TrackName.No_Track;
 
         public WorldTile ParentRegion;
+        public LightingManager Lighting { get; private set; }
+
+        public delegate void ActorSpawnedEventHandler(OpalLocalMap sender, IOpalGameActor args);
+        public event ActorSpawnedEventHandler ActorSpawned;
+        public delegate void ActorDespawnedEventHandler(OpalLocalMap sender, IOpalGameActor args);
+        public event ActorDespawnedEventHandler ActorDespawned;
 
         public OpalLocalMap(int width, int height, WorldTile parent, string name)
         {
@@ -104,9 +112,11 @@ namespace FieryOpal.Src
             Width = width;
             Height = height;
             SkyColor = Palette.Terrain["FP_OverworldFog"];
-            FogColor = Color.DarkSlateGray;
+            FogColor = Palette.Ui["UnknownTileBackground"];
             ParentRegion = parent;
             Name = name;
+            CeilingTile = null;
+            Lighting = new LightingManager(this);
         }
 
         public float[,] DistanceTransform(Func<Tuple<OpalTile, Point>, bool> predicate)
@@ -140,6 +150,7 @@ namespace FieryOpal.Src
                 if (Actors.Contains(actor)) return false;
                 Actors.Add(actor);
                 NotifyActorMoved(actor, new Point(-1, -1));
+                ActorSpawned?.Invoke(this, actor);
             }
             return true;
         }
@@ -161,6 +172,7 @@ namespace FieryOpal.Src
             {
                 if (!Actors.Contains(actor)) return false;
                 NotifyActorMoved(actor, new Point(-2, -2));
+                ActorDespawned?.Invoke(this, actor);
             }
             return true;
         }
@@ -187,9 +199,9 @@ namespace FieryOpal.Src
             }
         }
 
-        public void CallLocalGenerator(ILocalFeatureGenerator gen, bool remember=true)
+        public void CallLocalGenerator(ILocalFeatureGenerator gen, bool remember = true)
         {
-            if(remember) FeatureGenerators.Add(gen);
+            if (remember) FeatureGenerators.Add(gen);
             gen.Generate(this);
             Iter((self, x, y, t) =>
             {
@@ -249,6 +261,10 @@ namespace FieryOpal.Src
             {
                 a.MoveTo(FirstAccessibleTileAround(a.LocalPosition), true);
             }
+
+            var ambientLight = new AmbientLightEmitter();
+            ambientLight.LightIntensity = .25f;
+            ambientLight.ChangeLocalMap(this, new Point(0, 0), true);
         }
 
         public void GenerateAnew()
@@ -308,7 +324,7 @@ namespace FieryOpal.Src
             while (true);
         }
 
-        public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1, bool killDecorations=false)
+        public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1, bool killDecorations = false)
         {
             DrawShape(Util.BresenhamLine(start, end, thickness), newTile, killDecorations);
         }
@@ -328,7 +344,7 @@ namespace FieryOpal.Src
             foreach (var p in points)
             {
                 SetTile(p.X, p.Y, brush);
-                if(killDecorations)
+                if (killDecorations)
                 {
                     ActorsAt(p.X, p.Y)
                         .Where(a => typeof(IDecoration).IsAssignableFrom(a.GetType()))
@@ -422,6 +438,11 @@ namespace FieryOpal.Src
             return new List<IOpalGameActor>();
         }
 
+        public IEnumerable<IOpalGameActor> ActorsAt(Point p)
+        {
+            return ActorsAt(p.X, p.Y);
+        }
+
         public IEnumerable<Tuple<OpalTile, Point>> TilesWithin(Rectangle? R, bool yield_null = false)
         {
             Rectangle r;
@@ -449,7 +470,7 @@ namespace FieryOpal.Src
             Rectangle r;
             if (!R.HasValue)
             {
-                lock(actorsLock)
+                lock (actorsLock)
                 {
                     foreach (var actor in Actors) yield return actor;
                 }
@@ -500,20 +521,20 @@ namespace FieryOpal.Src
                 }
             }
         }
-        public Point FirstAccessibleTileAround(Point xy, bool ignoreDecorations=true)
+        public Point FirstAccessibleTileAround(Point xy, bool ignoreDecorations = true)
         {
             int r = 0;
             IEnumerable<Tuple<OpalTile, Point>> tiles_in_ring;
 
-            var validTile = (Func<Point,bool>)((Point p) =>
-            {
-                var t = TileAt(xy);
-                return !t.Properties.BlocksMovement
-                         && !ActorsAt(p.X, p.Y)
-                         .Any(
-                            a => (!(a is IDecoration) || (!ignoreDecorations && a is IDecoration) || (a as IDecoration).BlocksMovement)
-                         );
-            });
+            var validTile = (Func<Point, bool>)((Point p) =>
+             {
+                 var t = TileAt(xy);
+                 return (!t?.Properties.BlocksMovement ?? true)
+                          && !ActorsAt(p.X, p.Y)
+                          .Any(
+                             a => (!(a is IDecoration) || (!ignoreDecorations && a is IDecoration) || (a as IDecoration).BlocksMovement)
+                          );
+             });
 
             if (validTile(xy)) return xy;
 
