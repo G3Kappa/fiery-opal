@@ -22,7 +22,7 @@ namespace FieryOpal.Src.Actors.Environment
         public LightEmitterType LightEmitterType => LightEmitterType.Conical;
 
         public float LightIntensity { get; set; } = 1f;
-        public float LightRadius { get; set; } = 10f;
+        public float LightRadius { get; set; } = 5f;
         public float LightSmoothness { get; set; } = .1f;
         public Color LightColor { get; set; } = Util.Choose(new Color[] {
             new Color(255, 0, 0),
