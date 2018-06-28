@@ -56,7 +56,7 @@ namespace FieryOpal.Src.Ui
         {
             for (int x = 0; x < Manager.Parent.Width; x++)
             {
-                for (int y = 0; y < Manager.Parent.Width; y++)
+                for (int y = 0; y < Manager.Parent.Height; y++)
                 {
                     Grid[x, y] = Source.LightIntensity;
                 }
@@ -147,7 +147,7 @@ namespace FieryOpal.Src.Ui
 
             for (int x = 0; x < Parent.Width; x++)
             {
-                for (int y = 0; y < Parent.Width; y++)
+                for (int y = 0; y < Parent.Height; y++)
                 {
                     ColorGrid[x, y] = Color.Black;
                 }

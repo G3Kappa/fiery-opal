@@ -73,12 +73,12 @@ namespace FieryOpal.Src
                     if (rc != null)
                     {
                         Global.DrawCalls.Add(new DrawCallTexture(rc.RenderSurface, w.Position.ToVector2()));
-                        if (!wasDirty) return "ViewportRefresh";
                         var weaps = Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
                         foreach (var weapon in weaps)
                         {
                             // TODO draw pixelwise
-                            Global.DrawCalls.Add(new DrawCallTexture(weapon.ViewGraphics.AsTexture2D(), w.Position.ToVector2()));
+                            var tex = weapon.ViewGraphics.AsTexture2D(rc.RenderSurface.Width);
+                            Global.DrawCalls.Add(new DrawCallTexture(tex, w.Position.ToVector2() + new Vector2(rc.RenderSurface.Width / 2 - tex.Width / 2, rc.RenderSurface.Height - tex.Height)));
                         }
                     }
                     return "ViewportRefresh";

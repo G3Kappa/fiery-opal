@@ -5,28 +5,22 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 {
     public class BiomeTransitioner : BiomeTerrainGenerator
     {
-        /*
-         *  --------- | ---------
-         *  |      T| T |T      |
-         *  |      T| T |T      |
-         *  |      T| T |T      |
-         *  --------- | ---------
-         * Biome transitioning applies a mask of a fixed size at the edge of two tiles.
-         * This mask evenly blends the terrain and decorations of both biomes.
-         * */
-
-        protected const int TRANSITION_W = WorldTile.REGION_WIDTH / 8;
-        protected const int TRANSITION_H = WorldTile.REGION_HEIGHT / 8;
 
         public BiomeTransitioner(WorldTile worldPos) : base(worldPos) { }
 
         private static Tuple<Rectangle, Rectangle> GetTransitionRects(Point outer, Point inner)
         {
+            int RegionW = Nexus.InitInfo.RegionWidth;
+            int RegionH = Nexus.InitInfo.RegionHeight;
+
+            int TransitionW = RegionW / 8;
+            int TransitionH = RegionH / 8;
+
             Rectangle innerRect, outerRect;
             if (outer.Y == inner.Y)
             {
-                innerRect = new Rectangle(WorldTile.REGION_WIDTH - TRANSITION_W, 0, TRANSITION_W, WorldTile.REGION_HEIGHT);
-                outerRect = new Rectangle(0, 0, TRANSITION_W, WorldTile.REGION_HEIGHT);
+                innerRect = new Rectangle(RegionW - TransitionW, 0, TransitionW, RegionH);
+                outerRect = new Rectangle(0, 0, TransitionW, RegionH);
                 if (outer.X < inner.X)
                 {
                     var temp = innerRect;
@@ -36,8 +30,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             }
             else
             {
-                innerRect = new Rectangle(0, WorldTile.REGION_HEIGHT - TRANSITION_H, WorldTile.REGION_WIDTH, TRANSITION_H);
-                outerRect = new Rectangle(0, 0, WorldTile.REGION_WIDTH, TRANSITION_H);
+                innerRect = new Rectangle(0, RegionH - TransitionH, RegionW, TransitionH);
+                outerRect = new Rectangle(0, 0, RegionW, TransitionH);
                 if (outer.Y < inner.Y)
                 {
                     var temp = innerRect;

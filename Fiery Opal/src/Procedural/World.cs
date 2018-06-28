@@ -142,9 +142,6 @@ namespace FieryOpal.Src.Procedural
 
     public class WorldTile
     {
-        public const int REGION_WIDTH = 60;
-        public const int REGION_HEIGHT = 60;
-
         private static char GetGlyph(BiomeType biome)
         {
             switch (biome)
@@ -195,7 +192,7 @@ namespace FieryOpal.Src.Procedural
 
         private OpalLocalMap GenerateLocalMap()
         {
-            var map = new OpalLocalMap(REGION_WIDTH, REGION_HEIGHT, this, Biome?.Type.ToString() ?? "Instance");
+            var map = new OpalLocalMap(Nexus.InitInfo.RegionWidth, Nexus.InitInfo.RegionHeight, this, Biome?.Type.ToString() ?? "Instance");
             TerrainGeneratorBase gen;
             if (Biome != null)
             {

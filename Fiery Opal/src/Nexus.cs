@@ -26,7 +26,6 @@ namespace FieryOpal
         public static TurnTakingActor Player => GameInstance.Player;
         public static DebugCLI DebugCLI { get; private set; }
 
-
         public static InitConfigInfo InitInfo { get; set; }
 
         public static OpalServer GameServer { get; set; }

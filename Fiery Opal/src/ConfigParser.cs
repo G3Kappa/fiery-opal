@@ -259,6 +259,9 @@ namespace FieryOpal.Src
         public int WorldWidth { get; set; } = 100;
         public int WorldHeight { get; set; } = 100;
 
+        public int RegionWidth { get; set; } = 80;
+        public int RegionHeight { get; set; } = 80;
+
         public int FPSCap { get; set; } = 60;
 
         public string DefaultFontPath { get; set; } = "gfx/Taffer.font";

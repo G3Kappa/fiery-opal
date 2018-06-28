@@ -349,8 +349,15 @@ namespace FieryOpal.Src
         public static T[,] ResizeNearestNeighbor<T>(this T[,] source, int newWidth, int newHeight)
         {
             T[,] ret = new T[newWidth, newHeight];
-            int width = source.GetLength(0);
-            int height = source.GetLength(1);
+            float widthRatio = newWidth / (float)source.GetLength(0);
+            float heightRatio = newWidth / (float)source.GetLength(1);
+            for (int x = 0; x < newWidth; x++)
+            {
+                for (int y = 0; y < newHeight; y++)
+                {
+                    ret[x, y] = source[(int)(x / widthRatio), (int)(y / heightRatio)];
+                }
+            }
             return ret;
         }
     }

@@ -40,7 +40,7 @@ namespace FieryOpal.Src.Ui
 
 
         private Texture2D _texture;
-        public Texture2D AsTexture2D()
+        public Texture2D AsTexture2D(int viewportWidth)
         {
             if (_texture != null) return _texture;
 
@@ -53,8 +53,9 @@ namespace FieryOpal.Src.Ui
                                     Color.Transparent
                                 );
 
-            _texture = new Texture2D(Global.GraphicsDevice, pixels.GetLength(0), pixels.GetLength(1));
-            _texture.SetData(pixels.Flatten());
+            int scale = (viewportWidth / font.Size.X) / 2;
+            _texture = new Texture2D(Global.GraphicsDevice, pixels.GetLength(0) * scale, pixels.GetLength(1) * scale);
+            _texture.SetData(pixels.ResizeNearestNeighbor(font.Size.X * scale, font.Size.Y * scale).Flatten());
             return _texture;
         }
 
