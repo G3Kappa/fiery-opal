@@ -40,7 +40,7 @@ namespace FieryOpal.Src
             {
                 var fmt = "{0}{1}{2}";
                 char first_char = MainKey.ToString()[0];
-                string shift_mod = ((first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z')) ? MainKey.ToString().ToUpper() : "shift+" + MainKey.ToString().ToLower();
+                string shift_mod = (MainKey.ToString().Length == 1 && ((first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z'))) ? MainKey.ToString().ToUpper() : "shift+" + MainKey.ToString().ToLower();
 
                 var s = String.Format(fmt, CtrlDown ? "ctrl+" : "", AltDown ? "alt+" : "", ShiftDown ? shift_mod : MainKey.ToString().ToLower());
 

@@ -1,4 +1,6 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Audio;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
@@ -32,6 +34,7 @@ namespace FieryOpal.Src
 
     public delegate void ActorMovedEventHandler(IOpalGameActor a, Point oldPos, bool mapChanged=false);
     public delegate void MapChangedEventHandler(IOpalGameActor a, OpalLocalMap oldMap);
+    public delegate void ActorTurnedEventHandler(IOpalGameActor a, Vector2 oldLookingAt);
     public interface IOpalGameActor : ICustomSpritesheet, INamedObject
     {
         Guid Handle { get; }
@@ -41,6 +44,7 @@ namespace FieryOpal.Src
         ColoredGlyph Graphics { get; set; }
         ColoredGlyph FirstPersonGraphics { get; set; }
         Vector2 FirstPersonScale { get; set; }
+        Vector2 LookingAt { get; set; }
         float FirstPersonVerticalOffset { get; set; }
         bool Visible { get; set; }
 
@@ -50,6 +54,9 @@ namespace FieryOpal.Src
         bool MoveTo(Point rel, bool absolute);
         event ActorMovedEventHandler PositionChanged;
         event MapChangedEventHandler MapChanged;
+        event ActorTurnedEventHandler LookingAtChanged;
+
+        bool DrawShadow { get; }
 
         /// <summary>
         /// Removes the actor from the current map and spawns it at the given coordinates on another map.
@@ -101,6 +108,7 @@ namespace FieryOpal.Src
         public ColoredGlyph Graphics { get => graphics; set => graphics = value; }
         private ColoredGlyph fp_graphics;
         public ColoredGlyph FirstPersonGraphics { get => fp_graphics; set => fp_graphics = value; }
+        public Vector2 LookingAt { get; set; } = new Vector2(0, 1);
 
         private Vector2 fp_scale = new Vector2(1f, 1f);
         public Vector2 FirstPersonScale { get => fp_scale; set => fp_scale = value; }
@@ -129,11 +137,14 @@ namespace FieryOpal.Src
 
         public string Name { get; set; }
 
+        public virtual bool DrawShadow => true;
+
         public OpalActorBase()
         {
             Handle = Guid.NewGuid();
             Graphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
             FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, '@'));
+            FirstPersonVerticalOffset = 4.0f;
         }
 
         public virtual void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalActorBase, string> msg, bool is_broadcast)
@@ -146,6 +157,14 @@ namespace FieryOpal.Src
             if (Map == null) return;
         }
 
+        public void Turn(float deg)
+        {
+            var old = LookingAt;
+            LookingAt = new Vector2((float)Math.Cos(deg) * LookingAt.X - (float)Math.Sin(deg) * LookingAt.Y, (float)Math.Sin(deg) * LookingAt.X + (float)Math.Cos(deg) * LookingAt.Y);
+            // Round them to cut any possible floating point errors short and maintain a constant ratio, just in case
+            LookingAt = new Vector2((float)Math.Round(LookingAt.X, 0), (float)Math.Round(LookingAt.Y, 0));
+            LookingAtChanged?.Invoke(this, old);
+        }
 
         public bool MoveTo(Point p, bool absolute = false)
         {
@@ -295,14 +314,14 @@ namespace FieryOpal.Src
             bool ret = tile != null && !tile.Properties.IsBlock
                 && !new_map.ActorsAt(new_spawn.X, new_spawn.Y).Any(a =>
             {
-                if (this is DecorationBase)
+                if (this is IDecoration)
                 {
-                    return a is DecorationBase;
+                    return a is IDecoration;
                 }
                 return a is OpalActorBase;
             });
 
-            if (!ret && check_tile) new_spawn = new_map.FirstAccessibleTileAround(new_spawn, !(this is DecorationBase));
+            if (!ret && check_tile) new_spawn = new_map.FirstAccessibleTileAround(new_spawn, !(this is IDecoration));
 
             map = new_map;
             localPosition = new_spawn;
@@ -311,7 +330,7 @@ namespace FieryOpal.Src
 
             if (IsPlayer)
             {
-                Soundtrack.Play(new_map.Soundtrack);
+                SFXManager.PlaySoundtrack(new_map.SoundTrack, 1f);
             }
 
             return true;
@@ -319,13 +338,13 @@ namespace FieryOpal.Src
 
         public event ActorMovedEventHandler PositionChanged;
         public event MapChangedEventHandler MapChanged;
+        public event ActorTurnedEventHandler LookingAtChanged;
 
         public virtual bool OnBump(IOpalGameActor other) { return IgnoresCollision; }
 
         public override bool Equals(object obj)
         {
-            if (!typeof(OpalActorBase).IsAssignableFrom(obj.GetType())) return false;
-            return (obj as OpalActorBase).Handle == Handle;
+            return (obj as OpalActorBase)?.Handle == Handle;
         }
 
         public override int GetHashCode()
@@ -375,6 +394,7 @@ namespace FieryOpal.Src
     {
         public virtual bool BlocksMovement => false;
         public virtual bool DisplayAsBlock => false;
+        public override bool DrawShadow => false;
 
         public override bool OnBump(IOpalGameActor other)
         {

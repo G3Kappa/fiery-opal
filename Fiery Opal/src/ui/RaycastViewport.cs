@@ -27,7 +27,7 @@ namespace FieryOpal.Src.Ui
         }
 
         public bool Dirty { get; private set; }
-        public bool PrintLabels { get; private set; }
+        public bool DrawActorLabels { get; private set; }
         public float ViewDistance { get; set; }
         public bool DrawTerrainGrid { get; private set; }
         public bool DrawActorBoundaryBoxes { get; private set; }
@@ -67,7 +67,7 @@ namespace FieryOpal.Src.Ui
         }
         public void ToggleLabels(bool? state = null)
         {
-            PrintLabels = Toggle(PrintLabels, state);
+            DrawActorLabels = Toggle(DrawActorLabels, state);
         }
         public void ToggleActorBoundaryBoxes(bool? state = null)
         {
@@ -168,7 +168,7 @@ namespace FieryOpal.Src.Ui
                 //Side walls are slightly darker
                 if (info.SideHit) wallColor = Color.Lerp(wallColor, Color.Black, .25f);
                 // lighting
-                wallColor = Target.Lighting.Shade(wallColor, info.RayPos);
+                wallColor = Target.Lighting.ApplyShading(wallColor, info.RayPos);
 
                 //Distant walls blend in with the sky
                 if (DrawAmbientShading) wallColor = Color.Lerp(wallColor, Target.SkyColor, info.PerpWallDist / ViewDistance);
@@ -202,12 +202,12 @@ namespace FieryOpal.Src.Ui
                 floorWall.Y = info.RayPos.Y + 1.0f;
             }
 
-            OpalTile lastTile = null;
+            // Arrays that contain texture data for the floor and ceiling tiles
             Color[,] floorPixels = null;
-            Point oldFloorPos = new Point(-1,-1);
-
             Color[,] ceilingPixels = null;
-            if(Target.CeilingTile != null)
+            // Since ceilings don't change, at least not presently, we can load
+            // the texture once and just store it.
+            if (Target.CeilingTile != null)
             {
                 var reft = OpalTile.GetRefTile(Target.CeilingTile);
                 ceilingPixels = FontTextureCache.GetRecoloredPixels(
@@ -218,108 +218,123 @@ namespace FieryOpal.Src.Ui
                 );
             }
 
+            // The floor tile changes, however, and some optimizations are made
+            // here to reduce the number of array accesses both related to the
+            // tiles themselves and their textures.
+            OpalTile lastTile = null;
+            Point oldFloorPos = new Point(-1, -1);
+            // Shading a color is also expensive, and since floors tend to not
+            // have too many colors, it's good to cache the last used one.
+            Color lastFloorColor = Color.Black, lastShadedFloorColor = Color.Black;
+            bool actorsOnTile = false;
+            // Draws a circular shadow below each actor, on the floor they're occupying.
+            Color[,] shadowPixels = FontTextureCache.MakeShadow(Nexus.Fonts.Spritesheets["Terrain"], 7, new Color(224, 224, 224));
             for (int y = info.DrawEnd; y < RenderSurface.Height; y++)
             {
                 float currentDist = RenderSurface.Height / (2f * y - RenderSurface.Height);
-                if (currentDist > info.PerpWallDist) continue;
-
                 float weight = currentDist / info.PerpWallDist;
-                Vector2 currentFloor = new Vector2();
-                currentFloor.X = weight * floorWall.X + (1.0f - weight) * info.StartPos.X;
-                currentFloor.Y = weight * floorWall.Y + (1.0f - weight) * info.StartPos.Y;
-                Point curFloorPos = currentFloor.ToPoint();
 
-                OpalTile floorTile = curFloorPos == oldFloorPos ? lastTile : Target.TileAt(curFloorPos);
-                // Don't waste cycles
-                if (floorTile?.Properties.IsBlock ?? true) continue;
+                if (weight > 1) continue;
+
+                Vector2 currentFloor = new Vector2(
+                    weight * floorWall.X + (1.0f - weight) * info.StartPos.X,
+                    weight * floorWall.Y + (1.0f - weight) * info.StartPos.Y
+                );
+                Point curFloorPos = currentFloor.ToPoint();
+                // If we're still iterating the previous tile no need to re-fetch it.
+                OpalTile floorTile = lastTile;
+                if(oldFloorPos != curFloorPos)
+                {
+                    floorTile = Target.TileAt(curFloorPos);
+                    actorsOnTile = Target.ActorsAt(curFloorPos).Any(a => a.DrawShadow && a.Visible);
+                }
+
                 Font spritesheet = floorTile.Spritesheet;
 
-                Point floorTex;
-                // Only interested in the decimal part of currentFloor
-                floorTex.X = (int)((currentFloor.X - (int)currentFloor.X) * spritesheet.Size.X);
-                floorTex.Y = (int)((currentFloor.Y - (int)currentFloor.Y) * spritesheet.Size.Y);
+                // Only interested in the decimal part of currentFloor as far
+                // as the texture is of concern.
+                Point floorTex = new Point(
+                     (int)((currentFloor.X - (int)currentFloor.X) * spritesheet.Size.X),
+                     (int)((currentFloor.Y - (int)currentFloor.Y) * spritesheet.Size.Y)
+                );
 
+                // If we stepped over a different floor, we need to load its
+                // texture into floorPixels.
                 if (lastTile?.Name != floorTile.Name)
+                {
                     floorPixels = FontTextureCache.GetRecoloredPixels(
                         spritesheet,
                         (byte)floorTile.Graphics.Glyph,
                         floorTile.Graphics.Foreground,
                         floorTile.Graphics.Background
                     );
+                }
 
+                // The base color before any post processing
                 Color floorColor = floorPixels[floorTex.X, floorTex.Y];
+                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? Target.SkyColor;
+
+                // If on, draws a grid around each floor tile
                 if (DrawTerrainGrid && (floorTex.X < 1 || floorTex.Y < 1 || floorTex.X > spritesheet.Size.X - 2 || floorTex.Y > spritesheet.Size.Y - 2))
                 {
-                    floorColor = Color.Green;
+                    floorColor = Color.Magenta;
+                    ceilingColor = Color.LawnGreen;
                 }
-                floorColor = Target.Lighting.Shade(floorColor, curFloorPos);
 
-                if (DrawAmbientShading) floorColor = Color.Lerp(
-                    floorColor,
-                    Target.SkyColor,
-                    (float)Math.Pow((RenderSurface.Height / 2f) / y, ViewDistance / 3)
-                );
+                // If the tile is not empty draw a shadow
+                if(actorsOnTile && shadowPixels[floorTex.X, floorTex.Y] != Color.Transparent)
+                {
+                    floorColor = floorColor.BlendLight(shadowPixels[floorTex.X, floorTex.Y], .75f);
+                }
 
+
+                // Apply lighting
+                if (lastFloorColor != floorColor || oldFloorPos != curFloorPos)
+                {
+                    lastFloorColor = floorColor;
+                    floorColor = lastShadedFloorColor = Target.Lighting.ApplyShading(floorColor, curFloorPos);
+                }
+                else floorColor = lastShadedFloorColor;
+
+                if(ceilingPixels != null)
+                    ceilingColor = Target.Lighting.ApplyShading(ceilingColor, curFloorPos);
+
+                // And shade the horizon with fog
+                if (DrawAmbientShading)
+                {
+                    float dist = currentDist / ViewDistance;
+                    floorColor = Target.Lighting.ApplyAmbientShading(floorColor, dist);
+
+                    if (ceilingPixels != null)
+                        ceilingColor = Target.Lighting.ApplyAmbientShading(ceilingColor, dist);
+                }
+
+                // Finally, set both floor and ceiling pixels.
                 SetBackbufferAt(info.Column, y, floorColor);
-
-                // Ceiling
-                if(ceilingPixels == null)
-                {
-                    SetBackbufferAt(info.Column, RenderSurface.Height - y, Target.SkyColor);
-                }
-                else
-                {
-                    Color ceilingColor = ceilingPixels[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y];
-                    ceilingColor = Target.Lighting.Shade(ceilingColor, curFloorPos);
-                    if (DrawAmbientShading) ceilingColor = Color.Lerp(
-                        ceilingColor,
-                        Target.SkyColor,
-                        (float)Math.Pow((RenderSurface.Height / 2f) / y, ViewDistance / 3)
-                     );
-
-                    SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
-                }
+                SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
                 lastTile = floorTile;
                 oldFloorPos = curFloorPos;
             }
         }
 
-        private void DrawActorLabel(float[] zbuffer, Vector2 startPos, IOpalGameActor actor)
+        public void DrawBillboardSprite(Func<Color[,]> getPixels, Vector2 obseverPosition, Point billboardPosition, Vector2 scale, Point textureSize, float vOffset, ref float[] zbuffer, bool ignoreShaders=false)
         {
-            if (!PrintLabels || String.IsNullOrEmpty(actor.Name)) return;
-
-            Color[,] labelPixels = 
-                FontTextureCache.MakeLabel(
-                    Nexus.Fonts.MainFont,
-                    actor.Name,
-                    actor.FirstPersonGraphics.Foreground,
-                    Color.Transparent
-                );
-
-            Vector2 spritePosition = (actor.LocalPosition.ToVector2() - startPos + new Vector2(.5f));
-            Vector2 spriteProjection = new Vector2();
-
-            // Required for correct matrix multiplication
             float invDet = 1.0f / (PlaneVector.X * DirectionVector.Y - DirectionVector.X * PlaneVector.Y);
-            spriteProjection.X = invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X);
-            spriteProjection.Y = invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X);
+            Vector2 spritePosition = (billboardPosition.ToVector2() - obseverPosition + new Vector2(.5f));
+            Vector2 spriteProjection = new Vector2(
+                invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X),
+                invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X)
+            );
+            if (spriteProjection.Y <= 0) return;
 
-            if (spriteProjection.Y == 0) return;
-
-            float distance_scaled = (float)actor.LocalPosition.Dist(startPos) / ViewDistance;
-            Font spritesheet = Nexus.Fonts.MainFont;
+            float distance_scaled = (float)billboardPosition.Dist(obseverPosition) / ViewDistance;
 
             int spriteScreenX = (int)((RenderSurface.Width / 2) * (1 + spriteProjection.X / spriteProjection.Y));
-            int spriteHeight = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / 3 /*FP_SCALE*/);
-            if (spriteHeight < 6) return;
-            if (spriteHeight > spritesheet.Size.Y * 2) spriteHeight = spritesheet.Size.Y * 2;
-
-            int vMoveScreen = (int)(actor.FirstPersonVerticalOffset * spritesheet.Size.Y / spriteProjection.Y) - spriteHeight / 2;
+            int spriteHeight = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / scale.Y);
+            int vMoveScreen = (int)(textureSize.Y * vOffset / spriteProjection.Y);
 
             //calculate width of the sprite
-            int spriteWidth;
-            if (spriteHeight == spritesheet.Size.Y * 2) spriteWidth = Math.Min(spritesheet.Size.X * 2 * actor.Name.Length, spritesheet.Size.X * 2 * 8);
-            else spriteWidth = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / 6 /*2*FP_SCALE*/) * actor.Name.Length;
+            int spriteWidth = (int)(Math.Abs((int)(RenderSurface.Height / (spriteProjection.Y))) / scale.X);
 
             //calculate lowest and highest pixel to fill in current stripe
             Point drawStart = new Point(), drawEnd = new Point();
@@ -331,44 +346,91 @@ namespace FieryOpal.Src.Ui
             if (drawStart.X >= drawEnd.X || spriteHeight == 0)
                 return;
 
+            Color[,] spritePixels = null;
+
             //loop through every vertical stripe of the sprite on screen
             for (int stripe = drawStart.X; stripe < drawEnd.X; stripe++)
             {
-                int texX = (256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * spritesheet.Size.X * actor.Name.Length /*MULT*/ / spriteWidth) / 256;
-                //the conditions in the if are:
-                //1) it's in front of camera plane so you don't see things behind you
-                //2) it's on the screen (left)
-                //3) it's on the screen (right)
-                //4) ZBuffer, with perpendicular distance
+                int texX = (256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * textureSize.X / spriteWidth) / 256;
+
                 int lineHeight = (int)(RenderSurface.Height / zbuffer[stripe]);
                 int drawStartStripe = Math.Max(-lineHeight / 2 + RenderSurface.Height / 2, 0);
 
-                if (spriteProjection.Y > 0 && stripe > 0 && stripe < RenderSurface.Width && (spriteProjection.Y < zbuffer[stripe] || drawStart.Y < drawStartStripe))
+                if (spriteProjection.Y < zbuffer[stripe] || drawStart.Y < drawStartStripe)
                 {
                     // For every pixel of this stripe
                     for (int y = drawStart.Y; y < drawEnd.Y; y++)
                     {
                         if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStartStripe) break;
 
-                        int d = (y - vMoveScreen) * 256 - RenderSurface.Height * 128 + spriteHeight * 128;
-                        int texY = Math.Max(((d * spritesheet.Size.Y) / spriteHeight) / 256, 0);
-
-                        Color spriteColor = labelPixels[texX, texY];
-                        if(spriteColor == Color.Transparent)
+                        // Wait for as long as possible to load the pixels to save some cache hits
+                        if (spritePixels == null)
                         {
-                            spriteColor = Color.Lerp(Color.Black, GetBackbufferAt(stripe, y), distance_scaled * 10);
+                            spritePixels = getPixels();
                         }
 
+                        int d = (y - vMoveScreen) * 256 - RenderSurface.Height * 128 + spriteHeight * 128;
+                        int texY = Math.Max(((d * textureSize.Y) / spriteHeight) / 256, 0);
 
-                        // Shade to sky color with distance from player
-                        if (DrawAmbientShading) spriteColor = Color.Lerp(spriteColor, Target.SkyColor, distance_scaled);
+                        Color spriteColor = spritePixels[texX, texY];
+
+                        // If on, draws a red outline around the projected sprite
+                        if (DrawActorBoundaryBoxes && (stripe == drawStart.X || y == drawStart.Y || stripe == drawEnd.X - 1 || y == drawEnd.Y - 1))
+                        {
+                            spriteColor = Color.Red;
+                        }
+                        else
+                        {
+                            // Skip background pixels
+                            if (spriteColor.A == 0) continue;
+
+                            // Apply translucency
+                            else if(spriteColor.A < 255)
+                            {
+                                spriteColor = Color.Lerp(GetBackbufferAt(stripe, y), spriteColor, spriteColor.A / 255f);
+                            }
+
+                            if(!ignoreShaders)
+                            {
+                                spriteColor = Target.Lighting.ApplyShading(spriteColor, billboardPosition);
+                            }
+                        }
+
+                        if (!ignoreShaders && DrawAmbientShading)
+                        {
+                            spriteColor = Target.Lighting.ApplyAmbientShading(spriteColor, distance_scaled);
+                        }
+
                         SetBackbufferAt(stripe, y, spriteColor);
                     }
                 }
             }
         }
 
-        private void DrawActorSpriteVLines(float[] zbuffer, Vector2 startPos)
+        private void DrawActorLabel(ref float[] zbuffer, Vector2 startPos, IOpalGameActor actor)
+        {
+            if (String.IsNullOrWhiteSpace(actor.Name)) return;
+
+            DrawBillboardSprite(() =>
+            {
+                return
+                FontTextureCache.MakeLabel(
+                    Nexus.Fonts.MainFont,
+                    actor.Name,
+                    actor.FirstPersonGraphics.Foreground,
+                    new Color(0, 0, 0, .25f)
+                );
+            },
+            startPos,
+            actor.LocalPosition,
+            new Vector2(10f / actor.Name.Length, 8f),
+            new Point(Nexus.Fonts.MainFont.Size.X * actor.Name.Length, Nexus.Fonts.MainFont.Size.Y),
+            -16f,
+            ref zbuffer,
+            ignoreShaders: true);
+        }
+
+        private void DrawActorSprites(float[] zbuffer, Vector2 startPos)
         {
             List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)startPos.X, (int)startPos.Y, (int)ViewDistance, 0)
                 .Where(a =>
@@ -378,12 +440,13 @@ namespace FieryOpal.Src.Ui
                        && !(a is DecorationBase && (a as DecorationBase).DisplayAsBlock)
                        // Must derive from OpalActorBase
                        && a is OpalActorBase
-                       // Must not be the actor we're following or them
+                       // Must not be the actor we're following or on the same tile
                        && a.LocalPosition != startPos.ToPoint()
-                       // And must be in a visible position
+                       // And must be in a position visible to the actor we're following
                        && (Math.Sign(a.LocalPosition.X - startPos.X) == Math.Sign(DirectionVector.X)
                        || Math.Sign(a.LocalPosition.Y - startPos.Y) == Math.Sign(DirectionVector.Y))
                 ).ToList();
+
             actors_within_viewarea.Sort((a, b) =>
             {
                 var b_dist = a.LocalPosition.SquaredEuclidianDistance(startPos.ToPoint());
@@ -393,81 +456,24 @@ namespace FieryOpal.Src.Ui
 
             foreach (var actor in actors_within_viewarea)
             {
-                Vector2 spritePosition = (actor.LocalPosition.ToVector2() - startPos + new Vector2(.5f));
-                Vector2 spriteProjection = new Vector2();
-
-                // Required for correct matrix multiplication
-                float invDet = 1.0f / (PlaneVector.X * DirectionVector.Y - DirectionVector.X * PlaneVector.Y);
-                spriteProjection.X = invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X);
-                spriteProjection.Y = invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X);
-
-                if (spriteProjection.Y == 0) continue;
-
-                float distance_scaled = (float)actor.LocalPosition.Dist(startPos) / ViewDistance;
-                Font spritesheet = GetFontByDist(distance_scaled * ViewDistance, actor);
-
-                int spriteScreenX = (int)((RenderSurface.Width / 2) * (1 + spriteProjection.X / spriteProjection.Y));
-                int spriteHeight = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / actor.FirstPersonScale.Y);
-                int vMoveScreen = (int)(actor.FirstPersonVerticalOffset * spriteHeight / spriteProjection.Y) + spriteHeight / 2;
-
-                //calculate width of the sprite
-                int spriteWidth = (int)(Math.Abs((int)(RenderSurface.Height / (spriteProjection.Y))) / actor.FirstPersonScale.X);
-
-                //calculate lowest and highest pixel to fill in current stripe
-                Point drawStart = new Point(), drawEnd = new Point();
-                drawStart.X = Math.Max(-spriteWidth / 2 + spriteScreenX, 0);
-                drawStart.Y = Math.Max(-spriteHeight / 2 + RenderSurface.Height / 2 + vMoveScreen, 0);
-                drawEnd.X = Math.Min(spriteWidth / 2 + spriteScreenX, RenderSurface.Width - 1);
-                drawEnd.Y = Math.Min(spriteHeight / 2 + RenderSurface.Height / 2 + vMoveScreen, RenderSurface.Height - 1);
-
-                if (drawStart.X >= drawEnd.X || spriteHeight == 0)
-                    continue;
-
-                Color[,] spritePixels = null;
-                //loop through every vertical stripe of the sprite on screen
-                for (int stripe = drawStart.X; stripe < drawEnd.X; stripe++)
+                Font spritesheet = actor.Spritesheet;
+                DrawBillboardSprite(() =>
                 {
-                    int texX = (256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * spritesheet.Size.X / spriteWidth) / 256;
-                    //the conditions in the if are:
-                    //1) it's in front of camera plane so you don't see things behind you
-                    //2) it's on the screen (left)
-                    //3) it's on the screen (right)
-                    //4) ZBuffer, with perpendicular distance
-                    int lineHeight = (int)(RenderSurface.Height / zbuffer[stripe]);
-                    int drawStartStripe = Math.Max(-lineHeight / 2 + RenderSurface.Height / 2, 0);
+                    return FontTextureCache.GetRecoloredPixels(
+                        spritesheet,
+                        (byte)actor.FirstPersonGraphics.Glyph,
+                        actor.FirstPersonGraphics.Foreground,
+                        Color.Transparent
+                    );
+                }, 
+                startPos,
+                actor.LocalPosition,
+                actor.FirstPersonScale,
+                spritesheet.Size,
+                actor.FirstPersonVerticalOffset,
+                ref zbuffer);
 
-                    if (spriteProjection.Y > 0 && stripe > 0 && stripe < RenderSurface.Width && (spriteProjection.Y < zbuffer[stripe] || drawStart.Y < drawStartStripe))
-                    {
-                        // For every pixel of this stripe
-                        for (int y = drawStart.Y; y < drawEnd.Y; y++)
-                        {
-                            if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStartStripe) break;
-                            if (spritePixels == null) // Wait as long as possible to load the pixels to save some cache hits
-                                spritePixels = FontTextureCache.GetRecoloredPixels(
-                                    spritesheet,
-                                    (byte)actor.FirstPersonGraphics.Glyph,
-                                    actor.FirstPersonGraphics.Foreground,
-                                    Color.Transparent
-                                );
-
-                            int d = (y - vMoveScreen) * 256 - RenderSurface.Height * 128 + spriteHeight * 128;
-                            int texY = Math.Max(((d * spritesheet.Size.Y) / spriteHeight) / 256, 0);
-
-                            Color spriteColor = spritePixels[texX, texY];
-                            if (DrawActorBoundaryBoxes && (stripe == drawStart.X || y == drawStart.Y || stripe == drawEnd.X - 1 || y == drawEnd.Y - 1))
-                            {
-                                spriteColor = Color.Red;
-                            }
-                            if (spriteColor == Color.Transparent) continue;
-
-                            // Shade to sky color with distance from player
-                            spriteColor = Target.Lighting.Shade(spriteColor, actor.LocalPosition);
-                            if (DrawAmbientShading) spriteColor = Color.Lerp(spriteColor, Target.SkyColor, distance_scaled);
-                            SetBackbufferAt(stripe, y, spriteColor);
-                        }
-                    }
-                }
-                DrawActorLabel(zbuffer, startPos, actor);
+                if (DrawActorLabels) DrawActorLabel(ref zbuffer, startPos, actor);
             }
         }
 
@@ -481,7 +487,7 @@ namespace FieryOpal.Src.Ui
                 RenderSurface = new Texture2D(Global.GraphicsDevice, surf.Width, surf.Height);
             }
             
-            // Fill with SkyColor to cover up any off-by-one errors
+            // Fill with SkyColor to blend sky with ground
             // Also to make the wall drawing code lighter
             FillBackbuffer(Target.SkyColor);
 
@@ -543,7 +549,7 @@ namespace FieryOpal.Src.Ui
                 DrawWallVLine(rcpInfo);
             }
 
-            DrawActorSpriteVLines(
+            DrawActorSprites(
                 zbuffer,
                 startPos
             );

@@ -146,12 +146,12 @@ namespace FieryOpal.Src
         }
     }
 
-    public class RelectionBasedConfigLoader<T> : ConfigLoader<Tuple<string, string>, T>
+    public class ReflectionBasedConfigLoader<T> : ConfigLoader<Tuple<string, string>, T>
         where T : new()
     {
-        protected Func<RelectionBasedConfigLoader<T>, string, object> DelegatedConversion;
+        protected Func<ReflectionBasedConfigLoader<T>, string, object> DelegatedConversion;
 
-        public RelectionBasedConfigLoader(Func<RelectionBasedConfigLoader<T>, string, object> convert_rhs)
+        public ReflectionBasedConfigLoader(Func<ReflectionBasedConfigLoader<T>, string, object> convert_rhs)
             : base(new ConfigParserBase())
         {
             DelegatedConversion = convert_rhs;
@@ -242,12 +242,11 @@ namespace FieryOpal.Src
         public Dictionary<string, Font> Spritesheets { get; set; } = new Dictionary<string, Font>();
     }
 
-    public class FontConfigLoader : RelectionBasedConfigLoader<FontConfigInfo>
+    public class FontConfigLoader : ReflectionBasedConfigLoader<FontConfigInfo>
     {
         public FontConfigLoader()
             : base((self, rhs) => Global.LoadFont(rhs).GetFont(Font.FontSizes.One))
         {
-
         }
     }
 
@@ -272,7 +271,7 @@ namespace FieryOpal.Src
         public int? RngSeed { get; set; } = null;
     }
 
-    public class InitConfigLoader : RelectionBasedConfigLoader<InitConfigInfo>
+    public class InitConfigLoader : ReflectionBasedConfigLoader<InitConfigInfo>
     {
         public InitConfigLoader()
             : base((self, rhs) => rhs)
@@ -323,7 +322,7 @@ namespace FieryOpal.Src
         public DefaultDictionary<string, string> Translation { get; set; } = new DefaultDictionary<string, string>(GetDefaultString);
     }
 
-    public class LocalizationLoader : RelectionBasedConfigLoader<LocalizationInfo>
+    public class LocalizationLoader : ReflectionBasedConfigLoader<LocalizationInfo>
     {
         public LocalizationLoader()
             : base((self, rhs) => rhs)
@@ -348,7 +347,7 @@ namespace FieryOpal.Src
 
     }
 
-    public class KeybindConfigLoader : RelectionBasedConfigLoader<KeybindConfigInfo>
+    public class KeybindConfigLoader : ReflectionBasedConfigLoader<KeybindConfigInfo>
     {
         static Regex KeybindRegex = new Regex("(?:Key:)?\\s*([\\w]+)\\s*,\\s*(?:State:)?\\s*(Press|Down|Release)\\s*,\\s*(?:Help:)?\\s*\"(.*?)\"\\s*,\\s*(?:Ctrl:)?\\s*(true|false)\\s*,\\s*(?:Shift:)?\\s*(true|false)\\s*,\\s*(?:Alt:)?\\s*(true|false)\\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static KeybindInfo? ParseRhs(string rhs)
@@ -392,7 +391,7 @@ namespace FieryOpal.Src
         public Dictionary<string, Color> Creatures { get; set; } = new Dictionary<string, Color>();
     }
 
-    public class PaletteConfigLoader : RelectionBasedConfigLoader<PaletteConfigInfo>
+    public class PaletteConfigLoader : ReflectionBasedConfigLoader<PaletteConfigInfo>
     {
         static Regex RGBValueRegex = new Regex("(?:([\\d]{1,3}),?\\s*)", RegexOptions.Compiled);
         static Regex RGBAParserRegex = new Regex(RGBValueRegex.ToString().Repeat(4) + "?", RegexOptions.Compiled);

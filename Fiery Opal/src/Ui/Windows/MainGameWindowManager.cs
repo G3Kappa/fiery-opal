@@ -1,6 +1,9 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Items.Weapons;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using SadConsole;
+using System.Linq;
 
 namespace FieryOpal.Src.Ui.Windows
 {
@@ -79,7 +82,6 @@ namespace FieryOpal.Src.Ui.Windows
             Game = g;
 
             CreateLayout(w, h, g);
-            Game.Player.ChangeLocalMap(Game.World.RegionAt(0, 0).LocalMap, new Point(0, 0));
 
             PlayerControlledAI player_brain = new PlayerControlledAI(Game.Player, Nexus.Keys.GetPlayerKeybinds());
             player_brain.InternalMessagePipeline.Subscribe(Game);
@@ -106,12 +108,40 @@ namespace FieryOpal.Src.Ui.Windows
 
         public override void Update(GameTime gameTime)
         {
-            Game.Update(gameTime.ElapsedGameTime);
             base.Update(gameTime);
         }
 
         public override void Draw(GameTime gameTime)
         {
+            if (Game.Player != null)
+            {
+                TopDownWindow.Viewport.ViewArea = 
+                FirstPersonWindow.Viewport.ViewArea = 
+                    new Rectangle(
+                        Game.Player.LocalPosition.X - TopDownWindow.Width / 2,
+                        Game.Player.LocalPosition.Y - TopDownWindow.Height / 2,
+                        TopDownWindow.Width,
+                        TopDownWindow.Height
+                    );
+            }
+
+            bool wasDirty = (FirstPersonWindow.Viewport as RaycastViewport)?.Dirty ?? false;
+            if(wasDirty)
+            {
+                FirstPersonWindow.Viewport.Print(FirstPersonWindow, new Rectangle(new Point(0, 0), new Point(FirstPersonWindow.Width, FirstPersonWindow.Height)), Game.Player.Brain.TileMemory);
+                TopDownWindow.Viewport.Print(TopDownWindow, new Rectangle(new Point(0, 0), new Point(TopDownWindow.Width, TopDownWindow.Height)), Game.Player.Brain.TileMemory);
+            }
+
+            var rc = FirstPersonWindow.Viewport as RaycastViewport;
+            Global.DrawCalls.Add(new DrawCallTexture(rc.RenderSurface, FirstPersonWindow.Position.ToVector2()));
+            var weaps = Game.Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
+            foreach (var weapon in weaps)
+            {
+                // TODO draw pixelwise
+                var tex = weapon.ViewGraphics.AsTexture2D(rc.RenderSurface.Width);
+                Global.DrawCalls.Add(new DrawCallTexture(tex, FirstPersonWindow.Position.ToVector2() + new Vector2(rc.RenderSurface.Width / 2 - tex.Width / 2 + weapon.ViewGraphics.Offset.X * tex.Width / 2, rc.RenderSurface.Height - tex.Height + weapon.ViewGraphics.Offset.Y * tex.Height / 2)));
+            }
+
             Game.Draw(gameTime.ElapsedGameTime);
             base.Draw(gameTime);
         }

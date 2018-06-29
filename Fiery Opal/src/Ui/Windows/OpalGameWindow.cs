@@ -34,6 +34,15 @@ namespace FieryOpal.Src.Ui.Windows
                     break;
                 case "ToggleRaycastLabelView":
                     rcv?.ToggleLabels();
+                    rcv?.FlagForRedraw();
+                    if (rcv != null)
+                    {
+                        Util.LogBadge("FPV:",
+                            "Named actor labels {0}".Fmt(rcv.DrawActorLabels ? "ON" : "OFF"),
+                            false,
+                            rcv.DrawActorLabels ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
+                        );
+                    }
                     break;
                 case "FlagRaycastViewportForRedraw":
                 case "UpdateRaycastWindowRotation":

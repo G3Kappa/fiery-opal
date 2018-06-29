@@ -20,8 +20,8 @@ namespace FieryOpal.Src.Actors
 
         int RequiredSlots { get; }
 
-        void OnEquip(TurnTakingActor actor);
-        void OnUnequip(TurnTakingActor actor);
+        void OnEquip(IEquipmentUser actor);
+        void OnUnequip(IEquipmentUser actor);
     }
 
     public struct EquipmentSlot

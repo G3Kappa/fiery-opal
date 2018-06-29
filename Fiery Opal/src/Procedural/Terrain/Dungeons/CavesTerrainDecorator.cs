@@ -50,7 +50,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
                         break;
 
                 }
-                anim.ChangeLocalMap(m, m.FirstAccessibleTileAround(new Point(Util.Rng.Next(m.Width), Util.Rng.Next(m.Height))));
+                anim.ChangeLocalMap(m, new Point(Util.Rng.Next(m.Width), Util.Rng.Next(m.Height)));
             }
         }
 

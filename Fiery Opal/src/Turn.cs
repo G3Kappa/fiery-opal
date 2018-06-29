@@ -38,6 +38,11 @@ namespace FieryOpal.Src
 
         protected Dictionary<Guid, float> Accumulator;
 
+        public delegate void TurnStartedEventHandler(TurnManager sender, float turn);
+        public event TurnStartedEventHandler TurnStarted;
+        public delegate void TurnEndedEventHandler(TurnManager sender, float turn);
+        public event TurnEndedEventHandler TurnEnded;
+
         public TurnManager()
         {
             ResetAccumulator();
@@ -66,6 +71,7 @@ namespace FieryOpal.Src
             CurrentTime -= TimeDilation;
 
             var accKeys = Accumulator.Keys.ToList();
+            TurnStarted?.Invoke(this, CurrentTurn);
             for (float t = 0; t < 1; t += TimeDilation)
             {
                 // If the player is dead allow no further processing of turns.
@@ -102,8 +108,12 @@ namespace FieryOpal.Src
                 CurrentTime = (float)Math.Round(CurrentTime + TimeDilation, 3);
             }
 
+            TurnEnded?.Invoke(this, CurrentTime);
             CurrentPlayerDelay = Accumulator[Nexus.Player.Handle];
-            if (CurrentPlayerDelay > 0) BeginTurn(map);
+            if (CurrentPlayerDelay > 0)
+            {
+                BeginTurn(map);
+            }
         }
     }
 }

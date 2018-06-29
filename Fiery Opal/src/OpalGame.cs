@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Items.Weapons;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Windows;
@@ -20,6 +21,7 @@ namespace FieryOpal.Src
 
         public TurnManager TurnManager { get; private set; }
         public World World { get; private set; }
+
 
         public OpalGame(World world)
         {
@@ -46,44 +48,22 @@ namespace FieryOpal.Src
 
                 old_map?.Dispose();
             };
-        }
 
-        public virtual void Update(TimeSpan delta)
-        {
-            CurrentMap.Update(delta);
+            TurnManager.TurnStarted += (tm, t) =>
+            {
+                CurrentMap.Update(TimeSpan.MinValue);
+            };
+
+            TurnManager.TurnEnded += (tm, t) =>
+            {
+                CurrentMap.Update(TimeSpan.MinValue);
+            };
         }
 
         public virtual void Draw(TimeSpan delta)
         {
-            // Tell any subscribed OpalGameWindow to render the viewport.
-            InternalMessagePipeline.Broadcast(null, new Func<OpalConsoleWindow, string>(
-                cw =>
-                {
-                    OpalGameWindow w = cw as OpalGameWindow;
-                    if (Player != null)
-                    {
-                        w.Viewport.ViewArea = new Rectangle(Player.LocalPosition.X - w.Width / 2,
-                                                            Player.LocalPosition.Y - w.Height / 2,
-                                                            w.Width,
-                                                            w.Height);
-                    }
-                    bool wasDirty = (w.Viewport as RaycastViewport)?.Dirty ?? false;
-                    w.Viewport.Print(w, new Rectangle(new Point(0, 0), new Point(w.Width, w.Height)), Player.Brain.TileMemory);
-                    var rc = w.Viewport as RaycastViewport;
-                    if (rc != null)
-                    {
-                        Global.DrawCalls.Add(new DrawCallTexture(rc.RenderSurface, w.Position.ToVector2()));
-                        var weaps = Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
-                        foreach (var weapon in weaps)
-                        {
-                            // TODO draw pixelwise
-                            var tex = weapon.ViewGraphics.AsTexture2D(rc.RenderSurface.Width);
-                            Global.DrawCalls.Add(new DrawCallTexture(tex, w.Position.ToVector2() + new Vector2(rc.RenderSurface.Width / 2 - tex.Width / 2, rc.RenderSurface.Height - tex.Height)));
-                        }
-                    }
-                    return "ViewportRefresh";
-                }
-                ));
+            // This is currently done by the MGWM in order to synchronize
+            // raycast viewport drawing with localmap viewport drawing
         }
 
         public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalGame, string> msg, bool is_broadcast)

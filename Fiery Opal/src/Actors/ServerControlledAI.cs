@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Multiplayer;
+﻿using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Multiplayer;
 using System.Collections.Generic;
 
 namespace FieryOpal.Src.Actors

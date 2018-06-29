@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Items;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
@@ -353,7 +354,7 @@ namespace FieryOpal.Src
                     Util.LogText("Unknown actor class or actor class is not an item.", true);
                     return -1;
                 }
-            (h as Item).InteractWith(Nexus.Player);
+            (h as OpalItem).InteractWith(Nexus.Player);
             }
             return 0;
         }
@@ -427,7 +428,7 @@ namespace FieryOpal.Src
 
             foreach (var ieq in Nexus.Player.Equipment.GetContents())
             {
-                if ((ieq as Item).Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                if ((ieq as OpalItem).Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (!Nexus.Player.Equipment.TryUnequip(ieq, Nexus.Player))
                     {

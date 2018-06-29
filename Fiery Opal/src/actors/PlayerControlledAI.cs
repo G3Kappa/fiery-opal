@@ -1,4 +1,6 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Actors.Items.Weapons;
+using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;

@@ -67,3 +67,9 @@
 /processorParam:TextureFormat=Color
 /build:Weapons.png
 
+#begin Eerie01.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Eerie01.ogg
+

@@ -35,7 +35,9 @@ namespace FieryOpal.Src.Ui
         public LightingManager Manager;
 
         protected Point LastPos = new Point(-1337, -420);
-        public bool IsDirty => LastPos != Source.LocalPosition;
+        protected Vector2 LastDir = new Vector2(-1337, -420);
+        protected float LastAngle = -1;
+        public bool IsDirty => LastPos != Source.LocalPosition || LastDir != Source.LightDirection;
 
         public LightLayer(ILightEmitter source, LightingManager parent)
         {
@@ -52,13 +54,13 @@ namespace FieryOpal.Src.Ui
                 * (1f / Math.Pow(start.Dist(v) / emit.LightRadius, 2)), 1f/emit.LightSmoothness);
         }
 
-        private void RecalcAmbient()
+        private void Fill(float val)
         {
             for (int x = 0; x < Manager.Parent.Width; x++)
             {
                 for (int y = 0; y < Manager.Parent.Height; y++)
                 {
-                    Grid[x, y] = Source.LightIntensity;
+                    Grid[x, y] = val;
                 }
             }
         }
@@ -86,17 +88,19 @@ namespace FieryOpal.Src.Ui
 
         private void RecalcPoint()
         {
-            Grid[LastPos.X, LastPos.Y] += Source.LightIntensity;
+            Grid[LastPos.X, LastPos.Y] = Source.LightIntensity;
         }
 
         public bool Recalc()
         {
             if (!IsDirty) return false;
+            Fill(0);
             LastPos = Source.LocalPosition;
+            LastDir = Source.LightDirection;
             switch(Source.LightEmitterType)
             {
                 case LightEmitterType.Ambient:
-                    RecalcAmbient();
+                    Fill(Source.LightIntensity);
                     break;
                 case LightEmitterType.Conical:
                     RecalcConical();
@@ -144,15 +148,7 @@ namespace FieryOpal.Src.Ui
         public void Update()
         {
             if (!Enabled || Layers.Count == 0) return;
-
-            for (int x = 0; x < Parent.Width; x++)
-            {
-                for (int y = 0; y < Parent.Height; y++)
-                {
-                    ColorGrid[x, y] = Color.Black;
-                }
-            }
-
+            
             Layers.Values.ForEach(l =>
             {
                 bool wasDirty = l.Recalc();
@@ -161,9 +157,15 @@ namespace FieryOpal.Src.Ui
             Layers.Values.Merge(ref ColorGrid);
         }
 
-        public Color Shade(Color c, Point pos)
+
+        public Color ApplyShading(Color c, Point pos)
         {
             return !Enabled ? c : c.BlendLight(ColorGrid[pos.X, pos.Y], 1f);
+        }
+
+        public Color ApplyAmbientShading(Color c, float dist)
+        {
+            return Color.Lerp(c, Parent.SkyColor, dist);
         }
     }
 
@@ -181,19 +183,53 @@ namespace FieryOpal.Src.Ui
 
         public static Color BlendLight(this Color c, Color toBlend, float intensity)
         {
+            Vector4 vc = c.ToVector4();
+            Vector3 vb = toBlend.ToVector3();
+
             return new Color(
-                SoftLightBlend(c.R / 255f, toBlend.R / 255f, intensity),
-                SoftLightBlend(c.G / 255f, toBlend.G / 255f, intensity),
-                SoftLightBlend(c.B / 255f, toBlend.B / 255f, intensity)
+                SoftLightBlend(vc.X, vb.X, intensity),
+                SoftLightBlend(vc.Y, vb.Y, intensity),
+                SoftLightBlend(vc.Z, vb.Z, intensity),
+                vc.W
             );
         }
 
-        public static Color BlendAdditive(this Color c, Color b)
+        public static Color BlendAdditive(this Color c, Color b, bool alpha=true)
         {
+            Vector4 vc = c.ToVector4();
+            Vector4 vb = b.ToVector4();
+
             return new Color(
-                Math.Min(1f, c.R / 255f + b.R / 255f),
-                Math.Min(1f, c.G / 255f + b.G / 255f),
-                Math.Min(1f, c.B / 255f + b.B / 255f)
+                Math.Min(1f, vc.X + vb.X),
+                Math.Min(1f, vc.Y + vb.Y),
+                Math.Min(1f, vc.Z + vb.Z),
+                alpha ? Math.Min(1f, vc.W + vb.W) : vc.W
+            );
+        }
+
+        public static Color BlendSubtractive(this Color c, Color b, bool alpha = true)
+        {
+            Vector4 vc = c.ToVector4();
+            Vector4 vb = b.ToVector4();
+
+            return new Color(
+                Math.Min(1f, vc.X - vb.X),
+                Math.Min(1f, vc.Y - vb.Y),
+                Math.Min(1f, vc.Z - vb.Z),
+                alpha ? Math.Min(1f, vc.W - vb.W) : vc.W
+            );
+        }
+
+        public static Color BlendMultiply(this Color c, Color b, bool alpha = true)
+        {
+            Vector4 vc = c.ToVector4();
+            Vector4 vb = b.ToVector4();
+
+            return new Color(
+                Math.Min(1f, vc.X * vb.X),
+                Math.Min(1f, vc.Y * vb.Y),
+                Math.Min(1f, vc.Z * vb.Z),
+                alpha ? Math.Min(1f, vc.W * vb.W) : vc.W
             );
         }
 
@@ -205,13 +241,14 @@ namespace FieryOpal.Src.Ui
             int w = list[0].Grid.GetLength(0);
             int h = list[0].Grid.GetLength(1);
 
-            foreach(var l in list)
+            for (int x = 0; x < w; x++)
             {
-                Color c = l.Source.LightColor;
-                for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
                 {
-                    for (int y = 0; y < h; y++)
+                    grid[x, y] = Color.Black;
+                    foreach (var l in list)
                     {
+                        Color c = l.Source.LightColor;
                         grid[x, y] = Color.Lerp(grid[x, y], grid[x, y].BlendAdditive(c), l.Grid[x, y]);
                     }
                 }

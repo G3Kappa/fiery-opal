@@ -1,6 +1,8 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Tiles;
+﻿using FieryOpal.Src.Audio;
+using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using Microsoft.Xna.Framework;
+using System;
 using System.Linq;
 
 namespace FieryOpal.Src.Procedural.Terrain.Dungeons
@@ -84,7 +86,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             );
 
             m.CeilingTile = TileSkeleton.Get<NaturalWallSkeleton>();
-            m.Soundtrack = Soundtrack.TrackName.Caves;
+            m.SoundTrack = SFXManager.SoundTrackType.Caves;
+            m.SoundEffects.Add(new Tuple<SFXManager.SoundEffectType, float>(SFXManager.SoundEffectType.Eerie01, .003f));
         }
 
     }

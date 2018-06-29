@@ -158,6 +158,12 @@ namespace FieryOpal.Src.Ui
             return ret;
         }
 
+        public static Color[,] MakeShadow(Font f, byte glyph=7, Color? fg=null)
+        {
+            return GetCachedRecolor(f, glyph, fg ?? Color.White, Color.Transparent).Pixels;
+        }
+
+
         public static byte GetGlyphByBrightness(Font f, float brightness)
         {
             if (brightness < 0 || brightness >= 1)

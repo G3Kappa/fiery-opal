@@ -23,12 +23,8 @@ namespace FieryOpal.Src.Actors.Environment
 
         public float LightIntensity { get; set; } = 1f;
         public float LightRadius { get; set; } = 5f;
-        public float LightSmoothness { get; set; } = .1f;
-        public Color LightColor { get; set; } = Util.Choose(new Color[] {
-            new Color(255, 0, 0),
-            new Color(0, 255, 0),
-            new Color(0, 0, 255),
-        });
+        public float LightSmoothness { get; set; } = .5f;
+        public Color LightColor { get; set; } = Color.White;
 
         public Vector2 LightDirection { get; set; } = Util.RandomUnitPoint().ToVector2();
         public int LightAngleWidth { get; set; } = 90;
@@ -74,4 +70,5 @@ namespace FieryOpal.Src.Actors.Environment
         public Vector2 LightDirection { get; set; } = Vector2.Zero;
         public int LightAngleWidth { get; set; } = 0;
     }
+
 }

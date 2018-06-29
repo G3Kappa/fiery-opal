@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace FieryOpal.Src.Actors
+namespace FieryOpal.Src.Actors.Items
 {
-    public delegate void ItemContainerContentsChanged(Item i);
+    public delegate void ItemContainerContentsChanged(OpalItem i);
 
     public class ItemContainer<T>
-        where T : Item
+        where T : OpalItem
     {
         protected Dictionary<Guid, T> Contents;
         protected int capacity = 1;
@@ -55,7 +55,7 @@ namespace FieryOpal.Src.Actors
         }
     }
 
-    public class PersonalInventory : ItemContainer<Item>
+    public class PersonalInventory : ItemContainer<OpalItem>
     {
         public IInventoryHolder Owner;
 

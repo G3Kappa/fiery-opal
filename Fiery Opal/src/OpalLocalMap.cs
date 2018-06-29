@@ -1,8 +1,10 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Actors.Environment;
+using FieryOpal.Src.Audio;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Procedural.Terrain.Biomes;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using System;
@@ -83,7 +85,7 @@ namespace FieryOpal.Src
     public class OpalLocalMap : IDisposable
     {
         protected OpalTile[,] TerrainGrid { get; private set; }
-        protected List<IOpalGameActor> Actors { get; private set; }
+        public List<IOpalGameActor> Actors { get; private set; }
 
         public int Width { get; }
         public int Height { get; }
@@ -95,7 +97,8 @@ namespace FieryOpal.Src
 
         public List<ILocalFeatureGenerator> FeatureGenerators { get; private set; } = new List<ILocalFeatureGenerator>();
 
-        public Soundtrack.TrackName Soundtrack { get; set; } = Src.Soundtrack.TrackName.No_Track;
+        public SFXManager.SoundTrackType SoundTrack { get; set; } = SFXManager.SoundTrackType.None;
+        public List<Tuple<SFXManager.SoundEffectType, float>> SoundEffects { get; private set; } = new List<Tuple<SFXManager.SoundEffectType, float>>();
 
         public WorldTile ParentRegion;
         public LightingManager Lighting { get; private set; }
@@ -242,7 +245,7 @@ namespace FieryOpal.Src
 
         public virtual void GenerateAnew(params ILocalFeatureGenerator[] generators)
         {
-            var actors = actorsAtHashmap.SelectMany(a => a.Value).Where(a => !(a is DecorationBase)).ToList();
+            var actors = actorsAtHashmap.SelectMany(a => a.Value).Where(a => a is TurnTakingActor).ToList();
             FeatureGenerators.Clear();
             Iter((self, x, y, t) =>
             {
@@ -250,6 +253,8 @@ namespace FieryOpal.Src
                 return false;
             });
 
+            Actors = new List<IOpalGameActor>();
+            Lighting = new LightingManager(this);
             actorsAtHashmap = new Dictionary<Point, List<IOpalGameActor>>();
             foreach (var gen in generators)
             {
@@ -259,12 +264,13 @@ namespace FieryOpal.Src
 
             foreach (var a in actors)
             {
-                a.MoveTo(FirstAccessibleTileAround(a.LocalPosition), true);
+                a.ChangeLocalMap(this, a.LocalPosition, !(this is IDecoration));
             }
 
             var ambientLight = new AmbientLightEmitter();
             ambientLight.LightIntensity = .25f;
             ambientLight.ChangeLocalMap(this, new Point(0, 0), true);
+            Lighting.Update();
         }
 
         public void GenerateAnew()
@@ -353,6 +359,8 @@ namespace FieryOpal.Src
             }
         }
 
+        private double SFXCooldown = 0f;
+        private DateTime SFXLastPlayedAt = DateTime.Now;
         public void Update(TimeSpan delta)
         {
             lock (actorsLock)
@@ -360,6 +368,31 @@ namespace FieryOpal.Src
                 foreach (var actor in Actors)
                 {
                     actor.Update(delta);
+                }
+            }
+
+            // Roll a random SFX and then roll against its probability value
+            if (SoundEffects.Count > 0)
+            {
+                if ((DateTime.Now - SFXLastPlayedAt).TotalMilliseconds >= SFXCooldown)
+                {
+                    SFXCooldown = 0f;
+
+                    var sfx = Util.Choose(SoundEffects);
+                    if (Util.Rng.NextDouble() < sfx.Item2)
+                    {
+                        float volumeVariance = (float)Util.Rng.NextDouble() / 3f + .33f;
+                        float pitchVariance = (float)Util.Rng.NextDouble() - .5f;
+                        float panVariance = (float)Util.Rng.NextDouble() - .5f;
+
+                        SFXManager.PlayFX(sfx.Item1, volumeVariance, pitchVariance, panVariance, false, false);
+
+                        // To prevent spam and earrape, 5-10 seconds must pass before each ambient SFX can be played again.
+                        SFXCooldown = Util.Rng.Next(5000, 10000);
+                        SFXLastPlayedAt = DateTime.Now;
+
+                        Util.LogText("OpalLocalMap.Update: Played SFX \"{0}\".".Fmt(Enum.GetName(typeof(SFXManager.SoundEffectType), sfx.Item1)), true);
+                    }
                 }
             }
         }
@@ -496,8 +529,11 @@ namespace FieryOpal.Src
             Point center = new Point(x, y);
             foreach (var t in TilesWithin(new Rectangle(x - r1, y - r1, r1 * 2, r1 * 2)))
             {
-                double dist = Math.Sqrt(Math.Pow(t.Item2.X - x, 2) + Math.Pow(t.Item2.Y - y, 2));
-                if (dist <= r1 && dist > r2) yield return t;
+                double dist = t.Item2.Dist(center);
+                if (dist <= r1 && dist > r2)
+                {
+                    yield return t;
+                }
             }
         }
 
@@ -506,10 +542,10 @@ namespace FieryOpal.Src
             Point center = new Point(x, y);
             foreach (var t in TilesWithin(new Rectangle(x - r1, y - r1, r1 * 2, r1 * 2)))
             {
-                double dist = Math.Sqrt(Math.Pow(t.Item2.X - x, 2) + Math.Pow(t.Item2.Y - y, 2));
-                var actors = ActorsAt(t.Item2.X, t.Item2.Y).ToList();
-                if (dist <= r1 && dist > r2 && actors.Count() > 0)
+                double dist = t.Item2.Dist(new Point(x, y));
+                if (dist <= r1 && dist > r2)
                 {
+                    var actors = ActorsAt(t.Item2.X, t.Item2.Y).ToList();
                     foreach (var act in actors)
                     {
                         // No need to display hundreds of decorations, only the closest ones will suffice.
@@ -521,35 +557,51 @@ namespace FieryOpal.Src
                 }
             }
         }
+
+        public bool IsTileAcessible(Point p, bool ignoreDecorations = true)
+        {
+            var t = TileAt(p);
+            return (!t?.Properties.BlocksMovement ?? true)
+                     && !ActorsAt(p.X, p.Y)
+                     .Any(
+                        a => ((!ignoreDecorations && a is IDecoration)
+                             || ((a as IDecoration)?.BlocksMovement ?? false)
+                             || (!(a as OpalActorBase)?.IgnoresCollision ?? false))
+                     );
+        }
+
+        public Point FirstAccessibleTileInLine(Point lineStart, Point lineEnd, bool ignoreDecorations = true)
+        {
+            foreach(Point p in Util.BresenhamLine(lineStart, lineEnd, 1))
+            {
+                if (IsTileAcessible(p, ignoreDecorations)) return p;
+            }
+
+            Util.LogText("No accessible tile between {0} and {1}!".Fmt(lineStart, lineEnd), true);
+            return new Point(0, 0);
+        }
+
         public Point FirstAccessibleTileAround(Point xy, bool ignoreDecorations = true)
         {
-            int r = 0;
-            IEnumerable<Tuple<OpalTile, Point>> tiles_in_ring;
-
-            var validTile = (Func<Point, bool>)((Point p) =>
-             {
-                 var t = TileAt(xy);
-                 return (!t?.Properties.BlocksMovement ?? true)
-                          && !ActorsAt(p.X, p.Y)
-                          .Any(
-                             a => (!(a is IDecoration) || (!ignoreDecorations && a is IDecoration) || (a as IDecoration).BlocksMovement)
-                          );
-             });
-
-            if (validTile(xy)) return xy;
+            int r = 1;
+            List<Tuple<OpalTile, Point>> tiles_in_ring;
+            
+            if (IsTileAcessible(xy)) return xy;
 
             do
             {
-                tiles_in_ring = TilesWithinRing(xy.X, xy.Y, ++r, r - 2)
-                    .Where(t => validTile(t.Item2));
+                tiles_in_ring = TilesWithinRing(xy.X, xy.Y, r, r - 1)
+                    .Where(t => IsTileAcessible(t.Item2, ignoreDecorations)).ToList();
 
                 if (r >= Width / 2)
                 {
                     Util.LogText("No accessible tile around {0}!".Fmt(xy), true);
                     return new Point(0, 0);
                 }
+
+                r++;
             }
-            while (tiles_in_ring.Count() == 0);
+            while (tiles_in_ring.Count == 0);
 
             return tiles_in_ring.First().Item2;
         }

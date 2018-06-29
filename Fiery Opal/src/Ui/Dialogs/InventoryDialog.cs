@@ -1,4 +1,5 @@
 ﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Actors.Items;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -21,7 +22,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         public SortMode SortingMode { get; set; } = SortMode.Quantity;
         public PersonalInventory Inventory { get; set; }
 
-        protected string GroupByItem(Item i) => i.ItemInfo.Name.ToString() + i.ItemInfo.Category.ToString();
+        protected string GroupByItem(OpalItem i) => i.ItemInfo.Name.ToString() + i.ItemInfo.Category.ToString();
         protected int SelectedIndex = 0;
         protected bool Dirty = false;
 
@@ -34,9 +35,9 @@ namespace FieryOpal.Src.Ui.Dialogs
             Dirty = true;
         }
 
-        protected ContextMenu<Item> MakeContextMenu()
+        protected ContextMenu<OpalItem> MakeContextMenu()
         {
-            var context_menu = Make<ContextMenu<Item>>("Use Item", "", new Point(Width / 2, Height / 4));
+            var context_menu = Make<ContextMenu<OpalItem>>("Use Item", "", new Point(Width / 2, Height / 4));
             context_menu.Position = Position + new Point(Width / 4 + 1, Height / 3);
 
             var groups = GroupAndSortInventory();
@@ -54,9 +55,9 @@ namespace FieryOpal.Src.Ui.Dialogs
             return context_menu;
         }
 
-        protected IEnumerable<IGrouping<string, Item>> GroupAndSortInventory()
+        protected IEnumerable<IGrouping<string, OpalItem>> GroupAndSortInventory()
         {
-            IEnumerable<IGrouping<string, Item>> grouped_items;
+            IEnumerable<IGrouping<string, OpalItem>> grouped_items;
             grouped_items = Inventory.GetContents().GroupBy(GroupByItem);
 
             switch (SortingMode)
@@ -75,7 +76,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             return grouped_items;
         }
 
-        private Item GetFirstSelectedItem()
+        private OpalItem GetFirstSelectedItem()
         {
             var grouped = GroupAndSortInventory();
 
@@ -243,7 +244,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         private void PrintItemsAndScrollbar()
         {
             Cell textStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
-            IEnumerable<IGrouping<string, Item>> grouped_items = GroupAndSortInventory();
+            IEnumerable<IGrouping<string, OpalItem>> grouped_items = GroupAndSortInventory();
 
             var sel_idx = SelectedIndex;
             if (SelectedIndex <= ElementsPerPage / 2)

@@ -42,10 +42,20 @@ namespace FieryOpal.Src.Ui
             Print(surf, Rectangle.Empty, fog);
         }
 
-        private Cell ShadeCell(Cell c, Point p)
+        private Cell ShadeCell(Cell c, Point p, bool gray=false)
         {
-            Color fg = Target.Lighting.Shade(c.Foreground, p);
-            Color bg = Target.Lighting.Shade(c.Background, p);
+            Color fg = Target.Lighting.ApplyShading(c.Foreground, p);
+            Color bg = Target.Lighting.ApplyShading(c.Background, p);
+
+            if(gray)
+            {
+                var fgb = fg.GetBrightness();
+                var bgb = bg.GetBrightness();
+
+                fg = new Color(fgb, fgb, fgb);
+                bg = new Color(bgb, bgb, bgb);
+            }
+
             return new Cell(fg, bg, c.Glyph);
         }
 
@@ -75,7 +85,7 @@ namespace FieryOpal.Src.Ui
                 }
                 else if (!fog.CanSee(tuple.Item2))
                 {
-                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph));
+                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph), tuple.Item2, gray: true));
                 }
                 else
                 {
@@ -84,10 +94,10 @@ namespace FieryOpal.Src.Ui
             }
 
             var actors = Target.ActorsWithin(ViewArea).ToList();
-            foreach (var k in LastKnownPos.Keys)
+            foreach (var k in LastKnownPos.Keys.ToList())
             {
-                if (!(k as OpalActorBase)?.IsDead ?? true)
-                    actors.Add(k);
+                if (k.Map == Target) actors.Add(k);
+                else LastKnownPos.Remove(k);
             }
             // Make sure that the player is always drawn last
             actors.Remove(Nexus.Player);
@@ -122,7 +132,7 @@ namespace FieryOpal.Src.Ui
                     Point p = act.LocalPosition - vw;
                     if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
 
-                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, Target.Lighting.Shade(act.Graphics.Foreground, act.LocalPosition));
+                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, Target.Lighting.ApplyShading(act.Graphics.Foreground, act.LocalPosition));
                     surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
                 }
             }

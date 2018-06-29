@@ -80,6 +80,9 @@ namespace FieryOpal
             System.IO.Directory.CreateDirectory("./cfg/palettes");
             System.IO.Directory.CreateDirectory("./gfx");
             System.IO.Directory.CreateDirectory("./gfx/extra");
+            System.IO.Directory.CreateDirectory("./sfx");
+            System.IO.Directory.CreateDirectory("./sfx/soundtrack");
+            System.IO.Directory.CreateDirectory("./sfx/effects");
         }
 
         private static void Init()
@@ -100,6 +103,8 @@ namespace FieryOpal
             world.Generate();
             GameInstance = new OpalGame(world);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
+            OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
+            Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
 
             TypeConversionHelper<object>.RegisterDefaultConversions();
             TileSkeleton.PreloadAllSkeletons();
@@ -107,6 +112,8 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("Animals");
             OpalActorBase.PreloadActorClasses("Decorations");
             OpalActorBase.PreloadActorClasses("Environment");
+            OpalActorBase.PreloadActorClasses("Items");
+            OpalActorBase.PreloadActorClasses("Items.Weapons");
             LuaVM.Init();
 
             Util.LogText(Util.Str("WelcomeMessage"), false);

@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Procedural;
+﻿using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
@@ -10,6 +11,8 @@ namespace FieryOpal.Src.Actors
         public Humanoid() : base()
         {
             Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Palette.Creatures["Humanoid"], Color.Transparent, '@'));
+            FirstPersonVerticalOffset = 2;
+
             Brain = new WanderingBrain(this);
 
             Name = "Dude";

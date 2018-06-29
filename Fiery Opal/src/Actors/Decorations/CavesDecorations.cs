@@ -19,7 +19,7 @@ namespace FieryOpal.Src.Actors.Decorations
                 ));
 
             FirstPersonScale = new Microsoft.Xna.Framework.Vector2(2f, 2f);
-            FirstPersonVerticalOffset = 2f;
+            FirstPersonVerticalOffset = 6f;
         }
     }
 
@@ -39,7 +39,7 @@ namespace FieryOpal.Src.Actors.Decorations
                 ));
 
             FirstPersonScale = new Microsoft.Xna.Framework.Vector2(2f, 2f);
-            FirstPersonVerticalOffset = 1.35f;
+            FirstPersonVerticalOffset = 4f;
         }
     }
 }

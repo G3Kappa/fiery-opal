@@ -302,7 +302,7 @@ namespace FieryOpal.Src.Procedural
             for (int i = 0; i < n_villages; ++i)
                 yield return new VillageFeatureGenerator();
 
-            int n_dungeons = Util.Rng.Next((int)(Width * Height * .0015f));
+            int n_dungeons = Util.Rng.Next((int)(Width * Height * .0035f));
             for (int i = 0; i < n_dungeons; ++i)
                 yield return new DungeonFeatureGenerator();
         }

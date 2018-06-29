@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Procedural.Terrain.Tiles;
+﻿using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using FieryOpal.Src.Procedural.Worldgen;
 using Microsoft.Xna.Framework;
@@ -48,7 +49,11 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             Workspace.DrawShape(shape, wall);
 
             // Create passage w/ random walk biased towards going away from p
-            GenUtil.WeightedRandomWalk(Workspace, p, P => (float)-P.Dist(p), t => t == floor, t => t == wall, floor).ToList();
+            var traversed = GenUtil.WeightedRandomWalk(Workspace, p, P => (float)-P.Dist(p), t => t == floor, t => t == wall, floor).ToList();
+
+            Point dir = (traversed.Last() - traversed[traversed.Count - 2]);
+            new Torch().ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() + dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() + dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
+            new Torch().ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() - dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() - dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
 
             var dummyInstance = new DungeonInstance(0, "Overworld", m.ParentRegion, new List<DungeonInstance>());
             dummyInstance.Map = m;
