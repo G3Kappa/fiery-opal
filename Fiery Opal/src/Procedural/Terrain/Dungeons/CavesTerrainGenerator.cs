@@ -20,8 +20,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
         {
             base.Generate(m);
 
-            OpalTile wallTile = OpalTile.GetRefTile<NaturalWallSkeleton>();
-            OpalTile floorTile = OpalTile.GetRefTile<DirtSkeleton>();
+            OpalTile wallTile = OpalTile.GetRefTile<RockWallSkeleton>();
+            OpalTile floorTile = OpalTile.GetRefTile<RockFloorSkeleton>();
 
             Workspace.Iter((s, x, y, t) =>
             {
@@ -85,9 +85,11 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
                 randomize_order: true
             );
 
-            m.CeilingTile = TileSkeleton.Get<NaturalWallSkeleton>();
+            m.CeilingTile = TileSkeleton.Get<RockWallSkeleton>();
             m.SoundTrack = SFXManager.SoundTrackType.Caves;
             m.SoundEffects.Add(new Tuple<SFXManager.SoundEffectType, float>(SFXManager.SoundEffectType.Eerie01, .003f));
+            m.AmbientLight.LightIntensity = .15f;
+            m.Indoors = true;
         }
 
     }

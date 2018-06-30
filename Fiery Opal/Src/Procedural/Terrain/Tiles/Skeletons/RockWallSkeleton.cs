@@ -3,7 +3,7 @@ using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons
 {
-    public class NaturalWallSkeleton : TileSkeleton
+    public class RockWallSkeleton : TileSkeleton
     {
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
@@ -13,6 +13,6 @@ namespace FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons
                 fertility: 0f
             );
         public override string DefaultName => "RockWall";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["RockWallForeground"], Palette.Terrain["RockWallBackground"], 177);
+        public override Cell DefaultGraphics => new Cell(Palette.Terrain["RockForeground"], Palette.Terrain["RockBackground"], 177);
     }
 }

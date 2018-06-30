@@ -385,7 +385,14 @@ namespace FieryOpal.Src
         {
             if (ActorClasses.ContainsKey(className.ToLower()))
             {
-                return Activator.CreateInstance(ActorClasses[className.ToLower()]) as OpalActorBase;
+                try
+                {
+                    return Activator.CreateInstance(ActorClasses[className.ToLower()]) as OpalActorBase;
+                }
+                catch
+                {
+                    return null;
+                }
             }
             return null;
         }

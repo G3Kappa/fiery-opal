@@ -38,9 +38,9 @@ namespace FieryOpal.Src.Ui.Windows
                     if (rcv != null)
                     {
                         Util.LogBadge("FPV:",
-                            "Named actor labels {0}".Fmt(rcv.DrawActorLabels ? "ON" : "OFF"),
-                            false,
-                            rcv.DrawActorLabels ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
+                            "Named actor labels {0}".Fmt(rcv.DrawExtraLabels ? "ON" : "OFF"),
+                            true,
+                            rcv.DrawExtraLabels ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
                         );
                     }
                     break;
@@ -55,7 +55,7 @@ namespace FieryOpal.Src.Ui.Windows
                     {
                         Util.LogBadge("FPV:",
                             "Actor boundary boxes {0}".Fmt(rcv.DrawActorBoundaryBoxes ? "ON" : "OFF"),
-                            false,
+                            true,
                             rcv.DrawActorBoundaryBoxes ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
                         );
                     }
@@ -67,7 +67,7 @@ namespace FieryOpal.Src.Ui.Windows
                     {
                         Util.LogBadge("FPV:",
                             "Terrain grid {0}".Fmt(rcv.DrawTerrainGrid ? "ON" : "OFF"),
-                            false,
+                            true,
                             rcv.DrawTerrainGrid ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
                         );
                     }
@@ -79,7 +79,7 @@ namespace FieryOpal.Src.Ui.Windows
                     {
                         Util.LogBadge("FPV:",
                             "Ambient shading {0}".Fmt(rcv.DrawAmbientShading ? "ON" : "OFF"),
-                            false,
+                            true,
                             rcv.DrawAmbientShading ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
                         );
                     }
@@ -91,7 +91,7 @@ namespace FieryOpal.Src.Ui.Windows
                         Game.CurrentMap.Lighting.ToggleEnabled();
                         Util.LogBadge("FPV:",
                             "Lighting system {0}".Fmt(Game.CurrentMap.Lighting.Enabled ? "ON" : "OFF"),
-                            false,
+                            true,
                             Game.CurrentMap.Lighting.Enabled ? Palette.Ui["InfoMessage"] : Palette.Ui["ErrorMessage"]
                         );
                     }

@@ -42,7 +42,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             );
 
             StairTile stairs = (StairTile)OpalTile.GetRefTile<DownstairSkeleton>().Clone();
-            OpalTile wall = OpalTile.GetRefTile<NaturalWallSkeleton>();
+            OpalTile wall = OpalTile.GetRefTile<RockWallSkeleton>();
             OpalTile floor = OpalTile.GetRefTile<RockFloorSkeleton>();
 
             var shape = GenUtil.MakeRockShape(new Rectangle(p.X - 10, p.Y - 10, 20, 20));

@@ -84,7 +84,6 @@ namespace FieryOpal.Src.Procedural.Worldgen
         public void GenerateMap(int w, int h)
         {
             Map = new OpalLocalMap(w, h, WorldRegion, Util.Str("Dungeon_InstanceNameFmt", Name, Depth));
-            Map.SkyColor = Palette.Terrain["FP_DungeonFog"];
 
             Map.GenerateAnew(TerrainGenerator, TerrainDecorator);
 

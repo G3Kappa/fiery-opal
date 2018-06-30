@@ -3,7 +3,7 @@ using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons
 {
-    public class IceWallSkeleton : NaturalWallSkeleton
+    public class IceWallSkeleton : RockWallSkeleton
     {
         public override OpalTileProperties DefaultProperties => new OpalTileProperties(
             is_block: true,

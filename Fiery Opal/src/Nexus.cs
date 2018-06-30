@@ -31,6 +31,8 @@ namespace FieryOpal
         public static OpalServer GameServer { get; set; }
         public static OpalClient GameClient { get; set; }
 
+        public static DayNightCycleManager DayNightCycle { get; private set; }
+
         static void Main(string[] args)
         {
             CreatePaths();
@@ -102,6 +104,7 @@ namespace FieryOpal
             World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
             world.Generate();
             GameInstance = new OpalGame(world);
+            DayNightCycle = new DayNightCycleManager(1200);
             mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
             OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
             Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));

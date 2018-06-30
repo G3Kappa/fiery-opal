@@ -36,14 +36,14 @@ namespace FieryOpal.Src.Multiplayer
 
                     Byte[] buffer = new Byte[1024]; int b = 0;
                     try
-                    {
+                    { 
                         while ((b = stream.Read(buffer, 0, buffer.Length)) != 0)
                         {
                             var packet = new ClientPacket(buffer.Take(b).ToArray(), Client.Client.RemoteEndPoint);
-                            Server.ClientMsgHandlers[packet.Type].ForEach(h =>
+                            Server.ClientMsgHandlers[packet.Type].ToList().ForEach(h =>
                             {
                                 var reply = h(packet);
-                                if (reply.Type == ServerMsgType.Invalid) return;
+                                if (reply.Type == ServerMsgType.None) return;
 
                                 if (reply.IsBroadcast)
                                 {
@@ -56,7 +56,7 @@ namespace FieryOpal.Src.Multiplayer
                             });
                         }
                     }
-                    catch (System.IO.IOException e)
+                    catch
                     {
                         Util.LogServer("Client forcibly closed the connection. (IP: {0}) ".Fmt(Client.Client.RemoteEndPoint.ToString()), true);
                         Server.ClientPipeline.Broadcast(null, (ch) =>
@@ -137,6 +137,11 @@ namespace FieryOpal.Src.Multiplayer
             ClientMsgHandlers[type].Add(handler);
         }
 
+        public void RegisterHandlers(ClientMsgType type, IEnumerable<ClientMessageHandler> handlers)
+        {
+            ClientMsgHandlers[type].AddRange(handlers);
+        }
+
         public void UnregisterHandler(ClientMsgType type, ClientMessageHandler handler)
         {
             ClientMsgHandlers[type].Remove(handler);
@@ -177,6 +182,17 @@ namespace FieryOpal.Src.Multiplayer
 
                 return new ServerPacket(ServerMsgType.ClientDisconnected, p.Sender.ToString());
             });
+
+            RegisterHandler(ClientMsgType.ClientDisconnected, (p) =>
+            {
+                return new ServerPacket(ServerMsgType.Chat, "{0} has left the game.".Fmt(p.StringData));
+            });
+
+            RegisterHandler(ClientMsgType.PlayerMoved, (p) =>
+            {
+                return new ServerPacket(ServerMsgType.Chat, "{0} has entered the game.".Fmt(p.StringData));
+            });
+
         }
 
         public void Start()

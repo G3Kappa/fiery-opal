@@ -48,9 +48,11 @@ namespace FieryOpal.Src
             ResetAccumulator();
         }
 
+        private bool AccumulatorResetFlag = false;
         public void ResetAccumulator()
         {
             Accumulator = new Dictionary<Guid, float>();
+            AccumulatorResetFlag = true;
         }
 
         public void BeginTurn(OpalLocalMap map)
@@ -72,7 +74,9 @@ namespace FieryOpal.Src
 
             var accKeys = Accumulator.Keys.ToList();
             TurnStarted?.Invoke(this, CurrentTurn);
-            for (float t = 0; t < 1; t += TimeDilation)
+
+            float t = 0;
+            for (; t < 1; t += TimeDilation)
             {
                 // If the player is dead allow no further processing of turns.
                 // Unless they somehow come back to life, that is.
@@ -102,15 +106,28 @@ namespace FieryOpal.Src
                     if (Accumulator[kvp.Key] > 0) continue;
 
                     var cost = kvp.Value.Dequeue().Invoke();
+                    if(AccumulatorResetFlag) // Triggered when the player changes map
+                    {
+                        Accumulator[Nexus.Player.Handle] = cost;
+                        break;
+                    }
+
                     Accumulator[kvp.Key] += cost + TimeDilation * (cost - 1);
                 }
 
                 CurrentTime = (float)Math.Round(CurrentTime + TimeDilation, 3);
             }
 
+            Nexus.DayNightCycle.Update(t);
+            Nexus.DayNightCycle.UpdateLocal(map);
+
             TurnEnded?.Invoke(this, CurrentTime);
             CurrentPlayerDelay = Accumulator[Nexus.Player.Handle];
-            if (CurrentPlayerDelay > 0)
+            if(AccumulatorResetFlag)
+            {
+                AccumulatorResetFlag = false;
+            }
+            else if (CurrentPlayerDelay > 0)
             {
                 BeginTurn(map);
             }

@@ -27,7 +27,7 @@ namespace FieryOpal.Src.Ui
         }
 
         public bool Dirty { get; private set; }
-        public bool DrawActorLabels { get; private set; }
+        public bool DrawExtraLabels { get; private set; }
         public float ViewDistance { get; set; }
         public bool DrawTerrainGrid { get; private set; }
         public bool DrawActorBoundaryBoxes { get; private set; }
@@ -67,7 +67,7 @@ namespace FieryOpal.Src.Ui
         }
         public void ToggleLabels(bool? state = null)
         {
-            DrawActorLabels = Toggle(DrawActorLabels, state);
+            DrawExtraLabels = Toggle(DrawExtraLabels, state);
         }
         public void ToggleActorBoundaryBoxes(bool? state = null)
         {
@@ -81,9 +81,23 @@ namespace FieryOpal.Src.Ui
         {
             DrawAmbientShading = Toggle(DrawAmbientShading, state);
         }
-        private void FillBackbuffer(Color c)
+        private void FillBackbuffer(Color? c = null)
         {
-            Backbuffer = c.ToArray(RenderSurface.Width * RenderSurface.Height);
+            if(c.HasValue)
+            {
+                Backbuffer = c.Value.ToArray(RenderSurface.Width * RenderSurface.Height);
+            }
+            else
+            {
+                for (int y = 0; y < RenderSurface.Height; y++)
+                {
+                    Color skyColor = Nexus.DayNightCycle.GetSkyColor(1 - y / (float)RenderSurface.Height);
+                    for (int x = 0; x < RenderSurface.Width; x++)
+                    {
+                        SetBackbufferAt(x, y, skyColor);
+                    }
+                }
+            }
         }
         private void SetBackbufferAt(int x, int y, Color c)
         {
@@ -171,7 +185,7 @@ namespace FieryOpal.Src.Ui
                 wallColor = Target.Lighting.ApplyShading(wallColor, info.RayPos);
 
                 //Distant walls blend in with the sky
-                if (DrawAmbientShading) wallColor = Color.Lerp(wallColor, Target.SkyColor, info.PerpWallDist / ViewDistance);
+                if (DrawAmbientShading) wallColor = Target.Lighting.ApplyAmbientShading(wallColor, info.PerpWallDist / ViewDistance);
                 SetBackbufferAt(info.Column, y, wallColor);
             }
         }
@@ -228,7 +242,7 @@ namespace FieryOpal.Src.Ui
             Color lastFloorColor = Color.Black, lastShadedFloorColor = Color.Black;
             bool actorsOnTile = false;
             // Draws a circular shadow below each actor, on the floor they're occupying.
-            Color[,] shadowPixels = FontTextureCache.MakeShadow(Nexus.Fonts.Spritesheets["Terrain"], 7, new Color(224, 224, 224));
+            Color[,] shadowPixels = FontTextureCache.MakeShadow(Nexus.Fonts.Spritesheets["Terrain"], 7, new Color(180, 180, 180));
             for (int y = info.DrawEnd; y < RenderSurface.Height; y++)
             {
                 float currentDist = RenderSurface.Height / (2f * y - RenderSurface.Height);
@@ -272,7 +286,7 @@ namespace FieryOpal.Src.Ui
 
                 // The base color before any post processing
                 Color floorColor = floorPixels[floorTex.X, floorTex.Y];
-                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? Target.SkyColor;
+                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? Nexus.DayNightCycle.GetSkyColor(y / (float)RenderSurface.Height);
 
                 // If on, draws a grid around each floor tile
                 if (DrawTerrainGrid && (floorTex.X < 1 || floorTex.Y < 1 || floorTex.X > spritesheet.Size.X - 2 || floorTex.Y > spritesheet.Size.Y - 2))
@@ -473,7 +487,29 @@ namespace FieryOpal.Src.Ui
                 actor.FirstPersonVerticalOffset,
                 ref zbuffer);
 
-                if (DrawActorLabels) DrawActorLabel(ref zbuffer, startPos, actor);
+                if (DrawExtraLabels)
+                {
+                    if (actor is IInteractive)
+                    {
+                        DrawBillboardSprite(() =>
+                        {
+                            return FontTextureCache.MakeInteractionMarker(
+                                    Nexus.Fonts.MainFont,
+                                    25,
+                                    Palette.Ui["FP_InteractionMarker"]
+                            );
+                        },
+                        startPos,
+                        actor.LocalPosition,
+                        new Vector2(8f, 8f),
+                        Nexus.Fonts.MainFont.Size,
+                        -24f,
+                        ref zbuffer,
+                        ignoreShaders: true);
+                    }
+
+                    DrawActorLabel(ref zbuffer, startPos, actor);
+                }
             }
         }
 
@@ -485,11 +521,12 @@ namespace FieryOpal.Src.Ui
             if ((RenderSurface?.Width != surf.Width) || RenderSurface.Height != surf.Height)
             {
                 RenderSurface = new Texture2D(Global.GraphicsDevice, surf.Width, surf.Height);
+                FillBackbuffer(Color.Black);
             }
             
             // Fill with SkyColor to blend sky with ground
             // Also to make the wall drawing code lighter
-            FillBackbuffer(Target.SkyColor);
+            FillBackbuffer(Target.Indoors ? new Color?(Color.Black) : null);
 
             // Make sure the lighting system is up to date
             Target.Lighting.Update();

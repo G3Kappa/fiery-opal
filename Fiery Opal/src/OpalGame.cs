@@ -46,7 +46,10 @@ namespace FieryOpal.Src
                     }
                     ));
 
+                TurnManager.ResetAccumulator();
                 old_map?.Dispose();
+
+                Nexus.DayNightCycle.UpdateLocal(CurrentMap);
             };
 
             TurnManager.TurnStarted += (tm, t) =>
@@ -90,9 +93,6 @@ namespace FieryOpal.Src
                             return "ServeInfo";
                         }
                         ));
-                    break;
-                case "MapRefreshed": // Unused
-                    TurnManager.ResetAccumulator();
                     break;
                 case "PlayerInputHandled":
                     TurnManager.BeginTurn(CurrentMap);

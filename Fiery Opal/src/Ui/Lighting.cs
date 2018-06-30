@@ -25,6 +25,8 @@ namespace FieryOpal.Src.Ui
 
         Vector2 LightDirection { get; }
         int LightAngleWidth { get; }
+
+        event Action<ILightEmitter> LightEmitterDataChanged;
     }
 
     public class LightLayer
@@ -34,16 +36,18 @@ namespace FieryOpal.Src.Ui
 
         public LightingManager Manager;
 
-        protected Point LastPos = new Point(-1337, -420);
-        protected Vector2 LastDir = new Vector2(-1337, -420);
-        protected float LastAngle = -1;
-        public bool IsDirty => LastPos != Source.LocalPosition || LastDir != Source.LightDirection;
+        protected Point LastPos = new Point();
+        public bool IsDirty { get; private set; } = true;
 
         public LightLayer(ILightEmitter source, LightingManager parent)
         {
             Source = source;
             Manager = parent;
             Grid = new float[parent.Parent.Width, parent.Parent.Height];
+            source.LightEmitterDataChanged += (s) =>
+            {
+                IsDirty = true;
+            };
         }
 
         private float CalcIntensity(Vector2 start, Vector2 v, ILightEmitter emit)
@@ -70,7 +74,7 @@ namespace FieryOpal.Src.Ui
             Vector2 rayStart = LastPos.ToVector2() + new Vector2(.5f);
 
             int alfa = (int)(Math.Atan2(Source.LightDirection.Y, Source.LightDirection.X) * (180f / Math.PI));
-            for (float deg = alfa - Source.LightAngleWidth / 2; deg < alfa + Source.LightAngleWidth / 2; deg ++)
+            for (float deg = alfa - Source.LightAngleWidth / 2 + 0.01f; deg < alfa + Source.LightAngleWidth / 2; deg ++)
             {
                 Vector2 rayPos = rayStart;
 
@@ -96,7 +100,6 @@ namespace FieryOpal.Src.Ui
             if (!IsDirty) return false;
             Fill(0);
             LastPos = Source.LocalPosition;
-            LastDir = Source.LightDirection;
             switch(Source.LightEmitterType)
             {
                 case LightEmitterType.Ambient:
@@ -111,6 +114,7 @@ namespace FieryOpal.Src.Ui
                 default:
                     return false;
             }
+            IsDirty = false;
             return true;
         }
     }
@@ -165,7 +169,8 @@ namespace FieryOpal.Src.Ui
 
         public Color ApplyAmbientShading(Color c, float dist)
         {
-            return Color.Lerp(c, Parent.SkyColor, dist);
+            if(Parent.Indoors) return Color.Lerp(c, Color.Black, dist);
+            return Color.Lerp(c, Nexus.DayNightCycle.GetSkyColor(.5f), dist);
         }
     }
 

@@ -90,8 +90,8 @@ namespace FieryOpal.Src
         public int Width { get; }
         public int Height { get; }
         public string Name { get; set; }
+        public bool Indoors { get; set; } = false;
 
-        public Color SkyColor { get; set; }
         public Color FogColor { get; set; }
         public TileSkeleton CeilingTile { get; set; }
 
@@ -108,18 +108,20 @@ namespace FieryOpal.Src
         public delegate void ActorDespawnedEventHandler(OpalLocalMap sender, IOpalGameActor args);
         public event ActorDespawnedEventHandler ActorDespawned;
 
+        public AmbientLightEmitter AmbientLight { get; private set; }
+
         public OpalLocalMap(int width, int height, WorldTile parent, string name)
         {
             TerrainGrid = new OpalTile[width, height];
             Actors = new List<IOpalGameActor>();
             Width = width;
             Height = height;
-            SkyColor = Palette.Terrain["FP_OverworldFog"];
             FogColor = Palette.Ui["UnknownTileBackground"];
             ParentRegion = parent;
             Name = name;
             CeilingTile = null;
             Lighting = new LightingManager(this);
+            AmbientLight = new AmbientLightEmitter();
         }
 
         public float[,] DistanceTransform(Func<Tuple<OpalTile, Point>, bool> predicate)
@@ -267,9 +269,7 @@ namespace FieryOpal.Src
                 a.ChangeLocalMap(this, a.LocalPosition, !(this is IDecoration));
             }
 
-            var ambientLight = new AmbientLightEmitter();
-            ambientLight.LightIntensity = .25f;
-            ambientLight.ChangeLocalMap(this, new Point(0, 0), true);
+            AmbientLight.ChangeLocalMap(this, new Point(0, 0), true);
             Lighting.Update();
         }
 
@@ -371,13 +371,13 @@ namespace FieryOpal.Src
                 }
             }
 
-            // Roll a random SFX and then roll against its probability value
             if (SoundEffects.Count > 0)
             {
                 if ((DateTime.Now - SFXLastPlayedAt).TotalMilliseconds >= SFXCooldown)
                 {
                     SFXCooldown = 0f;
 
+                    // Roll a random SFX and then roll against its probability value
                     var sfx = Util.Choose(SoundEffects);
                     if (Util.Rng.NextDouble() < sfx.Item2)
                     {

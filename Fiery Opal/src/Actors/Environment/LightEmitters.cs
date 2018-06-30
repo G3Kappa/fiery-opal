@@ -10,32 +10,55 @@ using System.Threading.Tasks;
 
 namespace FieryOpal.Src.Actors.Environment
 {
-    public class ConicalLightEmitter : OpalActorBase, ILightEmitter
+    public abstract class LightEmitterBase : OpalActorBase, ILightEmitter
+    {
+        public event Action<ILightEmitter> LightEmitterDataChanged;
+
+        public LightEmitterBase()
+        {
+            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Magenta, Color.Transparent, 15));
+            Visible = false;
+            SetCollision(false);
+
+            PositionChanged += (a, p, _) => { LightEmitterDataChanged?.Invoke(this); };
+        }
+
+        private LightEmitterType _type = LightEmitterType.Conical;
+        public LightEmitterType LightEmitterType { get => _type; set { _type = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private float _intensity = 1f;
+        public float LightIntensity { get => _intensity; set { _intensity = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private float _lightRadius = 5f;
+        public float LightRadius { get => _lightRadius; set { _lightRadius = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private float _smoothness = 1f;
+        public float LightSmoothness { get => _smoothness; set { _smoothness = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private Color _color = Color.White;
+        public Color LightColor { get => _color; set { _color = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private Vector2 _direction = Vector2.Zero;
+        public Vector2 LightDirection { get => _direction; set { _direction = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        private int _angle = 90;
+        public int LightAngleWidth { get => _angle; set { _angle = value; LightEmitterDataChanged?.Invoke(this); } }
+    }
+
+    public class ConicalLightEmitter : LightEmitterBase
     {
         public ConicalLightEmitter()
         {
-            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Red, Color.Transparent, 15));
-            Visible = false;
-            SetCollision(false);
+            LightAngleWidth = 90;
+            LightDirection = Vector2.Zero;
+            LightEmitterType = LightEmitterType.Conical;
         }
-
-        public LightEmitterType LightEmitterType => LightEmitterType.Conical;
-
-        public float LightIntensity { get; set; } = 1f;
-        public float LightRadius { get; set; } = 5f;
-        public float LightSmoothness { get; set; } = .5f;
-        public Color LightColor { get; set; } = Color.White;
-
-        public Vector2 LightDirection { get; set; } = Util.RandomUnitPoint().ToVector2();
-        public int LightAngleWidth { get; set; } = 90;
-
     }
 
     public class RadialLightEmitter : ConicalLightEmitter
     {
         public RadialLightEmitter() 
         {
-            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Red, Color.Transparent, 15));
             LightAngleWidth = 360;
             LightDirection = Vector2.Zero;
         }
@@ -45,30 +68,17 @@ namespace FieryOpal.Src.Actors.Environment
     {
         public LinearLightEmitter()
         {
-            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Red, Color.Transparent, 15));
             LightAngleWidth = 2;
             LightDirection = Vector2.Zero;
         }
     }
 
-    public class AmbientLightEmitter : OpalActorBase, ILightEmitter
+    public class AmbientLightEmitter : LightEmitterBase
     {
         public AmbientLightEmitter()
         {
-            FirstPersonGraphics = Graphics = new ColoredGlyph(new Cell(Color.Red, Color.Transparent, 15));
-            Visible = false;
-            SetCollision(false);
+            LightEmitterType = LightEmitterType.Ambient;
         }
-
-        public LightEmitterType LightEmitterType => LightEmitterType.Ambient;
-
-        public float LightIntensity { get; set; } = .25f;
-        public float LightRadius { get; set; } = 1f;
-        public float LightSmoothness { get; set; } = 1f;
-        public Color LightColor { get; set; } = Color.White;
-
-        public Vector2 LightDirection { get; set; } = Vector2.Zero;
-        public int LightAngleWidth { get; set; } = 0;
     }
 
 }

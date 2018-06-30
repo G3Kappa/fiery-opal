@@ -56,10 +56,10 @@ namespace FieryOpal.Src
             public override int GetHashCode()
             {
                 int hash = MainKey.GetHashCode();
-                hash = (hash * 17) + CtrlDown.GetHashCode();
-                hash = (hash * 17) + ShiftDown.GetHashCode();
-                hash = (hash * 17) + AltDown.GetHashCode();
-                hash = (hash * 17) + State.GetHashCode();
+                hash = (hash * 17) + (CtrlDown ? 1 : 0);
+                hash = (hash * 17) + (ShiftDown ? 2 : 0);
+                hash = (hash * 17) + (AltDown ? 4 : 0);
+                hash = (hash * 17) + (State == KeypressState.Down ? 8 : (State == KeypressState.Press ? 16 : 32));
                 return hash;
             }
 

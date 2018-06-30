@@ -88,6 +88,7 @@
     <Compile Include="Src\Actors\TurnTakingAI.cs" />
     <Compile Include="Src\Audio\SFXManager.cs" />
     <Compile Include="Src\CommandDelegate.cs" />
+    <Compile Include="Src\DayNightCycleManager.cs" />
     <Compile Include="Src\Lib\CsVorbis\AllocChain.cs" />
     <Compile Include="Src\Lib\CsVorbis\Block.cs" />
     <Compile Include="Src\Lib\CsVorbis\Buffer.cs" />
@@ -232,8 +233,7 @@
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\SnowSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\WaterSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\SandSkeleton.cs" />
-    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\NaturalWallSkeleton.cs" />
-    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\NaturalFloorSkeleton.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\RockWallSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\DebugFloorSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\StairSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\TileSkeleton.cs" />

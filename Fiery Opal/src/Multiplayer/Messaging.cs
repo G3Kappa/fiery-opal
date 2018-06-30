@@ -16,15 +16,17 @@ namespace FieryOpal.Src.Multiplayer
         Ok = 0,
         ClientConnected = 1,
         ClientDisconnected = 2,
-        Chat = 3
+        Chat = 3,
+        PlayerMoved = 4
     }
 
     public enum ServerMsgType
     {
-        Invalid = 0,
+        None = 0,
         ClientConnected = 1,
         ClientDisconnected = 2,
         Chat = 3,
+        PlayerMoved = 4
     }
 
     public struct ClientPacket
@@ -56,7 +58,7 @@ namespace FieryOpal.Src.Multiplayer
     {
         private static ServerMsgType[] MsgLookup = (ServerMsgType[])Enum.GetValues(typeof(ServerMsgType));
 
-        public ServerMsgType Type => (uint)RawData[0] < MsgLookup.Length ? MsgLookup[(uint)RawData[0]] : ServerMsgType.Invalid;
+        public ServerMsgType Type => (uint)RawData[0] < MsgLookup.Length ? MsgLookup[(uint)RawData[0]] : ServerMsgType.None;
         public bool IsBroadcast => new[] {
             ServerMsgType.Chat, ServerMsgType.ClientConnected,
             ServerMsgType.ClientDisconnected

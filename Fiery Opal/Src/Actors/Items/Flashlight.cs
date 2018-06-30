@@ -21,11 +21,14 @@ namespace FieryOpal.Src.Actors.Items
             Name = "Flashlight";
             ItemInfo.Name = Name.ToColoredString(Color.Yellow);
 
-            LightSourceInner.LightAngleWidth = 45;
-            LightSourceOuter.LightAngleWidth = 90;
+            LightSourceInner.LightAngleWidth = 30;
+            LightSourceOuter.LightAngleWidth = 60;
 
             LightSourceInner.LightColor = Color.White;
+
             LightSourceInner.LightSmoothness = 1f;
+            LightSourceOuter.LightSmoothness = 1f;
+            LightSourceOuter.LightRadius = 7f;
         }
 
         public override void Update(TimeSpan delta)

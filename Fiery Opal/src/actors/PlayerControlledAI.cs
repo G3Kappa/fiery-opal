@@ -91,6 +91,11 @@ namespace FieryOpal.Src.Actors
 
             Body.Inventory.ItemStored += (item) => Util.LogText(Util.Str("Player_ItemPickedUp", item.ItemInfo.Name), false);
             Body.Inventory.ItemRetrieved += (item) => Util.LogText(Util.Str("Player_ItemDropped", item.ItemInfo.Name), false);
+
+            Nexus.DebugCLI.Closed += (e, eh) =>
+            {
+                InputHandled("FlagRaycastViewportForRedraw", false);
+            };
         }
 
         public void BindKeys()
@@ -109,14 +114,18 @@ namespace FieryOpal.Src.Actors
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.OpenInventory), (info) => { OpenInventory(); });
             Keybind.BindKey(KeyConfig.GetInfo(PlayerAction.Attack), (info) => { Attack(); });
 
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.L, Keybind.KeypressState.Press, "First Person: Toggle Labels"), (info) =>
+            bool ShowingLabels = false;
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Tab, Keybind.KeypressState.Press, "First Person: Enable Labels"), (info) =>
             {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    InputHandled("FlagRaycastViewportForRedraw");
-                    return 0f;
-                });
-                InputHandled("ToggleRaycastLabelView");
+                if (ShowingLabels) return;
+                ShowingLabels = true;
+                InputHandled("ToggleRaycastLabelView", false);
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Tab, Keybind.KeypressState.Release, "First Person: Disable Labels"), (info) =>
+            {
+                ShowingLabels = false;
+                InputHandled("ToggleRaycastLabelView", false);
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.OemPeriod, Keybind.KeypressState.Press, "Debug: Wait 50 turns", true), (info) =>
@@ -126,42 +135,22 @@ namespace FieryOpal.Src.Actors
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F5, Keybind.KeypressState.Press, "Debug: Toggle rendering of terrain grid", true), (info) =>
             {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    InputHandled("ToggleTerrainGrid");
-                    return 0f;
-                });
-                InputHandled();
+                InputHandled("ToggleTerrainGrid", false);
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F5, Keybind.KeypressState.Press, "Debug: Toggle rendering of boundary boxes", false, true), (info) =>
             {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    InputHandled("ToggleActorBoundaryBoxes");
-                    return 0f;
-                });
-                InputHandled();
+                InputHandled("ToggleActorBoundaryBoxes", false);
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F6, Keybind.KeypressState.Press, "Debug: Toggle rendering of ambient shading", true), (info) =>
             {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    InputHandled("ToggleAmbientShading");
-                    return 0f;
-                });
-                InputHandled();
+                InputHandled("ToggleAmbientShading", false);
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F6, Keybind.KeypressState.Press, "Debug: Toggle rendering of lighting system", false, true), (info) =>
             {
-                Body.EnqueuedActions.Enqueue(() =>
-                {
-                    InputHandled("ToggleLighting");
-                    return 0f;
-                });
-                InputHandled();
+                InputHandled("ToggleLighting", false);
             });
 
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Show CLI"), (info) =>
@@ -171,12 +160,6 @@ namespace FieryOpal.Src.Actors
                 Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Hide CLI"), (_info) =>
                 {
                     Nexus.DebugCLI.Hide();
-                    Body.EnqueuedActions.Enqueue(() =>
-                    {
-                        InputHandled("FlagRaycastViewportForRedraw");
-                        return 0f;
-                    });
-                    InputHandled();
                 });
             });
         }
@@ -190,12 +173,12 @@ namespace FieryOpal.Src.Actors
         /// Makes the game's TurnManager begin a new turn and optionally sends a message to the OpalGameWindows that host the game.
         /// </summary>
         /// <param name="msgForWindow"></param>
-        private void InputHandled(string msgForWindow = null)
+        private void InputHandled(string msgForWindow = null, bool startTurn = true)
         {
             InternalMessagePipeline.Broadcast(null, (g) =>
             {
                 if (msgForWindow != null) g.InternalMessagePipeline.Broadcast(null, (c) => msgForWindow);
-                return "PlayerInputHandled";
+                return startTurn ? "PlayerInputHandled" : "";
             });
         }
 
@@ -291,12 +274,11 @@ namespace FieryOpal.Src.Actors
         {
             if (turns <= 0f) return;
 
-            Body.EnqueuedActions.Enqueue(() => { return 1; });
-            for (int i = 0; i < (int)turns - 1; ++i)
+            for (int i = 0; i < (int)turns; ++i)
             {
-                InputHandled();
+                Body.EnqueuedActions.Enqueue(() => { return 1; });
+                InputHandled("FlagRaycastViewportForRedraw");
             }
-            InputHandled("FlagRaycastViewportForRedraw");
         }
 
         public void MoveRelative(int x, int y)
@@ -332,7 +314,7 @@ namespace FieryOpal.Src.Actors
                     w.Attack(Body.LookingAt.ToUnit().ToPoint());
                     delay += w.AttackDelay;
                 }
-                InputHandled("FlagRaycastViewportForRedraw");
+                InputHandled("FlagRaycastViewportForRedraw", false);
                 return delay;
             });
             InputHandled();

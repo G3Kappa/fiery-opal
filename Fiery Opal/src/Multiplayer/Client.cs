@@ -36,31 +36,27 @@ namespace FieryOpal.Src.Multiplayer
             }
 
             IsRunning = true;
-            while (Client.Connected)
-            {
-                NetworkStream stream = Client.GetStream();
-                var hello = new ClientPacket(ClientMsgType.ClientConnected, playerName, null);
-                lock(StreamLock) stream.Write(hello.RawData, 0, hello.RawData.Length);
+            NetworkStream stream = Client.GetStream();
+            var hello = new ClientPacket(ClientMsgType.ClientConnected, playerName, null);
+            lock(StreamLock) stream.Write(hello.RawData, 0, hello.RawData.Length);
 
-                Byte[] buffer = new Byte[1024]; int b = 0;
-                try
+            Byte[] buffer = new Byte[1024]; int b = 0;
+            try
+            {
+                while ((b = stream.Read(buffer, 0, buffer.Length)) != 0)
                 {
-                    while ((b = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    var packet = new ServerPacket(buffer.Take(b).ToArray());
+                    ServerMsgHandlers[packet.Type].ForEach(h =>
                     {
-                        var packet = new ServerPacket(buffer.Take(b).ToArray());
-                        ServerMsgHandlers[packet.Type].ForEach(h =>
-                        {
-                            var reply = h(packet);
-                            if (reply.Type == ClientMsgType.Ok) return;
-                            lock (StreamLock) stream.Write(reply.RawData, 0, reply.RawData.Length);
-                        });
-                    }
+                        var reply = h(packet);
+                        if (reply.Type == ClientMsgType.Ok) return;
+                        lock (StreamLock) stream.Write(reply.RawData, 0, reply.RawData.Length);
+                    });
                 }
-                catch (System.IO.IOException e)
-                {
-                    Util.LogClient("Server forcibly closed the connection.", true);
-                    break;
-                }
+            }
+            catch (System.IO.IOException)
+            {
+                Util.LogClient("The server forcibly closed the connection.", true);
             }
             IsRunning = false;
         }
@@ -105,7 +101,12 @@ namespace FieryOpal.Src.Multiplayer
                 // If it was us, don't spawn a new player.
                 if (args[1].Equals(Client.Client.LocalEndPoint.ToString()))
                 {
-                    Nexus.Player.Name = args[0];
+                    return new ClientPacket(ClientMsgType.Ok, null, null);
+                }
+
+                // If we already spawned that player, this is a broadcast message for someone else
+                if(OtherPlayers.ContainsKey(args[1]))
+                {
                     return new ClientPacket(ClientMsgType.Ok, null, null);
                 }
 
