@@ -523,7 +523,9 @@ namespace FieryOpal.Src.Ui
                 RenderSurface = new Texture2D(Global.GraphicsDevice, surf.Width, surf.Height);
                 FillBackbuffer(Color.Black);
             }
-            
+
+            ViewDistance = Nexus.Player.ViewDistance;
+
             // Fill with SkyColor to blend sky with ground
             // Also to make the wall drawing code lighter
             FillBackbuffer(Target.Indoors ? new Color?(Color.Black) : null);

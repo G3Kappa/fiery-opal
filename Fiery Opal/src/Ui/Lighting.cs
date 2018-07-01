@@ -20,7 +20,6 @@ namespace FieryOpal.Src.Ui
         LightEmitterType LightEmitterType { get; }
         float LightIntensity { get; }
         float LightRadius { get; }
-        float LightSmoothness { get; }
         Color LightColor { get; }
 
         Vector2 LightDirection { get; }
@@ -53,9 +52,13 @@ namespace FieryOpal.Src.Ui
         private float CalcIntensity(Vector2 start, Vector2 v, ILightEmitter emit)
         {
             if (start == v) return emit.LightIntensity;
-            return 
-                (float)Math.Pow(emit.LightIntensity 
-                * (1f / Math.Pow(start.Dist(v) / emit.LightRadius, 2)), 1f/emit.LightSmoothness);
+
+            var dist = (float)(start.Dist(v)) + 1;
+            if (dist > emit.LightRadius) dist += emit.LightRadius * (dist - emit.LightRadius);
+
+            var intensity = emit.LightIntensity / (dist * dist);
+            var retq = intensity.Quantize(32);
+            return retq;
         }
 
         private void Fill(float val)
@@ -160,7 +163,6 @@ namespace FieryOpal.Src.Ui
 
             Layers.Values.Merge(ref ColorGrid);
         }
-
 
         public Color ApplyShading(Color c, Point pos)
         {

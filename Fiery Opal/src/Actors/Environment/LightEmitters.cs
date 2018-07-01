@@ -32,9 +32,6 @@ namespace FieryOpal.Src.Actors.Environment
         private float _lightRadius = 5f;
         public float LightRadius { get => _lightRadius; set { _lightRadius = value; LightEmitterDataChanged?.Invoke(this); } }
 
-        private float _smoothness = 1f;
-        public float LightSmoothness { get => _smoothness; set { _smoothness = value; LightEmitterDataChanged?.Invoke(this); } }
-
         private Color _color = Color.White;
         public Color LightColor { get => _color; set { _color = value; LightEmitterDataChanged?.Invoke(this); } }
 

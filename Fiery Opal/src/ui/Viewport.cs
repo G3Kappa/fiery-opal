@@ -1,6 +1,8 @@
 ﻿using FieryOpal.Src.Procedural;
+using FieryOpal.Src.Procedural.Terrain.Tiles;
 using Microsoft.Xna.Framework;
 using SadConsole;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -34,7 +36,7 @@ namespace FieryOpal.Src.Ui
 
         private void PrintFog(SadConsole.Console surface, Point p)
         {
-            surface.SetCell(p.X, p.Y, new Cell(Target.FogColor, Target.FogColor, ' '));
+            surface.SetCell(p.X, p.Y, new Cell(Color.Transparent, Target.FogColor, ' '));
         }
 
         public void Print(SadConsole.Console surf, TileMemory fog = null)
@@ -44,10 +46,12 @@ namespace FieryOpal.Src.Ui
 
         private Cell ShadeCell(Cell c, Point p, bool gray=false)
         {
-            Color fg = Target.Lighting.ApplyShading(c.Foreground, p);
-            Color bg = Target.Lighting.ApplyShading(c.Background, p);
+            Color bg = c.Background, fg = c.Foreground;
 
-            if(gray)
+            fg = Target.Lighting.ApplyShading(fg, p);
+            bg = Target.Lighting.ApplyShading(bg, p);
+
+            if (gray)
             {
                 var fgb = fg.GetBrightness();
                 var bgb = bg.GetBrightness();
@@ -83,13 +87,17 @@ namespace FieryOpal.Src.Ui
                     PrintFog(surface, pos + targetArea.Location);
                     continue;
                 }
-                else if (!fog.CanSee(tuple.Item2))
+                else if (!fog.CanSee(tuple.Item2) && !t.Properties.IsBlock)
                 {
-                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph), tuple.Item2, gray: true));
+                    if (t is StairTile)
+                    {
+                        surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, new Cell(Palette.Ui["UnseenStairsForeground"], Palette.Ui["UnseenStairsBackground"], t.Graphics.Glyph));
+                    }
+                    else surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph), tuple.Item2, gray: true));
                 }
                 else
                 {
-                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(tuple.Item1.Graphics, tuple.Item2));
+                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(t.Graphics, tuple.Item2));
                 }
             }
 
@@ -132,7 +140,13 @@ namespace FieryOpal.Src.Ui
                     Point p = act.LocalPosition - vw;
                     if (Util.OOB(p.X, p.Y, targetArea.Width, targetArea.Height)) continue;
 
-                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, Target.Lighting.ApplyShading(act.Graphics.Foreground, act.LocalPosition));
+                    Color c = act.Graphics.Foreground;
+                    if(act.LocalPosition != Nexus.Player.LocalPosition)
+                    {
+                        c = Target.Lighting.ApplyShading(act.Graphics.Foreground, act.LocalPosition);
+                    }
+
+                    surface.SetForeground(targetArea.X + p.X, targetArea.Y + p.Y, c);
                     surface.SetGlyph(targetArea.X + p.X, targetArea.Y + p.Y, act.Graphics.Glyph);
                 }
             }

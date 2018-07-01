@@ -193,7 +193,38 @@ namespace FieryOpal.Src
 
         public static double ManhattanDist(this Point v, Point w)
         {
-            return (v.X - w.X) + (v.Y - w.Y);
+            return Math.Abs(w.X - v.X) + Math.Abs(w.Y - v.Y);
+        }
+
+        public static double ManhattanDist(this Vector2 v, Vector2 w)
+        {
+            return Math.Abs(w.X - v.X) + Math.Abs(w.Y - v.Y);
+        }
+
+        /// <summary>
+        /// Generalizes Manhattan distance (p=1) and Euclidean distance (p=2).
+        /// </summary>
+        /// <returns></returns>
+        public static double MinkowskiDist(this Point v, Point w, float p)
+        {
+            p = (float)Math.Pow(2, p);
+            return Math.Pow(Math.Pow(Math.Abs(w.X - v.X), p) + Math.Pow(Math.Abs(w.Y - v.Y), p), 1 / p);
+        }
+
+        public static double MinkowskiDist(this Vector2 v, Vector2 w, float p)
+        {
+            p = (float)Math.Pow(2, p);
+            return Math.Pow(Math.Pow(Math.Abs(w.X - v.X), p) + Math.Pow(Math.Abs(w.Y - v.Y), p), 1 / p);
+        }
+
+        public static double ChebyshevDistance(this Point v, Point w)
+        {
+            return Math.Max(Math.Abs(v.X - w.X), Math.Abs(v.Y - w.Y));
+        }
+
+        public static double ChebyshevDistance(this Vector2 v, Vector2 w)
+        {
+            return Math.Max(Math.Abs(v.X - w.X), Math.Abs(v.Y - w.Y));
         }
 
         public static float SquaredEuclidianDistance(this Point p, Point q)
@@ -201,9 +232,24 @@ namespace FieryOpal.Src
             return (q.X - p.X) * (q.X - p.X) + (q.Y - p.Y) * (q.Y - p.Y);
         }
 
+        public static float SquaredEuclidianDistance(this Vector2 p, Vector2 q)
+        {
+            return (q.X - p.X) * (q.X - p.X) + (q.Y - p.Y) * (q.Y - p.Y);
+        }
+
         public static float SquaredEuclidianDistance(this int p, int q)
         {
             return (q - p) * (q - p);
+        }
+
+        public static double Quantize(this double d, int steps)
+        {
+            return ((int)(d * steps)) / (float)steps;
+        }
+
+        public static float Quantize(this float d, int steps)
+        {
+            return (float)Quantize((double)d, steps);
         }
 
         public static Point RotateCW(this Point p)

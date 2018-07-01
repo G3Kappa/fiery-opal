@@ -35,17 +35,15 @@ namespace FieryOpal.Src.Actors.Items
             LightSourceOuter = new RadialLightEmitter()
             {
                 LightColor = Color.DarkOrange,
-                LightIntensity = 1f,
-                LightRadius = 5f,
-                LightSmoothness = 1f
+                LightIntensity = 30f,
+                LightRadius = 12f,
             };
 
             LightSourceInner = new RadialLightEmitter()
             {
                 LightColor = new Color(255, 255, 200),
-                LightIntensity = 2f,
-                LightRadius = 3f,
-                LightSmoothness = .75f
+                LightIntensity = 30f,
+                LightRadius = 4f,
             };
 
             Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.Orange, Color.Transparent, 161));

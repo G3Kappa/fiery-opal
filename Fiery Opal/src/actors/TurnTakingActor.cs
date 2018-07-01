@@ -14,6 +14,7 @@ namespace FieryOpal.Src.Actors
         public PersonalEquipment Equipment { get; protected set; }
         public int Health { get; protected set; }
         public int MaxHealth { get; protected set; }
+        public int ViewDistance { get; protected set; }
 
         public TurnTakingActor() : base()
         {
@@ -24,6 +25,7 @@ namespace FieryOpal.Src.Actors
             };
 
             MaxHealth = Health = 100;
+            ViewDistance = 64;
         }
 
         public void ReceiveDamage(int damage)

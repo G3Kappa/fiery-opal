@@ -4,6 +4,7 @@ using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,10 +25,12 @@ namespace FieryOpal.Src.Actors.Items.Weapons
 
         public virtual void OnEquip(IEquipmentUser actor)
         {
+            Update(TimeSpan.MinValue);
         }
 
         public virtual void OnUnequip(IEquipmentUser actor)
         {
+            Update(TimeSpan.MinValue);
         }
 
         public abstract void Attack(Point direction);
