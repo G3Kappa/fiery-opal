@@ -9,17 +9,18 @@ namespace FieryOpal.Src
 {
     public struct OpalTileProperties
     {
-        public bool IsBlock, IsNatural;
+        public bool IsBlock, IsNatural, HasRoof;
         public float MovementPenalty, Fertility;
 
         public bool BlocksMovement => IsBlock || MovementPenalty >= 1.0f;
 
-        public OpalTileProperties(bool is_block = false, bool is_natural = true, float movement_penalty = 0f, float fertility = 0f)
+        public OpalTileProperties(bool is_block = false, bool is_natural = true, float movement_penalty = 0f, float fertility = 0f, bool has_roof = false)
         {
             IsBlock = is_block;
             IsNatural = is_natural;
             MovementPenalty = movement_penalty;
             Fertility = fertility;
+            HasRoof = has_roof;
         }
     }
 

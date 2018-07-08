@@ -41,7 +41,7 @@ namespace FieryOpal.Src
             }
         }
 
-        private static List<Vector2> DDA(OpalLocalMap target, Vector2 deltaDist, Vector2 stepDir, Vector2 pos, Vector2 sideDist, out bool side)
+        private static List<Vector2> DDA(Point mapSize, Vector2 deltaDist, Vector2 stepDir, Vector2 pos, Vector2 sideDist, Predicate<Point> isRayBlocked, int maxlen, out bool side)
         {
             // Wall hit? Side hit?
             //perform DDA
@@ -65,30 +65,20 @@ namespace FieryOpal.Src
                 }
 
                 traversed.Add(mapPos);
-                if (Util.OOB((int)mapPos.X, (int)mapPos.Y, target.Width, target.Height))
+                if (Util.OOB((int)mapPos.X, (int)mapPos.Y, mapSize.X, mapSize.Y))
                 {
                     break;
                 }
-
+                else if (maxlen > 0 && mapPos.Dist(pos) >= maxlen) break;
 
                 //Check if ray has hit a wall
-                var t = target.TileAt(mapPos.ToPoint());
-                if (t?.Properties.IsBlock ?? false) break;
-
-                // Check if it hit a decoration that should render as a block
-                var decos = target.ActorsAt(mapPos.ToPoint())
-                    .Where(d => 
-                        d is DecorationBase 
-                        && (d as DecorationBase).DisplayAsBlock
-                    )
-                ;
-                if (decos.Count() > 0) break;
+                if (isRayBlocked(mapPos.ToPoint())) break;
             }
 
             return traversed;
         }
 
-        public static RayInfo CastRay(OpalLocalMap target, Vector2 position, Vector2 rayDir)
+        public static RayInfo CastRay(Point mapSize, Vector2 position, Vector2 rayDir, Predicate<Point> isRayBlocked, int maxlen=0)
         {
             //length of ray from current position to next x or y-side
             Vector2 sideDist = new Vector2();
@@ -100,13 +90,13 @@ namespace FieryOpal.Src
             // Calculate stepDir and initial sideDist
             CalcStep(rayDir, position, deltaDist, ref stepDir, ref sideDist);
             // Perform DDA
-            List<Vector2> traversed = DDA(target, deltaDist, stepDir, position, sideDist, out bool side);
+            List<Vector2> traversed = DDA(mapSize, deltaDist, stepDir, position, sideDist, isRayBlocked, maxlen, out bool side);
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
             float perpWallDist; Vector2 last = traversed.Last();
             if (!side) perpWallDist = (last.X - position.X + (1 - stepDir.X) / 2) / rayDir.X;
             else       perpWallDist = (last.Y - position.Y + (1 - stepDir.Y) / 2) / rayDir.Y;
 
-            if(Util.OOB((int)last.X, (int)last.Y, target.Width, target.Height))
+            if(Util.OOB((int)last.X, (int)last.Y, mapSize.X, mapSize.X))
             {
                 traversed.RemoveAt(traversed.Count - 1);
             }
@@ -120,13 +110,13 @@ namespace FieryOpal.Src
             };
         }
 
-        public static bool IsLineObstructed(OpalLocalMap target, Vector2 a, Vector2 b)
+        public static bool IsLineObstructed(Point mapSize, Vector2 a, Vector2 b, Predicate<Point> obstructed)
         {
             Vector2 mapPos = b.ToPoint().ToVector2();
 
             double angle = Math.Atan2((a - b).Y, (a - b).X);
             Vector2 rayDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
-            var info = CastRay(target, b, rayDir);
+            var info = CastRay(mapSize, b, rayDir, obstructed);
             return a.Dist(info.LastPointTraversed) < a.Dist(b);
         }
     }

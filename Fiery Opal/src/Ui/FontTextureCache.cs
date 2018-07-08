@@ -58,7 +58,7 @@ namespace FieryOpal.Src.Ui
             public Font Font;
             public Color[] FontImagePixels;
             public Dictionary<byte, Color[,]> GlyphPixels;
-            public Dictionary<Tuple<byte, uint, uint>, RecoloredGlyph> RecoloredGlyphPixels;
+            public Dictionary<ulong, RecoloredGlyph> RecoloredGlyphPixels;
             public List<byte> LumaSortedGlyphs;
 
             public CachedFont(Font f, Color[] fontImagePixels)
@@ -66,7 +66,7 @@ namespace FieryOpal.Src.Ui
                 Font = f;
                 FontImagePixels = fontImagePixels;
                 GlyphPixels = new Dictionary<byte, Color[,]>();
-                RecoloredGlyphPixels = new Dictionary<Tuple<byte, uint, uint>, RecoloredGlyph>();
+                RecoloredGlyphPixels = new Dictionary<ulong, RecoloredGlyph>();
                 LumaSortedGlyphs = new List<byte>(255);
             }
         }
@@ -133,12 +133,13 @@ namespace FieryOpal.Src.Ui
                 cached_font.LumaSortedGlyphs.AddRange(SortGlyphs(f));
             }
 
-            if (!CachedFonts[f.Name].GlyphPixels.ContainsKey(glyph))
+            var cached = CachedFonts[f.Name];
+            if (!cached.GlyphPixels.ContainsKey(glyph))
             {
-                CachedFonts[f.Name].GlyphPixels[glyph] = ObtainGlyphPixels(CachedFonts[f.Name], glyph);
+                cached.GlyphPixels[glyph] = ObtainGlyphPixels(cached, glyph);
             }
 
-            CachedFonts[f.Name].GlyphPixels[glyph].DeepClone(ref pixels);
+            cached.GlyphPixels[glyph].DeepClone(ref pixels);
         }
 
         public static Color[,] MakeLabel(Font f, string text, Color fg, Color bg)
@@ -147,6 +148,33 @@ namespace FieryOpal.Src.Ui
             for (int i = 0; i < text.Length; i++)
             {
                 Color[,] pixels = GetRecoloredPixels(f, (byte)text[i], fg, bg);
+                for (int x = 0; x < f.Size.X; x++)
+                {
+                    for (int y = 0; y < f.Size.Y; y++)
+                    {
+                        ret[i * f.Size.X + x, y] = pixels[x, y];
+                    }
+                }
+            }
+            return ret;
+        }
+
+        public static Color[,] MakeHealthBar(Font f, float pct)
+        {
+            const int LENGTH = 20;
+
+            Color[,] ret = new Color[LENGTH * f.Size.X, f.Size.Y];
+
+            Color bg = new Color(0, 0, 0, 64);
+            for (int i = 0; i < LENGTH; i++)
+            {
+                char glyph = (i / (float)LENGTH) <= pct ? (char)177 : ' ';
+                Color fg;
+                if (pct > .75f) fg = Color.Lerp(Color.Green, Color.Yellow, (1 - pct) * 4);
+                else if (pct > .5f) fg = Color.Lerp(Color.Yellow, Color.Red, (1 - pct) * 2);
+                else fg = Color.Red;
+
+                Color[,] pixels = GetRecoloredPixels(f, (byte)glyph, fg, bg);
                 for (int x = 0; x < f.Size.X; x++)
                 {
                     for (int y = 0; y < f.Size.Y; y++)
@@ -180,7 +208,8 @@ namespace FieryOpal.Src.Ui
                 GetRecoloredPixels(f, 0, Color.White, Color.Black);
             }
 
-            return CachedFonts[f.Name].LumaSortedGlyphs[(int)(brightness * CachedFonts[f.Name].LumaSortedGlyphs.Count)];
+            var cf = CachedFonts[f.Name];
+            return cf.LumaSortedGlyphs[(int)(brightness * cf.LumaSortedGlyphs.Count)];
         }
 
         public static Color[,] GetRecoloredPixels(Font f, byte glyph, Color newForeground, Color newBackground)
@@ -195,7 +224,7 @@ namespace FieryOpal.Src.Ui
                 CollectGarbage();
             }
 
-            Tuple<byte, uint, uint> key = new Tuple<byte, uint, uint>(glyph, newForeground.PackedValue, newBackground.PackedValue);
+            ulong key = (ulong)(glyph * 17 + newForeground.PackedValue * 17 + newBackground.PackedValue * 17);
             Color[,] pixels2d = new Color[f.Size.X, f.Size.Y];
             if (!CachedFonts.ContainsKey(f.Name) || !CachedFonts[f.Name].GlyphPixels.ContainsKey(glyph))
             {
@@ -210,7 +239,8 @@ namespace FieryOpal.Src.Ui
                 return cf.RecoloredGlyphPixels[key];
             }
 
-            cf.RecoloredGlyphPixels[key] = new CachedFont.RecoloredGlyph(glyph, newForeground.PackedValue, newBackground.PackedValue);
+            var rg = new CachedFont.RecoloredGlyph(glyph, newForeground.PackedValue, newBackground.PackedValue);
+            cf.RecoloredGlyphPixels[key] = rg;
             for (int x = 0; x < f.Size.X; x++)
             {
                 for (int y = 0; y < f.Size.Y; y++)
@@ -232,8 +262,8 @@ namespace FieryOpal.Src.Ui
                 }
             }
 
-            cf.RecoloredGlyphPixels[key].Pixels = pixels2d;
-            return cf.RecoloredGlyphPixels[key];
+            rg.Pixels = pixels2d;
+            return rg;
         }
 
         public static void CollectGarbage()
@@ -245,7 +275,7 @@ namespace FieryOpal.Src.Ui
 
             foreach (CachedFont cf in CachedFonts.Values)
             {
-                List<Tuple<byte, uint, uint>> to_remove = new List<Tuple<byte, uint, uint>>();
+                List<ulong> to_remove = new List<ulong>();
                 foreach (var key in cf.RecoloredGlyphPixels.Keys)
                 {
                     // Update hit delta to reflect now - last hit;
@@ -258,13 +288,6 @@ namespace FieryOpal.Src.Ui
                         if (cf.RecoloredGlyphPixels[key].Hits <= HIT_COUNT_TOO_LOW * Util.Framerate * time_elapsed.TotalSeconds)
                         {
                             to_remove.Add(key);
-                            ColoredString msg = new ColoredString("FontGC: Deallocated ", m_fore, m_back)
-                                + new ColoredString(((char)key.Item1).ToString(), new Color(key.Item2), new Color(key.Item3))
-                                + new ColoredString(String.Format(". ({0}hits/{1}s, last hit {2}s ago)",
-                                cf.RecoloredGlyphPixels[key].Hits,
-                                Math.Round(time_elapsed.TotalSeconds, 2),
-                                Math.Round(cf.RecoloredGlyphPixels[key].HitDelta.TotalSeconds, 2)), m_fore, m_back);
-                            Util.Log(msg, true);
                             continue;
                         }
                         // Reset the number of hits to 0 so that this will get deallocated during the next pass if it doesn't get displayed again

@@ -11,14 +11,24 @@ namespace FieryOpal.Src
             return new Point((v.X > 0 ? 1 : (v.X < 0 ? -1 : 0)), (v.Y > 0 ? 1 : (v.Y < 0 ? -1 : 0)));
         }
 
-        public static Point RandomUnitPoint(bool xy = true)
+        public static Point RandomUnitPoint(bool xy = true, bool xor=false)
         {
-            if (xy)
+            if(!xor)
             {
-                return new Point(Util.Rng.Next(3) - 1, Util.Rng.Next(3) - 1);
+                if (xy)
+                {
+                    return new Point(Util.Rng.Next(3) - 1, Util.Rng.Next(3) - 1);
+                }
+                bool x = Util.Rng.NextDouble() < .5f;
+                return new Point(x ? Util.Rng.Next(3) - 1 : 0, !x ? Util.Rng.Next(3) - 1 : 0);
             }
-            bool x = Util.Rng.NextDouble() < .5f;
-            return new Point(x ? Util.Rng.Next(3) - 1 : 0, !x ? Util.Rng.Next(3) - 1 : 0);
+
+            Point r;
+            do
+            {
+                r = RandomUnitPoint(xy, false);
+            } while (r == Point.Zero || (Math.Abs(r.X) + Math.Abs(r.Y)) == 2);
+            return r;
         }
 
         public static Vector2 Orthogonal(this Vector2 v)
@@ -156,6 +166,29 @@ namespace FieryOpal.Src
             return ChangeXY(v, new_x, (y) => y);
         }
 
+        public static Vector2 MaxComponents(this Vector2 v)
+        {
+            bool xy = Math.Abs(v.X) > Math.Abs(v.Y);
+
+            return new Vector2(xy ? v.X : 0, xy ? 0 : v.Y);
+        }
+
+        public static Vector2 Abs(this Vector2 v)
+        {
+            return new Vector2(Math.Abs(v.X), Math.Abs(v.Y));
+        }
+
+        public static Point ToRoundedPoint(this Vector2 v)
+        {
+            float fx = v.X - (int)v.X;
+            float fy = v.Y - (int)v.Y;
+
+            return new Point(
+                fx >= .5f ? (int)(v.X + 1) : (int)v.X,
+                fy >= .5f ? (int)(v.Y + 1) : (int)v.Y
+            );
+        }
+
         public static Vector2 ChangeY(this Vector2 v, Func<float, float> new_y)
         {
             return ChangeXY(v, (x) => x, new_y);
@@ -163,12 +196,12 @@ namespace FieryOpal.Src
 
         public static int UnitX(this Vector2 v)
         {
-            return v.X < 0 ? -1 : v.X > 0 ? 1 : 0;
+            return v.X < -.5f ? -1 : v.X > .5f ? 1 : 0;
         }
 
         public static int UnitY(this Vector2 v)
         {
-            return v.Y < 0 ? -1 : v.Y > 0 ? 1 : 0;
+            return v.Y < -.5f ? -1 : v.Y > .5f ? 1 : 0;
         }
 
         public static double Dist(this Vector2 v, Vector2 w)
@@ -211,6 +244,11 @@ namespace FieryOpal.Src
             return Math.Pow(Math.Pow(Math.Abs(w.X - v.X), p) + Math.Pow(Math.Abs(w.Y - v.Y), p), 1 / p);
         }
 
+
+        /// <summary>
+        /// Generalizes Manhattan distance (p=1) and Euclidean distance (p=2).
+        /// </summary>
+        /// <returns></returns>
         public static double MinkowskiDist(this Vector2 v, Vector2 w, float p)
         {
             p = (float)Math.Pow(2, p);
@@ -225,6 +263,66 @@ namespace FieryOpal.Src
         public static double ChebyshevDistance(this Vector2 v, Vector2 w)
         {
             return Math.Max(Math.Abs(v.X - w.X), Math.Abs(v.Y - w.Y));
+        }
+
+        public static double OctagonalDist(this Point v, Point w)
+        {
+            return OctagonalDist(v.ToVector2(), w.ToVector2());
+        }
+
+        public static T Clamp<T>(this T val, T min, T max) where T : IComparable<T>
+        {
+            if (val.CompareTo(min) < 0) return min;
+            else if (val.CompareTo(max) > 0) return max;
+            else return val;
+        }
+
+        public static double OctagonalDist(this Vector2 v, Vector2 w)
+        {
+            float dx = Math.Abs(v.X - w.X);
+            float dy = Math.Abs(v.Y - w.Y);
+
+            float min, max;
+            if (dx < dy)
+            {
+                min = dx;
+                max = dy;
+            }
+            else
+            {
+                min = dy;
+                max = dx;
+            }
+
+            return 0.41 * min + 0.941246 * max;
+        }
+
+        // http://flipcode.com/archives/Fast_Approximate_Distance_Functions.shtml
+        public static int FastDist(this Point v, Point w)
+        {
+            int dx = Math.Abs(v.X - w.X);
+            int dy = Math.Abs(v.Y - w.Y);
+
+            int min, max;
+            if (dx < dy)
+            {
+                min = dx;
+                max = dy;
+            }
+            else
+            {
+                min = dy;
+                max = dx;
+            }
+
+            int approx = (max * 1007) + (min * 441);
+            if(max < (min << 4))
+            {
+                approx -= max * 40;
+            }
+
+            // add 512 for proper rounding
+            return ((approx + 512) >> 10);
         }
 
         public static float SquaredEuclidianDistance(this Point p, Point q)

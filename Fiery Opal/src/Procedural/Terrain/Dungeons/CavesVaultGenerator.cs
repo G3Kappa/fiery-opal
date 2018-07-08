@@ -41,10 +41,11 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
                 .Select(t => t.Item2).ToList()
             );
 
-            StairTile stairs = (StairTile)OpalTile.GetRefTile<DownstairSkeleton>().Clone();
+            StairTile stairs = (StairTile)TileFactory.Make(TileSkeleton.Get<DownstairSkeleton>().Make);
             OpalTile wall = OpalTile.GetRefTile<RockWallSkeleton>();
-            OpalTile floor = OpalTile.GetRefTile<RockFloorSkeleton>();
-
+            OpalTile floor = TileFactory.Make(TileSkeleton.Get<RockFloorSkeleton>().Make);
+            floor.Properties.HasRoof = true;
+            stairs.Properties.HasRoof = true;
             var shape = GenUtil.MakeRockShape(new Rectangle(p.X - 10, p.Y - 10, 20, 20));
             Workspace.DrawShape(shape, wall);
 
@@ -52,8 +53,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             var traversed = GenUtil.WeightedRandomWalk(Workspace, p, P => (float)-P.Dist(p), t => t == floor, t => t == wall, floor).ToList();
 
             Point dir = (traversed.Last() - traversed[traversed.Count - 2]);
-            new Torch().ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() + dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() + dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
-            new Torch().ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() - dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() - dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
+            new Torch(Color.Blue).ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() + dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() + dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
+            new Torch(Color.Red).ChangeLocalMap(Workspace, Workspace.FirstAccessibleTileInLine(traversed.Last() - dir.ToVector2().Orthogonal().ToPoint(), traversed.Last() - dir.ToVector2().Orthogonal().ToPoint() + dir * new Point(10)));
 
             var dummyInstance = new DungeonInstance(0, "Overworld", m.ParentRegion, new List<DungeonInstance>());
             dummyInstance.Map = m;

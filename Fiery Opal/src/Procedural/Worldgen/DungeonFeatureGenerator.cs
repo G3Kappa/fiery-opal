@@ -19,7 +19,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             var lairname = new GoodDeityGenerator().Generate().Name;
             Name = "Lair of {0}".Fmt(lairname.Substring(0, lairname.Length - 1));
 
-            Depth = Util.Rng.Next(3, 30);
+            Depth = Util.Rng.Next(1, 5);
         }
 
         protected Dictionary<int, DungeonInstance> Instances = new Dictionary<int, DungeonInstance>();
@@ -33,7 +33,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected override IEnumerable<Point> MarkRegions(World w)
         {
-            var allowedBiomes = new[] { BiomeType.Mountain, BiomeType.Peak };
+            var allowedBiomes = new[] { BiomeType.Mountain, BiomeType.Hill };
             Point p;
             do
             {

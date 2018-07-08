@@ -1,9 +1,12 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Actors.Items.Weapons;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
+using System;
 using System.Linq;
+using System.Threading;
 
 namespace FieryOpal.Src.Ui.Windows
 {
@@ -74,13 +77,13 @@ namespace FieryOpal.Src.Ui.Windows
             RegisterWindow(LogWindow);
             // So that this window can receive logs from anywhere
             Util.GlobalLogPipeline.Subscribe(LogWindow);
+
         }
 
         public MainGameWindowManager(int w, int h, OpalGame g) : base(w, h)
         {
 
             Game = g;
-
             CreateLayout(w, h, g);
 
             PlayerControlledAI player_brain = new PlayerControlledAI(Game.Player, Nexus.Keys.GetPlayerKeybinds());
@@ -111,12 +114,13 @@ namespace FieryOpal.Src.Ui.Windows
             base.Update(gameTime);
         }
 
-        public override void Draw(GameTime gameTime)
+
+        public override void Draw(GameTime time)
         {
             if (Game.Player != null)
             {
-                TopDownWindow.Viewport.ViewArea = 
-                FirstPersonWindow.Viewport.ViewArea = 
+                TopDownWindow.Viewport.ViewArea =
+                FirstPersonWindow.Viewport.ViewArea =
                     new Rectangle(
                         Game.Player.LocalPosition.X - TopDownWindow.Width / 2,
                         Game.Player.LocalPosition.Y - TopDownWindow.Height / 2,
@@ -126,24 +130,55 @@ namespace FieryOpal.Src.Ui.Windows
             }
 
             bool wasDirty = (FirstPersonWindow.Viewport as RaycastViewport)?.Dirty ?? false;
-            if(wasDirty)
+            if (wasDirty)
             {
                 FirstPersonWindow.Viewport.Print(FirstPersonWindow, new Rectangle(new Point(0, 0), new Point(FirstPersonWindow.Width, FirstPersonWindow.Height)), Game.Player.Brain.TileMemory);
                 TopDownWindow.Viewport.Print(TopDownWindow, new Rectangle(new Point(0, 0), new Point(TopDownWindow.Width, TopDownWindow.Height)), Game.Player.Brain.TileMemory);
             }
 
             var rc = FirstPersonWindow.Viewport as RaycastViewport;
-            Global.DrawCalls.Add(new DrawCallTexture(rc.RenderSurface, FirstPersonWindow.Position.ToVector2()));
+            
+            Global.DrawCalls.Add(new DrawCallCustom(() =>
+            {
+                Global.SpriteBatch.End();
+                ShaderManager.LightingShader.Parameters["LightMap"].SetValue(Game.CurrentMap.Lighting.LightMap);
+                ShaderManager.LightingShader.Parameters["Projection"].SetValue(rc.ProjectionTexture);
+                ShaderManager.LightingShader.Parameters["ViewDistance"].SetValue(Game.Player.ViewDistance / 64f);
+                ShaderManager.LightingShader.Parameters["AmbientLightIntensity"].SetValue(Game.CurrentMap.AmbientLightIntensity);
+                ShaderManager.LightingShader.Parameters["PlayerPosition"].SetValue((Game.Player.LocalPosition.ToVector2() / new Vector2(Game.CurrentMap.Width, Game.CurrentMap.Width)));
+                ShaderManager.LightingShader.Parameters["SkyColor"].SetValue(Game.CurrentMap.Indoors ? Color.Black.ToVector4() : Nexus.DayNightCycle.GetSkyColor(.5f).ToVector4());
+                Global.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap, null, RasterizerState.CullNone, ShaderManager.LightingShader);
+                Global.SpriteBatch.Draw(
+                    rc.RenderSurface,
+                    new Rectangle(FirstPersonWindow.Position, new Point(FirstPersonWindow.Width, FirstPersonWindow.Height)),
+                    null,
+                    Color.White
+                );
+                Global.SpriteBatch.End();
+                Global.SpriteBatch.Begin(SpriteSortMode.Immediate);
+            }));
+
             var weaps = Game.Player.Equipment.GetContents().Where(i => i is Weapon).Select(i => i as Weapon);
             foreach (var weapon in weaps)
             {
                 // TODO draw pixelwise
                 var tex = weapon.ViewGraphics.AsTexture2D(rc.RenderSurface.Width);
-                Global.DrawCalls.Add(new DrawCallTexture(tex, FirstPersonWindow.Position.ToVector2() + new Vector2(rc.RenderSurface.Width / 2 - tex.Width / 2 + weapon.ViewGraphics.Offset.X * tex.Width / 2, rc.RenderSurface.Height - tex.Height + weapon.ViewGraphics.Offset.Y * tex.Height / 2)));
-            }
+                Global.DrawCalls.Add(new DrawCallCustom(() =>
+                {
+                    var ofs = new Vector2(
+                        rc.RenderSurface.Width / 2 - tex.Width / 2 + weapon.ViewGraphics.Offset.X * tex.Width / 2, 
+                        rc.RenderSurface.Height - tex.Height + weapon.ViewGraphics.Offset.Y * tex.Height / 2
+                    );
 
-            Game.Draw(gameTime.ElapsedGameTime);
-            base.Draw(gameTime);
+                    Global.SpriteBatch.Draw(
+                        tex,
+                        FirstPersonWindow.Position.ToVector2() + ofs,
+                        Game.Player.Map.Lighting.ApplyShading(Color.White, Game.Player.LocalPosition)
+                    );
+                }));
+            }
+            Game.Draw(time.ElapsedGameTime);
+            base.Draw(time);
         }
     }
 }

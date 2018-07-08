@@ -68,8 +68,8 @@ namespace FieryOpal.Src.Procedural.Worldgen
         private bool ValidRegion(WorldTile t)
         {
             return
-                (t.Biome.AverageTemperature <= BiomeHeatType.Hotter && t.Biome.AverageTemperature >= BiomeHeatType.Colder)
-                && t.Biome.AverageHumidity >= BiomeMoistureType.Dry
+                   t.Biome.AverageHumidity >= BiomeMoistureType.Dry
+                && t.Biome.Elevation >= BiomeElevationType.AboveSeaLevel
                 && !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)
                 && !HasRiver(t);
         }
@@ -88,7 +88,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
             {
                 p = new Point(Util.Rng.Next(0, w.Width), Util.Rng.Next(0, w.Height));
             }
-            while ((w.RegionAt(p.X, p.Y).GenInfo.Elevation <= .75f || !ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
+            while ((!ValidRegion(w.RegionAt(p.X, p.Y))) && --start_tries > 0);
             if (start_tries < 0)
             {
                 Util.LogText("WorldFeatureGenerator: Could not place river.", true);
@@ -113,8 +113,8 @@ namespace FieryOpal.Src.Procedural.Worldgen
                     break;
                 }
 
-                q = regions.MinBy(r => r.Item1).Item2;
-                if (q == p || !ValidRegion(w.RegionAt(q.X, q.Y))) break;
+                q = regions.Where(r => !HasRiver(w.RegionAt(r.Item2.X, r.Item2.Y))).MinBy(r => r.Item1).Item2;
+                if ((q == p || !ValidRegion(w.RegionAt(q.X, q.Y))) && Util.Rng.NextDouble() > .67f) break;
                 yield return q;
                 p = q;
             }

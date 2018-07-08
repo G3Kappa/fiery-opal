@@ -64,7 +64,7 @@ namespace FieryOpal.Src
         /// <param name="new_map">The new OpalLocalMap.</param>
         /// <param name="new_spawn">The spawn coordinates.</param>
         /// <returns></returns>
-        bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile = true);
+        bool ChangeLocalMap(OpalLocalMap new_map, Point? new_spawn, bool check_tile = true);
 
         bool OnBump(IOpalGameActor other);
     }
@@ -131,7 +131,7 @@ namespace FieryOpal.Src
         public bool IsFlying { get => is_flying; protected set => is_flying = value; }
 
         public Guid Handle { get; }
-        public virtual Font Spritesheet => Nexus.Fonts.Spritesheets["Creatures"];
+        public virtual Font Spritesheet { get; protected set; } = Nexus.Fonts.Spritesheets["Creatures"];
 
         public bool IsPlayer => (this as TurnTakingActor)?.Brain is PlayerControlledAI;
 
@@ -162,7 +162,7 @@ namespace FieryOpal.Src
             var old = LookingAt;
             LookingAt = new Vector2((float)Math.Cos(deg) * LookingAt.X - (float)Math.Sin(deg) * LookingAt.Y, (float)Math.Sin(deg) * LookingAt.X + (float)Math.Cos(deg) * LookingAt.Y);
             // Round them to cut any possible floating point errors short and maintain a constant ratio, just in case
-            LookingAt = new Vector2((float)Math.Round(LookingAt.X, 0), (float)Math.Round(LookingAt.Y, 0));
+            LookingAt = new Vector2((float)Math.Round(LookingAt.X, 4), (float)Math.Round(LookingAt.Y, 4));
             LookingAtChanged?.Invoke(this, old);
         }
 
@@ -211,7 +211,7 @@ namespace FieryOpal.Src
                 Point new_region_pos = curRegion.WorldPosition + q;
                 var new_region = world.RegionAt(new_region_pos.X, new_region_pos.Y);
 
-                if (new_region != null)
+                if (new_region != null && IsPlayer)
                 {
                     Point new_spawn = new Point(LocalPosition.X, LocalPosition.Y);
                     if (q.X < 0)
@@ -298,8 +298,10 @@ namespace FieryOpal.Src
             return ret;
         }
 
-        public bool ChangeLocalMap(OpalLocalMap new_map, Point new_spawn, bool check_tile = true)
+        public bool ChangeLocalMap(OpalLocalMap new_map, Point? spawn=null, bool check_tile = true)
         {
+            Point new_spawn = spawn ?? new Point(Util.Rng.Next(new_map.Width), Util.Rng.Next(new_map.Height));
+
             var oldMap = map;
             oldMap?.Despawn(this);
 

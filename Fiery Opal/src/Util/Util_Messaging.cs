@@ -4,7 +4,9 @@ using Microsoft.Xna.Framework;
 using SadConsole;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace FieryOpal.Src
 {
@@ -128,6 +130,59 @@ namespace FieryOpal.Src
         public static ColoredString ToColoredString(this char glyph, Cell c)
         {
             return new ColoredString(glyph.ToString(), c);
+        }
+
+        private static Color ParseColor(string c)
+        {
+            if (c.StartsWith("#"))
+            {
+                c = c.Substring(1);
+                int ofs = c.Length == 3 ? 1 : 2;
+
+                byte r = Byte.Parse(c.Substring(0, ofs), NumberStyles.HexNumber);
+                byte g = Byte.Parse(c.Substring(1 * ofs, ofs), NumberStyles.HexNumber);
+                byte b = Byte.Parse(c.Substring(2 * ofs, ofs), NumberStyles.HexNumber);
+
+                if (ofs == 1)
+                {
+                    r *= 16; g *= 16; b *= 16;
+                }
+
+                return new Color(r, g, b);
+            }
+            else if (c.Length == 0) return Color.Transparent;
+            else return Palette.Ui[c];
+        }
+
+        public static ColoredString FmtC(this string fmt, Color? fg, Color? bg, params object[] args)
+        {
+            // Valid examples: {0}, {1:RED}, {4:WHITE:CYAN}, {5:#FF00FF:BLACK}
+            const string R_HEX = "#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}";
+            const string R_NAME = "[a-zA-Z]";
+
+            const string R_COLOR = "(" + R_NAME + "|" + R_HEX + ")";
+            const string R_OPT_ARG = "(?:\\:" + R_COLOR + ")?";
+
+            const string R_ARG = @"\{(\d)" + R_OPT_ARG + R_OPT_ARG + @"\}";
+
+            ColoredString ret = new ColoredString("", Color.White, Color.Black);
+            foreach(Match match in Regex.Matches(fmt, R_ARG, RegexOptions.Compiled))
+            {
+                int argIdx = Int32.Parse(match.Groups[1].Value);
+                if (argIdx >= args.Length) throw new ArgumentOutOfRangeException();
+
+                int idx = fmt.IndexOf(match.Value);
+                ret += fmt.Substring(0, idx).ToColoredString(fg ?? Color.Transparent, bg ?? Color.Transparent);
+                fmt = fmt.Substring(idx + match.Length);
+
+                Color cFg = match.Groups.Count > 2 ? ParseColor(match.Groups[2].Value) : fg ?? Color.Transparent;
+                Color cBg = match.Groups.Count > 3 ? ParseColor(match.Groups[3].Value) : bg ?? Color.Transparent;
+
+                ret += args[argIdx].ToString().ToColoredString(cFg, cBg);
+            }
+            ret += fmt.ToColoredString(fg, bg);
+
+            return ret;
         }
 
         public static string CapitalizeFirst(this string s)

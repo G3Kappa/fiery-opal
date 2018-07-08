@@ -70,8 +70,6 @@ namespace FieryOpal.Src
                 }
             }
 
-            CurrentTime -= TimeDilation;
-
             var accKeys = Accumulator.Keys.ToList();
             TurnStarted?.Invoke(this, CurrentTurn);
 
@@ -97,12 +95,22 @@ namespace FieryOpal.Src
 
                 foreach (var key in accKeys)
                 {
+                    if (!Accumulator.ContainsKey(key))
+                    {
+                        Util.Err("TurnManager.BeginTurn: key dropped from the accumulator.");
+                        continue;
+                    }
                     Accumulator[key] = Math.Max(Accumulator[key] - TimeDilation, 0);
                 }
 
                 foreach (var kvp in actions)
                 {
                     if (kvp.Value.Count == 0) continue;
+                    if (!Accumulator.ContainsKey(kvp.Key))
+                    {
+                        Util.Err("TurnManager.BeginTurn: key dropped from the accumulator.");
+                        continue;
+                    }
                     if (Accumulator[kvp.Key] > 0) continue;
 
                     var cost = kvp.Value.Dequeue().Invoke();
@@ -117,6 +125,8 @@ namespace FieryOpal.Src
 
                 CurrentTime = (float)Math.Round(CurrentTime + TimeDilation, 3);
             }
+
+            if(t > 0) CurrentTime -= TimeDilation;
 
             Nexus.DayNightCycle.Update(t);
             Nexus.DayNightCycle.UpdateLocal(map);

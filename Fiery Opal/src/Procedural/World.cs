@@ -28,6 +28,7 @@ namespace FieryOpal.Src.Procedural
         // Unrelated to the BiomeTable
         Sea,
         Ocean,
+        Hill,
         Mountain,
         Peak,
     }
@@ -54,11 +55,15 @@ namespace FieryOpal.Src.Procedural
 
     public enum BiomeElevationType
     {
+        Bottom,
+        WayWayBelowSeaLevel,
         WayBelowSeaLevel,
         BelowSeaLevel,
         AtSeaLevel,
         AboveSeaLevel,
-        WayAboveSeaLevel
+        WayAboveSeaLevel,
+        WayWayAboveSeaLevel,
+        Top
     }
 
     public class BiomeInfo
@@ -85,15 +90,23 @@ namespace FieryOpal.Src.Procedural
 
             switch (Elevation)
             {
-                case BiomeElevationType.WayBelowSeaLevel:
+                case BiomeElevationType.Bottom:
                     return BiomeType.Ocean;
-                case BiomeElevationType.BelowSeaLevel:
+                case BiomeElevationType.WayWayBelowSeaLevel:
+                    return BiomeType.Ocean;
+                case BiomeElevationType.WayBelowSeaLevel:
                     return BiomeType.Sea;
+                case BiomeElevationType.BelowSeaLevel:
+                    return baseType;
                 case BiomeElevationType.AtSeaLevel:
                     return baseType;
                 case BiomeElevationType.AboveSeaLevel:
-                    return BiomeType.Mountain;
+                    return baseType;
                 case BiomeElevationType.WayAboveSeaLevel:
+                    return BiomeType.Hill;
+                case BiomeElevationType.WayWayAboveSeaLevel:
+                    return BiomeType.Mountain;
+                case BiomeElevationType.Top:
                     return BiomeType.Peak;
                 default:
                     return BiomeType.Ice;
@@ -167,6 +180,8 @@ namespace FieryOpal.Src.Procedural
                 case BiomeType.Sea:
                 case BiomeType.Ocean:
                     return (char)247;
+                case BiomeType.Hill:
+                    return (char)239;
                 case BiomeType.Mountain:
                     return (char)127;
                 case BiomeType.Peak:
@@ -286,7 +301,7 @@ namespace FieryOpal.Src.Procedural
 
         private IEnumerable<WorldFeatureGenerator> GetWFGs()
         {
-            int n_rivers = Util.Rng.Next((int)(Width * Height * .003f));
+            int n_rivers = Util.Rng.Next((int)(Width * Height * .006f));
             for (int i = 0; i < n_rivers; ++i)
                 yield return new RiverFeatureGenerator(
                     (b) => b.AverageTemperature >= BiomeHeatType.Cold
@@ -294,15 +309,15 @@ namespace FieryOpal.Src.Procedural
                     : OpalTile.GetRefTile<FrozenWaterSkeleton>()
                 );
 
-            int n_colonies = Util.Rng.Next((int)(Width * Height * .0028f));
+            int n_colonies = Util.Rng.Next((int)(Width * Height * 0));
             for (int i = 0; i < n_colonies; ++i)
                 yield return new ColonyFeatureGenerator();
 
-            int n_villages = Util.Rng.Next((int)(Width * Height * .0035f));
+            int n_villages = Util.Rng.Next((int)(Width * Height * .0065f));
             for (int i = 0; i < n_villages; ++i)
                 yield return new VillageFeatureGenerator();
 
-            int n_dungeons = Util.Rng.Next((int)(Width * Height * .0035f));
+            int n_dungeons = Util.Rng.Next((int)(Width * Height * .0025f));
             for (int i = 0; i < n_dungeons; ++i)
                 yield return new DungeonFeatureGenerator();
         }
@@ -310,7 +325,7 @@ namespace FieryOpal.Src.Procedural
         public void Generate()
         {
             var fElevMap = GenerateElevationMap();
-            Apply(ref fElevMap, (x, y, f) => (float)Math.Pow(f, .9f));
+            Apply(ref fElevMap, (x, y, f) => (float)Math.Pow((2 + f.ApplyContrast(.5f) + 1 * f + 3 * (float)Math.Pow(f, .5f) + 4 * (float)Math.Pow(f, 2f)) / 10f, 2f));
             var fTempMap = GenerateTemperatureMap();
             Apply(ref fTempMap, (x, y, f) => .35f * f + .65f * (.99f - Math.Abs(y - .5f) * 2));
             var fRainMap = GenerateHumidityMap();
@@ -336,6 +351,7 @@ namespace FieryOpal.Src.Procedural
             BiomeTerrainGenerator.RegisterType<BorealForestTerrainGenerator>(BiomeType.BorealForest);
             BiomeTerrainGenerator.RegisterType<TundraTerrainGenerator>(BiomeType.Tundra);
             BiomeTerrainGenerator.RegisterType<GrasslandsTerrainGenerator>(BiomeType.Grassland);
+            BiomeTerrainGenerator.RegisterType<HillTerrainGenerator>(BiomeType.Hill);
             BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Mountain);
             BiomeTerrainGenerator.RegisterType<MountainTerrainGenerator>(BiomeType.Peak);
 
@@ -377,8 +393,8 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateTemperatureMap()
         {
             return Noise.Calc2D(
-                Util.Rng.Next(1000),
-                Util.Rng.Next(1000),
+                Util.Rng.Next(100000),
+                Util.Rng.Next(100000),
                 Width,
                 Height,
                 .035f,
@@ -389,8 +405,8 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateHumidityMap()
         {
             return Noise.Calc2D(
-                Util.Rng.Next(1000),
-                Util.Rng.Next(1000),
+                Util.Rng.Next(100000),
+                Util.Rng.Next(100000),
                 Width,
                 Height,
                 .015f,
@@ -401,13 +417,14 @@ namespace FieryOpal.Src.Procedural
         private float[,] GenerateElevationMap()
         {
             return Noise.Calc2D(
-                Util.Rng.Next(1000),
-                Util.Rng.Next(1000),
+                Util.Rng.Next(100000),
+                Util.Rng.Next(100000),
                 Width,
                 Height,
-                .012f,
+                .014f,
                 7,
-                .999f);
+                .999f
+            );
         }
 
         private void Apply(ref float[,] map, Func<float, float, float, float> f)
@@ -431,7 +448,7 @@ namespace FieryOpal.Src.Procedural
 
             for (int i = 0; i < w; ++i)
                 for (int j = 0; j < h; ++j)
-                    ret[i, j] = values[(int)(normalize(i / (float)w, j / (float)h, map[i, j]) * values.Length)];
+                    ret[i, j] = values[((int)(normalize(i / (float)w, j / (float)h, map[i, j]) * values.Length)).Clamp(0, values.Length - 1)];
 
             return ret;
         }

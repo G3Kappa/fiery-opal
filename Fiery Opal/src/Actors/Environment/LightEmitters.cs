@@ -29,8 +29,8 @@ namespace FieryOpal.Src.Actors.Environment
         private float _intensity = 1f;
         public float LightIntensity { get => _intensity; set { _intensity = value; LightEmitterDataChanged?.Invoke(this); } }
 
-        private float _lightRadius = 5f;
-        public float LightRadius { get => _lightRadius; set { _lightRadius = value; LightEmitterDataChanged?.Invoke(this); } }
+        private int _lightRadius = 5;
+        public int LightRadius { get => _lightRadius; set { _lightRadius = value; LightEmitterDataChanged?.Invoke(this); } }
 
         private Color _color = Color.White;
         public Color LightColor { get => _color; set { _color = value; LightEmitterDataChanged?.Invoke(this); } }
@@ -40,6 +40,11 @@ namespace FieryOpal.Src.Actors.Environment
 
         private int _angle = 90;
         public int LightAngleWidth { get => _angle; set { _angle = value; LightEmitterDataChanged?.Invoke(this); } }
+
+        public void ForceUpdateLightEmitter()
+        {
+            LightEmitterDataChanged?.Invoke(this);
+        }
     }
 
     public class ConicalLightEmitter : LightEmitterBase
@@ -69,13 +74,4 @@ namespace FieryOpal.Src.Actors.Environment
             LightDirection = Vector2.Zero;
         }
     }
-
-    public class AmbientLightEmitter : LightEmitterBase
-    {
-        public AmbientLightEmitter()
-        {
-            LightEmitterType = LightEmitterType.Ambient;
-        }
-    }
-
 }

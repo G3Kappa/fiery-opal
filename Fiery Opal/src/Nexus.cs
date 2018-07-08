@@ -1,12 +1,15 @@
 using FieryOpal.Src.Multiplayer;
 using FieryOpal.Src;
 using FieryOpal.Src.Actors;
+using FieryOpal.Src.Quests;
 using FieryOpal.Src.Procedural;
 using FieryOpal.Src.Procedural.Terrain.Tiles;
 using FieryOpal.Src.Ui;
 using FieryOpal.Src.Ui.Dialogs;
 using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
+using System;
+using FieryOpal.Src.Actors.Items;
 
 namespace FieryOpal
 {
@@ -25,6 +28,7 @@ namespace FieryOpal
         public static OpalGame GameInstance { get; private set; }
         public static TurnTakingActor Player => GameInstance.Player;
         public static DebugCLI DebugCLI { get; private set; }
+        public static QuestManager Quests { get; private set; }
 
         public static InitConfigInfo InitInfo { get; set; }
 
@@ -47,6 +51,9 @@ namespace FieryOpal
 
             Keybind.PushState();
             Keybind.PushState();
+
+
+
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
         }
@@ -59,16 +66,10 @@ namespace FieryOpal
         }
 
 
-        private static double dAcc = 0d;
         private static void Draw(GameTime time)
         {
-            if ((dAcc += time.ElapsedGameTime.TotalMilliseconds) >= (1d / InitInfo.FPSCap))
-            {
-                Util.UpdateFramerate((int)dAcc);
-                mainGameWindowManager.Draw(time);
-                OpalDialog.Draw(time);
-                dAcc = 0d;
-            }
+            mainGameWindowManager.Draw(time);
+            OpalDialog.Draw(time);
         }
 
         private static void CreatePaths()
@@ -82,6 +83,7 @@ namespace FieryOpal
             System.IO.Directory.CreateDirectory("./cfg/palettes");
             System.IO.Directory.CreateDirectory("./gfx");
             System.IO.Directory.CreateDirectory("./gfx/extra");
+            System.IO.Directory.CreateDirectory("./gfx/shaders");
             System.IO.Directory.CreateDirectory("./sfx");
             System.IO.Directory.CreateDirectory("./sfx/soundtrack");
             System.IO.Directory.CreateDirectory("./sfx/effects");
@@ -89,11 +91,17 @@ namespace FieryOpal
 
         private static void Init()
         {
+            var fpsCounter = new SadConsole.Game.FPSCounterComponent(SadConsole.Game.Instance);
+            SadConsole.Game.Instance.Components.Add(fpsCounter);
+
             Fonts = Util.LoadDefaultFontConfig();
             Keys = Util.LoadDefaultKeyConfig();
             Locale = Util.LoadDefaultLocalizationConfig(InitInfo);
             PaletteInfo = Util.LoadDefaultPaletteConfig();
             Palette.LoadDefaults(PaletteInfo);
+            ShaderManager.LoadContent(SadConsole.Game.Instance.Content);
+
+            SadConsole.Game.Instance.TargetElapsedTime = new TimeSpan(0, 0, 0, 0, 1000 / InitInfo.FPSCap);
 
             InitInfo.RngSeed = InitInfo.RngSeed ?? Util.Rng.Next();
             Util.SeedRng(InitInfo.RngSeed.Value);
@@ -108,6 +116,11 @@ namespace FieryOpal
             mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
             OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
             Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
+
+            Quests = new QuestManager(Player);
+            GameInstance.TurnManager.TurnEnded += (_, __) => { Quests.UpdateProgress(); };
+
+            GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
 
             TypeConversionHelper<object>.RegisterDefaultConversions();
             TileSkeleton.PreloadAllSkeletons();

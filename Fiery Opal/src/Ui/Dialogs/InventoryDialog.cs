@@ -274,7 +274,7 @@ namespace FieryOpal.Src.Ui.Dialogs
                 var name = group.Key;
                 var items = group.ToArray();
 
-                Print(Col1Width / 2 - items.Length.ToString().Length / 2, 5 + 2 * j, items.Length.ToString().PadLeft(2, '0').ToColoredString(textStyle));
+                Print(Col1Width / 2 - items.Length.ToString().Length / 2, 5 + 2 * j, items.Length.ToString().ToColoredString(textStyle));
                 SetCell(Col1Width + 3, 5 + 2 * j, items.First().Graphics);
                 Print(Col1Width + 5, 5 + 2 * j, items.First().ItemInfo.Name);
                 Print(Col1Width + Col2Width + 3, 5 + 2 * j, items.First().ItemInfo.Category.ToString().ToColoredString(textStyle));

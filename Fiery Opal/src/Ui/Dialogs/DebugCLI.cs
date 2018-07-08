@@ -82,7 +82,6 @@ namespace FieryOpal.Src.Ui.Dialogs
             RegisterDelegate("startsv", new CommandStartServer());
             RegisterDelegate("connect", new CommandStartClient());
             RegisterDelegate("say", new CommandSendChatMsg());
-            RegisterDelegate("tr", new CommandTestRaycaster());
 
             var noclip = new CommandNoclip();
             RegisterDelegate("noclip", noclip);

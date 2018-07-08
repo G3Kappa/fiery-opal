@@ -44,7 +44,7 @@ namespace FieryOpal.Src.Ui
             Print(surf, Rectangle.Empty, fog);
         }
 
-        private Cell ShadeCell(Cell c, Point p, bool gray=false)
+        private Cell ShadeCell(Cell c, Point p, Color ambientLight, bool gray=false)
         {
             Color bg = c.Background, fg = c.Foreground;
 
@@ -73,6 +73,7 @@ namespace FieryOpal.Src.Ui
 
             surface.Clear();
             var tiles = Target.TilesWithin(ViewArea);
+            Color ambientLight = new Color(Target.AmbientLightIntensity, Target.AmbientLightIntensity, Target.AmbientLightIntensity, 1);
             foreach (var tuple in tiles)
             {
                 OpalTile t = tuple.Item1;
@@ -93,11 +94,11 @@ namespace FieryOpal.Src.Ui
                     {
                         surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, new Cell(Palette.Ui["UnseenStairsForeground"], Palette.Ui["UnseenStairsBackground"], t.Graphics.Glyph));
                     }
-                    else surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph), tuple.Item2, gray: true));
+                    else surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(new Cell(Palette.Ui["UnseenTileForeground"], Palette.Ui["UnseenTileBackground"], tuple.Item1.Graphics.Glyph), tuple.Item2, ambientLight, gray: true));
                 }
                 else
                 {
-                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(t.Graphics, tuple.Item2));
+                    surface.SetCell(targetArea.X + pos.X, targetArea.Y + pos.Y, ShadeCell(t.Graphics, tuple.Item2, ambientLight));
                 }
             }
 

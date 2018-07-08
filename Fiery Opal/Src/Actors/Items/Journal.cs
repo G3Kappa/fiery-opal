@@ -22,23 +22,28 @@ namespace FieryOpal.Src.Actors.Items
         private void Read(IInventoryHolder holder)
         {
             var book = OpalDialog.Make<BookDialog>("Journal", "");
+
+            Nexus.Quests.GetActiveQuests().ForEach(q =>
+            {
+                book.Write(q.Name);
+                book.NewLine();
+                book.Write(q.Descrption);
+                book.NewLine();
+                foreach (var o in q.GetObjectives())
+                {
+                    book.Write("  ".ToColoredString() + o.Descrption);
+                    book.NewLine();
+                }
+            });
+
             OpalDialog.LendKeyboardFocus(book);
             book.Show();
-        }
-
-        private void Write(IInventoryHolder holder)
-        {
-            var diag = OpalDialog.Make<DialogueDialog>("Write", "This feature is currently not implemented.");
-            diag.AddOption("I wholly understand and submit to the consequences.", null);
-            OpalDialog.LendKeyboardFocus(diag);
-            diag.Show();
         }
 
         protected override void RegisterInventoryActions()
         {
             base.RegisterInventoryActions();
             RegisterInventoryAction("read", (h) => Read(h), new Keybind.KeybindInfo(Keys.R, Keybind.KeypressState.Press, "Read journal"));
-            RegisterInventoryAction("write on", (h) => Write(h), new Keybind.KeybindInfo(Keys.W, Keybind.KeypressState.Press, "Write on journal"));
 
             UnregisterInventoryAction("drop"); // Key item, can't be dropped.
         }

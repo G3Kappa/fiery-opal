@@ -1,5 +1,7 @@
 ﻿using FieryOpal.Src;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,6 @@ namespace FieryOpal.Src.Ui
 {
     public enum LightEmitterType
     {
-        Ambient,// Illuminates the entire map, regardless of the emitter's location.
         Conical,  // Illuminates a section of a circle <) radiating from the emitter.
         Point   // Illuminates only the tile on which the emitter resides.
     }
@@ -19,19 +20,20 @@ namespace FieryOpal.Src.Ui
     {
         LightEmitterType LightEmitterType { get; }
         float LightIntensity { get; }
-        float LightRadius { get; }
+        int LightRadius { get; }
         Color LightColor { get; }
 
         Vector2 LightDirection { get; }
         int LightAngleWidth { get; }
 
         event Action<ILightEmitter> LightEmitterDataChanged;
+        void ForceUpdateLightEmitter();
     }
 
     public class LightLayer
     {
         public ILightEmitter Source { get; }
-        public float[,] Grid { get; }
+        public float[,] Grid { get; private set; }
 
         public LightingManager Manager;
 
@@ -42,18 +44,32 @@ namespace FieryOpal.Src.Ui
         {
             Source = source;
             Manager = parent;
-            Grid = new float[parent.Parent.Width, parent.Parent.Height];
+
+            switch(source.LightEmitterType)
+            {
+                case LightEmitterType.Conical:
+                    Grid = new float[2 * source.LightRadius, 2 * source.LightRadius];
+                    source.LightEmitterDataChanged += (s) =>
+                    {
+                        Grid = new float[2 * s.LightRadius, 2 * s.LightRadius];
+                    };
+                    break;
+                case LightEmitterType.Point:
+                    Grid = new float[1, 1];
+                    break;
+            }
+
             source.LightEmitterDataChanged += (s) =>
             {
                 IsDirty = true;
             };
         }
 
-        private float CalcIntensity(Vector2 start, Vector2 v, ILightEmitter emit)
+        public float CalcIntensity(Point start, Point v, ILightEmitter emit)
         {
             if (start == v) return emit.LightIntensity;
 
-            var dist = (float)(start.Dist(v)) + 1;
+            var dist = (float)start.Dist(v) + 1;
             if (dist > emit.LightRadius) dist += emit.LightRadius * (dist - emit.LightRadius);
 
             var intensity = emit.LightIntensity / (dist * dist);
@@ -63,9 +79,11 @@ namespace FieryOpal.Src.Ui
 
         private void Fill(float val)
         {
-            for (int x = 0; x < Manager.Parent.Width; x++)
+            int w = Grid.GetLength(0);
+            int h = Grid.GetLength(1);
+            for (int x = 0; x < w; x++)
             {
-                for (int y = 0; y < Manager.Parent.Height; y++)
+                for (int y = 0; y < h; y++)
                 {
                     Grid[x, y] = val;
                 }
@@ -77,25 +95,28 @@ namespace FieryOpal.Src.Ui
             Vector2 rayStart = LastPos.ToVector2() + new Vector2(.5f);
 
             int alfa = (int)(Math.Atan2(Source.LightDirection.Y, Source.LightDirection.X) * (180f / Math.PI));
-            for (float deg = alfa - Source.LightAngleWidth / 2 + 0.01f; deg < alfa + Source.LightAngleWidth / 2; deg ++)
+            for (float deg = alfa - Source.LightAngleWidth / 2 + 0.01f; deg < alfa + Source.LightAngleWidth / 2; deg+=3.6f)
             {
                 Vector2 rayPos = rayStart;
 
                 double theta = deg * (Math.PI / 180f);
                 Vector2 rayDir = new Vector2((float)Math.Cos(theta), (float)Math.Sin(theta));
 
-                var rayInfo = Raycaster.CastRay(Manager.Parent, rayStart, rayDir);
-                rayInfo.PointsTraversed.ForEach(v =>
+                var rayInfo = Raycaster.CastRay(new Point(Manager.Parent.Width, Manager.Parent.Height), rayStart, rayDir, (p) => (Manager.Parent.TileAt(p)?.Properties.IsBlock ?? false));
+                foreach(Vector2 v in rayInfo.PointsTraversed)
                 {
-                    var p = v.ToPoint();
-                    Grid[p.X, p.Y] = CalcIntensity(rayStart, v.ToPoint().ToVector2() + new Vector2(.5f), Source);
-                });
+                    var p = v.ToPoint() - (Source.LocalPosition - new Point(Source.LightRadius));
+                    if (Util.OOB(p.X, p.Y, Grid.GetLength(0), Grid.GetLength(1))) break;
+                    if (Manager.Parent.TileAt(v.ToPoint())?.Properties.IsBlock ?? true) break;
+
+                    Grid[p.X, p.Y] = CalcIntensity(rayStart.ToPoint(), v.ToPoint(), Source);
+                }
             }
         }
 
         private void RecalcPoint()
         {
-            Grid[LastPos.X, LastPos.Y] = Source.LightIntensity;
+            Grid[0, 0] = Source.LightIntensity;
         }
 
         public bool Recalc()
@@ -105,9 +126,6 @@ namespace FieryOpal.Src.Ui
             LastPos = Source.LocalPosition;
             switch(Source.LightEmitterType)
             {
-                case LightEmitterType.Ambient:
-                    Fill(Source.LightIntensity);
-                    break;
                 case LightEmitterType.Conical:
                     RecalcConical();
                     break;
@@ -127,7 +145,8 @@ namespace FieryOpal.Src.Ui
         public OpalLocalMap Parent { get; }
 
         protected Dictionary<Guid, LightLayer> Layers { get; }
-        protected Color[,] ColorGrid;
+        protected Color[] ColorGrid;
+        public Texture2D LightMap { get; protected set; }
 
         public bool Enabled { get; private set; } = true;
         public void ToggleEnabled(bool? state=null)
@@ -139,40 +158,76 @@ namespace FieryOpal.Src.Ui
         {
             Parent = parentMap;
             Layers = new Dictionary<Guid, LightLayer>();
-            ColorGrid = new Color[Parent.Width, Parent.Height];
+            ColorGrid = new Color[Parent.Width * Parent.Height];
+            LightMap = new Texture2D(Global.GraphicsDevice, Parent.Width, Parent.Height);
 
             parentMap.ActorSpawned += (map, actor) => {
                 if (!typeof(ILightEmitter).IsAssignableFrom(actor.GetType())) return;
-                Layers[actor.Handle] = new LightLayer(actor as ILightEmitter, this);
+
+                var emit = actor as ILightEmitter;
+                Layers[actor.Handle] = new LightLayer(emit, this);
             };
 
             parentMap.ActorDespawned += (map, actor) => {
                 if (!typeof(ILightEmitter).IsAssignableFrom(actor.GetType())) return;
                 Layers.Remove(actor.Handle);
+                Update(true);
             };
+
         }
 
-        public void Update()
+        public void Update(bool force=false)
         {
-            if (!Enabled || Layers.Count == 0) return;
-            
+            if (!Enabled) return;
+
+            bool anyDirty = false;
             Layers.Values.ForEach(l =>
             {
                 bool wasDirty = l.Recalc();
+                if (wasDirty) anyDirty = true;
             });
 
-            Layers.Values.Merge(ref ColorGrid);
+            if(force || anyDirty)
+            {
+                Layers.Values.Merge(ref ColorGrid, new Point(Parent.Width, Parent.Height), Parent.AmbientLightIntensity);
+                Util.LogText("Lighting.Update: Updated.", true);
+            }
+            LightMap.SetData(ColorGrid);
         }
 
         public Color ApplyShading(Color c, Point pos)
         {
-            return !Enabled ? c : c.BlendLight(ColorGrid[pos.X, pos.Y], 1f);
+            var l = ColorGrid[pos.X + pos.Y * Parent.Width];
+            var ambient = new Color(Parent.AmbientLightIntensity, Parent.AmbientLightIntensity, Parent.AmbientLightIntensity);
+            return !Enabled ? c : c.BlendMultiply(Color.Lerp(ambient, l.BlendAdditive(ambient), l.A / 255f));
         }
 
-        public Color ApplyAmbientShading(Color c, float dist)
+        public Color GetLightingAt(Point pos)
         {
-            if(Parent.Indoors) return Color.Lerp(c, Color.Black, dist);
-            return Color.Lerp(c, Nexus.DayNightCycle.GetSkyColor(.5f), dist);
+            return ColorGrid[pos.Y * Parent.Width + pos.X];
+        }
+
+        public float CalcFaceIntensity(Vector2 floorWall)
+        {
+            return
+            Math.Min(
+                Layers.Sum(l =>
+                    {
+                        if (Raycaster.IsLineObstructed(
+                            new Point(Parent.Width, Parent.Height),
+                            floorWall,
+                            l.Value.Source.LocalPosition.ToVector2(),
+                            (p) => Parent.TileAt(p)?.Properties.IsBlock ?? true)
+                        )
+                        {
+                            return 0f;
+                        }
+
+                        return l.Value.CalcIntensity(l.Value.Source.LocalPosition, floorWall.ToPoint(), l.Value.Source);
+                    }
+                ),
+                1
+           );
         }
     }
 
@@ -190,27 +245,26 @@ namespace FieryOpal.Src.Ui
 
         public static Color BlendLight(this Color c, Color toBlend, float intensity)
         {
-            Vector4 vc = c.ToVector4();
+            Vector3 vc = c.ToVector3();
             Vector3 vb = toBlend.ToVector3();
 
             return new Color(
                 SoftLightBlend(vc.X, vb.X, intensity),
                 SoftLightBlend(vc.Y, vb.Y, intensity),
-                SoftLightBlend(vc.Z, vb.Z, intensity),
-                vc.W
+                SoftLightBlend(vc.Z, vb.Z, intensity)
             );
         }
 
-        public static Color BlendAdditive(this Color c, Color b, bool alpha=true)
+        public static Color BlendAdditive(this Color c, Color b, bool alpha=true, float pct=1)
         {
             Vector4 vc = c.ToVector4();
             Vector4 vb = b.ToVector4();
 
             return new Color(
-                Math.Min(1f, vc.X + vb.X),
-                Math.Min(1f, vc.Y + vb.Y),
-                Math.Min(1f, vc.Z + vb.Z),
-                alpha ? Math.Min(1f, vc.W + vb.W) : vc.W
+                Math.Min(1f, vc.X + pct * vb.X),
+                Math.Min(1f, vc.Y + pct * vb.Y),
+                Math.Min(1f, vc.Z + pct * vb.Z),
+                alpha ? Math.Min(1f, vc.W + pct * vb.W) : vc.W
             );
         }
 
@@ -240,23 +294,50 @@ namespace FieryOpal.Src.Ui
             );
         }
 
-        public static void Merge(this IEnumerable<LightLayer> layers, ref Color[,] grid)
+        public static float ApplyContrast(this float f, float contrast)
+        {
+            int iContrast = (int)(contrast * 255);
+            int iF = (int)(f * 255);
+
+            float k = (259f * (iContrast + 255)) / (255f * (259 - iContrast));
+            return ((k * (iF - 128) + 128).Clamp(0, 255)) / 255f;
+        }
+
+        public static void Merge(this IEnumerable<LightLayer> layers, ref Color[] grid, Point size, float ambientLight=1f)
         {
             var list = layers.ToList();
-            if (list.Count == 0) return;
 
-            int w = list[0].Grid.GetLength(0);
-            int h = list[0].Grid.GetLength(1);
+            int w = size.X;
+            int h = size.Y;
 
             for (int x = 0; x < w; x++)
             {
                 for (int y = 0; y < h; y++)
                 {
-                    grid[x, y] = Color.Black;
+                    int i = y * w + x;
+                    grid[i] = Color.TransparentBlack;
                     foreach (var l in list)
                     {
                         Color c = l.Source.LightColor;
-                        grid[x, y] = Color.Lerp(grid[x, y], grid[x, y].BlendAdditive(c), l.Grid[x, y]);
+
+                        int lw = l.Grid.GetLength(0);
+                        int lh = l.Grid.GetLength(1);
+
+                        int lx = x - l.Source.LocalPosition.X;
+                        int ly = y - l.Source.LocalPosition.Y;
+
+                        if(l.Source.LightEmitterType == LightEmitterType.Conical)
+                        {
+                            lx += l.Source.LightRadius;
+                            ly += l.Source.LightRadius;
+                        }
+
+                        if(Util.OOB(lx, ly, lw, lh))
+                        {
+                            continue;
+                        }
+
+                        grid[i] = Color.Lerp(grid[i], grid[i].BlendAdditive(c), l.Grid[lx, ly]);
                     }
                 }
             }

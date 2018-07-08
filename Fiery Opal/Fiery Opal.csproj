@@ -70,6 +70,7 @@
     <Compile Include="Src\Actors\Animals\Rat.cs" />
     <Compile Include="Src\Actors\Animals\Mole.cs" />
     <Compile Include="Src\Actors\Debug\SmartBoi.cs" />
+    <Compile Include="Src\Actors\Decorations\Furniture.cs" />
     <Compile Include="Src\Actors\Decorations\CavesDecorations.cs" />
     <Compile Include="Src\Actors\Environment\LightEmitters.cs" />
     <Compile Include="Src\Actors\Humanoid.cs" />
@@ -210,10 +211,12 @@
     <Compile Include="Src\Procedural\BasicTerrainDecorator.cs" />
     <Compile Include="Src\Procedural\CellularAutomata.cs" />
     <Compile Include="Src\Procedural\Terrain\Biomes\BiomeTransitioner.cs" />
+    <Compile Include="Src\Procedural\Terrain\Biomes\HillTerrainGenerator.cs" />
     <Compile Include="Src\Procedural\Terrain\Dungeons\CavesTerrainDecorator.cs" />
     <Compile Include="Src\Procedural\Terrain\Dungeons\CavesTerrainGenerator.cs" />
     <Compile Include="Src\Procedural\Terrain\Dungeons\CavesVaultGenerator.cs" />
-    <Compile Include="Src\Procedural\Terrain\Prefabs\SakhalTombGenerator.cs" />
+    <Compile Include="Src\Procedural\Terrain\Prefabs\Prefab.cs" />
+    <Compile Include="Src\Procedural\Terrain\Prefabs\Room.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\MudFloorSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\RockFloorSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\StairTile.cs" />
@@ -274,6 +277,8 @@
     <Compile Include="Src\Procedural\Terrain\Biomes\DesertTerrainGenerator.cs" />
     <Compile Include="Src\Procedural\Terrain\Biomes\GrasslandsTerrainGenerator.cs" />
     <Compile Include="Src\Procedural\World.cs" />
+    <Compile Include="Src\Quests\GatheringQuest.cs" />
+    <Compile Include="Src\Quests\Quest.cs" />
     <Compile Include="Src\Turn.cs" />
     <Compile Include="Src\Ui\Dialogs\BookDialog.cs" />
     <Compile Include="Src\Ui\Dialogs\DebugCLI.cs" />
@@ -285,6 +290,7 @@
     <Compile Include="Src\Ui\Dialogs\WorldMapScrollDialog.cs" />
     <Compile Include="Src\Ui\FontTextureCache.cs" />
     <Compile Include="Src\Ui\Dialogs\InventoryDialog.cs" />
+    <Compile Include="Src\Ui\ShaderManager.cs" />
     <Compile Include="Src\Ui\WeaponViewSprite.cs" />
     <Compile Include="Src\Ui\Windows\MainGameWindowManager.cs" />
     <Compile Include="Src\Ui\Dialogs\OkCancelDialog.cs" />
@@ -467,6 +473,9 @@
     </Content>
     <Content Include="gfx\kein.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="gfx\shaders\lighting.fx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="gfx\taffer.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

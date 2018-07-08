@@ -91,8 +91,8 @@ namespace FieryOpal.Src
         {
             if(!m.Indoors)
             {
-                m.AmbientLight.LightColor = Color.White.BlendLight(GetSkyColor(.5f), .25f);
-                m.AmbientLight.LightIntensity = GetAmbientLightIntensity();
+                var ambient = GetAmbientLightIntensity();
+                m.AmbientLightIntensity = ambient;
             }
         }
 
@@ -117,8 +117,12 @@ namespace FieryOpal.Src
 
         private float GetAmbientLightIntensity()
         {
-            float dayProgress = (CurrentTime / DayLength);
-            return .85f * (1 - 2 * Math.Abs(dayProgress - .5f)) + .15f;
+            return .85f * (1 - 2 * Math.Abs(DayProgress - .5f)) + .15f;
+        }
+
+        public int GetBaseViewDistance(bool indoors)
+        {
+            return indoors ? 32 : (int)(GetAmbientLightIntensity() * 56) + 8;
         }
 
         public void Update(float turnsElapsed=1)

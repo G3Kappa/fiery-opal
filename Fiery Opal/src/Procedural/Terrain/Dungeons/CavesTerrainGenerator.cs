@@ -77,8 +77,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             GenUtil.MatrixReplacement.CaveSystemRules.SlideAcross(
                 Workspace,
                 new Point(1),
-                new GenUtil.MRRule(t => t == floorTile, floorTile),
-                new GenUtil.MRRule(t => t == wallTile, wallTile),
+                new GenUtil.MRRule(t => t == floorTile, () => floorTile),
+                new GenUtil.MRRule(t => t == wallTile, () => wallTile),
                 10,
                 break_early: false,
                 shuffle: true,
@@ -88,7 +88,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             m.CeilingTile = TileSkeleton.Get<RockWallSkeleton>();
             m.SoundTrack = SFXManager.SoundTrackType.Caves;
             m.SoundEffects.Add(new Tuple<SFXManager.SoundEffectType, float>(SFXManager.SoundEffectType.Eerie01, .003f));
-            m.AmbientLight.LightIntensity = .15f;
+            m.AmbientLightIntensity = .15f;
             m.Indoors = true;
         }
 

@@ -12,6 +12,8 @@ namespace FieryOpal.Src.Actors
         protected static Color[] PossibleColors;
         protected static int[] PossibleGlyphs;
 
+        public override bool DrawShadow => true;
+
         public Plant()
         {
             PossibleGlyphs = new[] { 6, 23, 24 };
@@ -50,7 +52,7 @@ namespace FieryOpal.Src.Actors
             PossibleColors = new[] {
                 Palette.Vegetation["GenericPlant2"],
             };
-            FirstPersonVerticalOffset = -6;
+            FirstPersonVerticalOffset = -8;
             FirstPersonScale = new Vector2(.5f, .5f);
 
             SetGraphics();
@@ -60,6 +62,7 @@ namespace FieryOpal.Src.Actors
     public class Sapling : Plant
     {
         public override bool BlocksMovement => false;
+        public override bool DrawShadow => false;
 
         public Sapling()
         {
@@ -71,7 +74,7 @@ namespace FieryOpal.Src.Actors
                 Palette.Vegetation["GenericPlant3"],
             };
 
-            FirstPersonVerticalOffset = 7;
+            FirstPersonVerticalOffset = 10;
             FirstPersonScale = new Vector2(1.5f, 3f);
 
             SetGraphics();

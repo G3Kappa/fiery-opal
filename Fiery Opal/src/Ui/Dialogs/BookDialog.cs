@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using SadConsole;
 using System;
 using System.Collections.Generic;
 
@@ -7,10 +8,10 @@ namespace FieryOpal.Src.Ui.Dialogs
 {
     public class BookDialog : OpalDialog
     {
-        protected string Text;
-        public string Contents => Text;
+        protected ColoredString Text = "".ToColoredString();
+        public ColoredString Contents => Text;
 
-        protected List<string> Pages { get; } = new List<string>();
+        protected List<ColoredString> Pages { get; } = new List<ColoredString>();
 
         private int current_page = 0;
         public int CurrentPage
@@ -227,14 +228,14 @@ namespace FieryOpal.Src.Ui.Dialogs
 
             var page_size = LeftPage.Width * (LeftPage.Height - 2);
             var len = 0;
-            while (len < Text.Length)
+            while (len < Text.Count)
             {
-                Pages.Add(Text.Substring(len, Math.Min(page_size, Text.Length - len)));
+                Pages.Add(Text.SubString(len, Math.Min(page_size, Text.Count - len)));
                 len += page_size;
             }
         }
 
-        public void Write(string str)
+        public void Write(ColoredString str)
         {
             Text += str;
         }
@@ -242,18 +243,18 @@ namespace FieryOpal.Src.Ui.Dialogs
         public void EndPage()
         {
             Impaginate();
-            int spaces_needed = LeftPage.Width * (LeftPage.Height - 2) - Pages[Pages.Count - 1].Length;
+            int spaces_needed = LeftPage.Width * (LeftPage.Height - 2) - Pages[Pages.Count - 1].Count;
 
             // In this case we want to leave a blank page
             if (spaces_needed == 0) spaces_needed = LeftPage.Width * (LeftPage.Height - 2);
 
-            Write(' '.Repeat(spaces_needed));
+            Write(" ".Repeat(spaces_needed).ToColoredString());
         }
 
         public void NewLine()
         {
             Impaginate();
-            Write(' '.Repeat(LeftPage.Width - Pages[Pages.Count - 1].Length % LeftPage.Width));
+            Write(" ".Repeat(LeftPage.Width - Pages[Pages.Count - 1].Count % LeftPage.Width).ToColoredString());
         }
 
         public void FlipToPage(int page)
@@ -267,14 +268,14 @@ namespace FieryOpal.Src.Ui.Dialogs
             LeftPage.Fill(DefaultPalette["CurrentPagesForeground"], DefaultPalette["CurrentPagesBackground"], ' ');
             RightPage.Fill(DefaultPalette["CurrentPagesForeground"], DefaultPalette["CurrentPagesBackground"], ' ');
 
-            Print(3, LeftPage.Position.Y + LeftPage.Height - 2, l_pg);
+            //Print(3, LeftPage.Position.Y + LeftPage.Height - 2, l_pg);
             if (CurrentPage + 2 <= Pages.Count)
             {
-                Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, r_pg);
+                //Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, r_pg);
             }
             else
             {
-                Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, " ".Repeat(r_pg.Length));
+                //Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, " ".Repeat(r_pg.Length));
             }
 
             LeftPage.Print(0, 0, Pages[page]);
@@ -287,7 +288,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         protected override void PrintText(string text)
         {
             //base.PrintText(text);
-            Write(text);
+            Write(text.ToColoredString());
             Dirty = true;
         }
 

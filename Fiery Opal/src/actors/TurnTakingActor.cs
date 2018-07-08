@@ -25,7 +25,7 @@ namespace FieryOpal.Src.Actors
             };
 
             MaxHealth = Health = 100;
-            ViewDistance = 64;
+            ViewDistance = 32;
         }
 
         public void ReceiveDamage(int damage)
@@ -51,6 +51,8 @@ namespace FieryOpal.Src.Actors
         public override void Update(TimeSpan delta)
         {
             base.Update(delta);
+
+            ViewDistance = Nexus.DayNightCycle.GetBaseViewDistance(Map.Indoors);
 
             if (Equipment == null) return;
             foreach(var i in Equipment.GetContents())

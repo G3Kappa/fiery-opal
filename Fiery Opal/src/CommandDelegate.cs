@@ -448,41 +448,4 @@ namespace FieryOpal.Src
         }
 
     }
-
-    public class CommandTestRaycaster : CommandDelegate
-    {
-        public static Type[] _Signature = new Type[0] { };
-
-        public CommandTestRaycaster(string name = "tr") : base(name, _Signature)
-        {
-
-        }
-
-        protected Point? a, b;
-
-        protected override int ExecInternal(object[] args)
-        {
-            if(a == null)
-            {
-                a = Nexus.Player.LocalPosition;
-                Util.LogText("Saved A ({0})".Fmt(a), true);
-            }
-            else if(b == null)
-            {
-                b = Nexus.Player.LocalPosition;
-                Util.LogText("Saved B ({0})".Fmt(b), true);
-                bool obstructed = Raycaster.IsLineObstructed(Nexus.Player.Map, a.Value.ToVector2(), b.Value.ToVector2());
-                Util.LogText("There's {0} between A and B".Fmt(obstructed ? "a wall" : "nothing"), true);
-                a = b = null;
-            }
-
-            return 0;
-        }
-
-        protected override dynamic ParseArgument(Type T, string str)
-        {
-            return str;
-        }
-
-    }
 }

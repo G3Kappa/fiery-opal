@@ -1,4 +1,6 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Actors;
+using FieryOpal.Src.Procedural.Terrain.Prefabs;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 using System.Collections.Generic;
@@ -54,7 +56,27 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
         {
+            int minSz = 10, maxSz = 15;
 
+            var rooms = Lib.PoissonDiskSampler.SampleRectangle(new Vector2(maxSz, maxSz), new Vector2(m.Width - maxSz * 2, m.Height - maxSz * 2), maxSz + 3);
+            HomePrefabDecorator roomDecorator = new HomePrefabDecorator();
+
+            foreach(var r in rooms)
+            {
+                Point sz = new Point(Util.Rng.Next(minSz, maxSz), Util.Rng.Next(minSz, maxSz));
+                Rectangle rect = new Rectangle(r.ToPoint(), sz);
+                if (m.TilesWithin(rect).Count(t => t.Item1.Properties.IsBlock) < maxSz)
+                {
+                    new RoomPrefab(rect.Location, rect.Width, rect.Height, Util.RandomUnitPoint(false, true)).Place(m, roomDecorator);
+                }
+            }
+
+            int population = Util.Rng.Next(5, 15);
+            while(population --> 0)
+            {
+                var villager = new Humanoid();
+                villager.ChangeLocalMap(m);
+            }
         }
     }
 }

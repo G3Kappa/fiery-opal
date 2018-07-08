@@ -265,7 +265,7 @@ namespace FieryOpal.Src.Actors
             Body.EnqueuedActions.Enqueue(() =>
             {
                 Body.Turn(angle);
-                return .25f;
+                return .025f;
             });
             InputHandled("FlagRaycastViewportForRedraw");
         }

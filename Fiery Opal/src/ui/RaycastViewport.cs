@@ -1,5 +1,7 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Actors.Environment;
+using FieryOpal.Src.Procedural.Terrain.Tiles;
+using FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SadConsole;
@@ -23,6 +25,7 @@ namespace FieryOpal.Src.Ui
             public int LineHeight;
             public Vector2 RayDir;
             public Point RayPos;
+            public Point PreviousRayPos;
             public Vector2 StartPos;
         }
 
@@ -34,15 +37,16 @@ namespace FieryOpal.Src.Ui
         public bool DrawAmbientShading { get; private set; }
         public TurnTakingActor Following { get; set; }
         public Texture2D RenderSurface { get; private set; }
+        public Texture2D ProjectionTexture { get; private set; }
 
-        private Color[] Backbuffer;
+        private Color[] Backbuffer, Projection;
         private float AspectRatio = 0.5f;
 
         public Vector2 DirectionVector
         {
             get
             {
-                var look = Following.LookingAt.ToUnit();
+                var look = Following.LookingAt;
                 if (Vector2.DistanceSquared(look, new Vector2(0, 0)) == 2)
                 {
                     return look / 3 * AspectRatio;
@@ -81,9 +85,11 @@ namespace FieryOpal.Src.Ui
         {
             DrawAmbientShading = Toggle(DrawAmbientShading, state);
         }
+
         private void FillBackbuffer(Color? c = null)
         {
-            if(c.HasValue)
+            Projection = Color.TransparentBlack.ToArray(RenderSurface.Width * RenderSurface.Height);
+            if (c.HasValue)
             {
                 Backbuffer = c.Value.ToArray(RenderSurface.Width * RenderSurface.Height);
             }
@@ -99,6 +105,7 @@ namespace FieryOpal.Src.Ui
                 }
             }
         }
+
         private void SetBackbufferAt(int x, int y, Color c)
         {
             if (Util.OOB(x, y, RenderSurface.Width, RenderSurface.Height)) return;
@@ -109,17 +116,31 @@ namespace FieryOpal.Src.Ui
             if (Util.OOB(x, y, RenderSurface.Width, RenderSurface.Height)) return Color.Magenta;
             return Backbuffer[y * RenderSurface.Width + x];
         }
+
+        private void SetProjectionAt(int x, int y, Point p, float z, float a=1f)
+        {
+            if (Util.OOB(x, y, ProjectionTexture.Width, ProjectionTexture.Height)) return;
+            int i = y * ProjectionTexture.Width + x;
+            Projection[i].R = (byte)(((p.X + .5f) / Target.Width) * 255);
+            Projection[i].G = (byte)(((p.Y + .5f) / Target.Height) * 255);
+            Projection[i].B = (byte)(z * 255);
+            Projection[i].A = (byte)(a * 255);
+        }
+
+        private Color GetProjectionAt(int x, int y)
+        {
+            if (Util.OOB(x, y, ProjectionTexture.Width, ProjectionTexture.Height)) return Color.Magenta;
+            return Projection[y * ProjectionTexture.Width + x];
+        }
+
         private void UpdateRenderSurface()
         {
             RenderSurface.SetData(Backbuffer);
+            ProjectionTexture.SetData(Projection);
         }
+
         private Font GetFontByDist(float perpDist, ICustomSpritesheet thing)
         {
-            return thing.Spritesheet;
-            if (perpDist / ViewDistance > .4f)
-            {
-                return Nexus.Fonts.MainFont;
-            }
             return thing.Spritesheet;
         }
 
@@ -146,14 +167,20 @@ namespace FieryOpal.Src.Ui
                 var decos = Target.ActorsAt(info.RayPos.X, info.RayPos.Y)
                     .Where(d => (d as DecorationBase)?.DisplayAsBlock ?? false)
                     .ToList();
-                if (decos.Count <= 0) return;
-                // And if we do let's draw that as if it were a wall
-                wallPixels = FontTextureCache.GetRecoloredPixels(
-                    (spritesheet = GetFontByDist(info.PerpWallDist, decos[0])),
-                    (byte)decos[0].FirstPersonGraphics.Glyph,
-                    decos[0].FirstPersonGraphics.Foreground,
-                    decos[0].FirstPersonGraphics.Background
-                );
+                if (decos.Count <= 0)
+                {
+                    return;
+                }
+                else
+                {
+                    // And if we do let's draw that as if it were a wall
+                    wallPixels = FontTextureCache.GetRecoloredPixels(
+                        (spritesheet = GetFontByDist(info.PerpWallDist, decos[0])),
+                        (byte)decos[0].FirstPersonGraphics.Glyph,
+                        decos[0].FirstPersonGraphics.Foreground,
+                        decos[0].FirstPersonGraphics.Background
+                    );
+                }
             }
             // But if we do have a wall tile, let's draw that
             else
@@ -181,12 +208,10 @@ namespace FieryOpal.Src.Ui
                 Color wallColor = wallPixels[texX, texY];
                 //Side walls are slightly darker
                 if (info.SideHit) wallColor = Color.Lerp(wallColor, Color.Black, .25f);
-                // lighting
-                wallColor = Target.Lighting.ApplyShading(wallColor, info.RayPos);
-
-                //Distant walls blend in with the sky
-                if (DrawAmbientShading) wallColor = Target.Lighting.ApplyAmbientShading(wallColor, info.PerpWallDist / ViewDistance);
                 SetBackbufferAt(info.Column, y, wallColor);
+
+                bool roofed = Target.TileAt(info.PreviousRayPos)?.Properties.HasRoof ?? false;
+                SetProjectionAt(info.Column, y, info.PreviousRayPos, roofed ? 1 : 0);
             }
         }
 
@@ -221,8 +246,9 @@ namespace FieryOpal.Src.Ui
             Color[,] ceilingPixels = null;
             // Since ceilings don't change, at least not presently, we can load
             // the texture once and just store it.
-            if (Target.CeilingTile != null)
+            if(Target.CeilingTile != null)
             {
+
                 var reft = OpalTile.GetRefTile(Target.CeilingTile);
                 ceilingPixels = FontTextureCache.GetRecoloredPixels(
                     reft.Spritesheet,
@@ -242,7 +268,7 @@ namespace FieryOpal.Src.Ui
             Color lastFloorColor = Color.Black, lastShadedFloorColor = Color.Black;
             bool actorsOnTile = false;
             // Draws a circular shadow below each actor, on the floor they're occupying.
-            Color[,] shadowPixels = FontTextureCache.MakeShadow(Nexus.Fonts.Spritesheets["Terrain"], 7, new Color(180, 180, 180));
+            Color[,] shadowPixels = FontTextureCache.MakeShadow(Nexus.Fonts.Spritesheets["Terrain"], 7, new Color(150, 150, 150));
             for (int y = info.DrawEnd; y < RenderSurface.Height; y++)
             {
                 float currentDist = RenderSurface.Height / (2f * y - RenderSurface.Height);
@@ -262,6 +288,8 @@ namespace FieryOpal.Src.Ui
                     floorTile = Target.TileAt(curFloorPos);
                     actorsOnTile = Target.ActorsAt(curFloorPos).Any(a => a.DrawShadow && a.Visible);
                 }
+
+                if (floorTile == null) continue;
 
                 Font spritesheet = floorTile.Spritesheet;
 
@@ -286,7 +314,7 @@ namespace FieryOpal.Src.Ui
 
                 // The base color before any post processing
                 Color floorColor = floorPixels[floorTex.X, floorTex.Y];
-                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? Nexus.DayNightCycle.GetSkyColor(y / (float)RenderSurface.Height);
+                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? floorColor;
 
                 // If on, draws a grid around each floor tile
                 if (DrawTerrainGrid && (floorTex.X < 1 || floorTex.Y < 1 || floorTex.X > spritesheet.Size.X - 2 || floorTex.Y > spritesheet.Size.Y - 2))
@@ -301,31 +329,22 @@ namespace FieryOpal.Src.Ui
                     floorColor = floorColor.BlendLight(shadowPixels[floorTex.X, floorTex.Y], .75f);
                 }
 
-
-                // Apply lighting
-                if (lastFloorColor != floorColor || oldFloorPos != curFloorPos)
-                {
-                    lastFloorColor = floorColor;
-                    floorColor = lastShadedFloorColor = Target.Lighting.ApplyShading(floorColor, curFloorPos);
-                }
-                else floorColor = lastShadedFloorColor;
-
-                if(ceilingPixels != null)
-                    ceilingColor = Target.Lighting.ApplyShading(ceilingColor, curFloorPos);
-
-                // And shade the horizon with fog
-                if (DrawAmbientShading)
-                {
-                    float dist = currentDist / ViewDistance;
-                    floorColor = Target.Lighting.ApplyAmbientShading(floorColor, dist);
-
-                    if (ceilingPixels != null)
-                        ceilingColor = Target.Lighting.ApplyAmbientShading(ceilingColor, dist);
-                }
-
                 // Finally, set both floor and ceiling pixels.
                 SetBackbufferAt(info.Column, y, floorColor);
-                SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
+                SetProjectionAt(info.Column, y, curFloorPos, 0);
+
+                if (Target.CeilingTile != null)
+                {
+                    SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
+                    SetProjectionAt(info.Column, RenderSurface.Height - y, curFloorPos, 0);
+                }
+                else if(floorTile.Properties.HasRoof)
+                {
+                    SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
+                    SetProjectionAt(info.Column, RenderSurface.Height - y, curFloorPos, 1);
+                    SetProjectionAt(info.Column, y, curFloorPos, 1);
+                }
+
                 lastTile = floorTile;
                 oldFloorPos = curFloorPos;
             }
@@ -341,7 +360,7 @@ namespace FieryOpal.Src.Ui
             );
             if (spriteProjection.Y <= 0) return;
 
-            float distance_scaled = (float)billboardPosition.Dist(obseverPosition) / ViewDistance;
+            float distance_scaled = (float)billboardPosition.FastDist(obseverPosition.ToPoint()) / ViewDistance;
 
             int spriteScreenX = (int)((RenderSurface.Width / 2) * (1 + spriteProjection.X / spriteProjection.Y));
             int spriteHeight = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / scale.Y);
@@ -375,8 +394,6 @@ namespace FieryOpal.Src.Ui
                     // For every pixel of this stripe
                     for (int y = drawStart.Y; y < drawEnd.Y; y++)
                     {
-                        if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStartStripe) break;
-
                         // Wait for as long as possible to load the pixels to save some cache hits
                         if (spritePixels == null)
                         {
@@ -403,19 +420,14 @@ namespace FieryOpal.Src.Ui
                             {
                                 spriteColor = Color.Lerp(GetBackbufferAt(stripe, y), spriteColor, spriteColor.A / 255f);
                             }
-
-                            if(!ignoreShaders)
-                            {
-                                spriteColor = Target.Lighting.ApplyShading(spriteColor, billboardPosition);
-                            }
                         }
 
-                        if (!ignoreShaders && DrawAmbientShading)
-                        {
-                            spriteColor = Target.Lighting.ApplyAmbientShading(spriteColor, distance_scaled);
-                        }
+                        bool roofed = Target.TileAt(billboardPosition).Properties.HasRoof;
+                        Color proj = GetProjectionAt(stripe, y);
+                        if (!roofed && proj.B > 0) continue; // Don't render actors outside of indoors areas if there's a roof
 
                         SetBackbufferAt(stripe, y, spriteColor);
+                        SetProjectionAt(stripe, y, billboardPosition, roofed ? 1 : 0);
                     }
                 }
             }
@@ -437,16 +449,62 @@ namespace FieryOpal.Src.Ui
             },
             startPos,
             actor.LocalPosition,
-            new Vector2(10f / actor.Name.Length, 8f),
+            new Vector2(10f / actor.Name.Length, Nexus.Fonts.MainFont.Size.Y),
             new Point(Nexus.Fonts.MainFont.Size.X * actor.Name.Length, Nexus.Fonts.MainFont.Size.Y),
+            -24f,
+            ref zbuffer,
+            ignoreShaders: true);
+        }
+
+        private void DrawActorHealthbar(ref float[] zbuffer, Vector2 startPos, IOpalGameActor actor)
+        {
+            if (!typeof(TurnTakingActor).IsAssignableFrom(actor.GetType())) return;
+
+            var tta = actor as TurnTakingActor;
+            if (tta.Health >= tta.MaxHealth) return;
+
+            DrawBillboardSprite(() =>
+            {
+                return
+                FontTextureCache.MakeHealthBar(
+                    Nexus.Fonts.MainFont,
+                    tta.Health / (float)tta.MaxHealth
+                );
+            },
+            startPos,
+            actor.LocalPosition,
+            new Vector2(2f, Nexus.Fonts.MainFont.Size.Y),
+            new Point(Nexus.Fonts.MainFont.Size.X * 20, Nexus.Fonts.MainFont.Size.Y),
             -16f,
             ref zbuffer,
             ignoreShaders: true);
         }
 
+        private void DrawInteractionMarker(ref float[] zbuffer, Vector2 startPos, IOpalGameActor actor)
+        {
+            if (actor is IInteractive)
+            {
+                DrawBillboardSprite(() =>
+                {
+                    return FontTextureCache.MakeInteractionMarker(
+                            Nexus.Fonts.MainFont,
+                            25,
+                            Palette.Ui["FP_InteractionMarker"]
+                    );
+                },
+                startPos,
+                actor.LocalPosition,
+                new Vector2(Nexus.Fonts.MainFont.Size.X, Nexus.Fonts.MainFont.Size.Y),
+                Nexus.Fonts.MainFont.Size,
+                -32f,
+                ref zbuffer,
+                ignoreShaders: true);
+            }
+        }
+
         private void DrawActorSprites(float[] zbuffer, Vector2 startPos)
         {
-            List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)startPos.X, (int)startPos.Y, (int)ViewDistance, 0)
+            List<IOpalGameActor> actors_within_viewarea = Target.ActorsWithinRing((int)startPos.X, (int)startPos.Y, (int)ViewDistance, 0, true)
                 .Where(a =>
                        // Must be visible, duh
                        a.Visible
@@ -456,6 +514,7 @@ namespace FieryOpal.Src.Ui
                        && a is OpalActorBase
                        // Must not be the actor we're following or on the same tile
                        && a.LocalPosition != startPos.ToPoint()
+                       && Following.Brain.TileMemory.CanSee(a.LocalPosition)
                        // And must be in a position visible to the actor we're following
                        && (Math.Sign(a.LocalPosition.X - startPos.X) == Math.Sign(DirectionVector.X)
                        || Math.Sign(a.LocalPosition.Y - startPos.Y) == Math.Sign(DirectionVector.Y))
@@ -487,28 +546,11 @@ namespace FieryOpal.Src.Ui
                 actor.FirstPersonVerticalOffset,
                 ref zbuffer);
 
+                DrawActorHealthbar(ref zbuffer, startPos, actor);
                 if (DrawExtraLabels)
                 {
-                    if (actor is IInteractive)
-                    {
-                        DrawBillboardSprite(() =>
-                        {
-                            return FontTextureCache.MakeInteractionMarker(
-                                    Nexus.Fonts.MainFont,
-                                    25,
-                                    Palette.Ui["FP_InteractionMarker"]
-                            );
-                        },
-                        startPos,
-                        actor.LocalPosition,
-                        new Vector2(8f, 8f),
-                        Nexus.Fonts.MainFont.Size,
-                        -24f,
-                        ref zbuffer,
-                        ignoreShaders: true);
-                    }
-
                     DrawActorLabel(ref zbuffer, startPos, actor);
+                    DrawInteractionMarker(ref zbuffer, startPos, actor);
                 }
             }
         }
@@ -521,6 +563,7 @@ namespace FieryOpal.Src.Ui
             if ((RenderSurface?.Width != surf.Width) || RenderSurface.Height != surf.Height)
             {
                 RenderSurface = new Texture2D(Global.GraphicsDevice, surf.Width, surf.Height);
+                ProjectionTexture = new Texture2D(Global.GraphicsDevice, surf.Width, surf.Height);
                 FillBackbuffer(Color.Black);
             }
 
@@ -548,7 +591,7 @@ namespace FieryOpal.Src.Ui
 
                 // Direction of this ray
                 Vector2 rayDir = new Vector2(DirectionVector.X + PlaneVector.X * cameraX, DirectionVector.Y + PlaneVector.Y * cameraX);
-                var rayInfo = Raycaster.CastRay(Target, startPos, rayDir);
+                var rayInfo = Raycaster.CastRay(new Point(Target.Width, Target.Height), startPos, rayDir, (p) => Target.TileAt(p)?.Properties.IsBlock ?? false, (int)ViewDistance);
                 float perpWallDist = zbuffer[x] = rayInfo.ProjectedDistance;
                 // Update TileMemory
                 rayInfo.PointsTraversed.ForEach(v => {
@@ -581,6 +624,7 @@ namespace FieryOpal.Src.Ui
                     LineHeight = lineHeight,
                     RayDir = rayDir,
                     RayPos = rayInfo.LastPointTraversed.ToPoint(),
+                    PreviousRayPos = rayInfo.PointsTraversed.Count > 1 ? rayInfo.PointsTraversed.ElementAt(rayInfo.PointsTraversed.Count - 2).ToPoint() : rayInfo.LastPointTraversed.ToPoint(),
                     StartPos = startPos,
                 };
 

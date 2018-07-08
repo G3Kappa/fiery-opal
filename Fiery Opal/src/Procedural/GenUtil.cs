@@ -278,9 +278,9 @@ namespace FieryOpal.Src.Procedural
         }
 
 
-        public class MRRule : Tuple<Predicate<OpalTile>, OpalTile>
+        public class MRRule : Tuple<Predicate<OpalTile>, Func<OpalTile>>
         {
-            public MRRule(Predicate<OpalTile> pred, OpalTile ret) : base(pred, ret) { }
+            public MRRule(Predicate<OpalTile> pred, Func<OpalTile> ret) : base(pred, ret) { }
         }
 
         public struct MatrixReplacement
@@ -365,6 +365,8 @@ namespace FieryOpal.Src.Procedural
                             if (pattern[x, y] > 1) continue; // > 1 is catch all
                             bool bit = pattern[x, y] == 1;
                             var t = map.TileAt(p.X + x - (MatrixSize / 2), p.Y + y - (MatrixSize / 2));
+                            if (t == null) continue;
+
                             if (bit == zero(t) || bit != one(t))
                             {
                                 bad_pattern = true;
@@ -394,7 +396,10 @@ namespace FieryOpal.Src.Procedural
                         bool bit = Replacements[matrix_index][x, y] == 1;
                         if (Replacements[matrix_index][x, y] <= 1) // > 1 is ignored
                         {
-                            map.SetTile(p.X + x - (MatrixSize / 2), p.Y + y - (MatrixSize / 2), bit ? one.Item2 : zero.Item2);
+                            int xx = p.X + x - (MatrixSize / 2);
+                            int yy = p.Y + y - (MatrixSize / 2);
+                            OpalTile t = (bit ? one.Item2() : zero.Item2());
+                            if(t != null) map.SetTile(xx, yy, t);
                         }
                     }
                 }

@@ -43,9 +43,9 @@ namespace FieryOpal.Src
             return new bool?();
         }
 
-        public static void UpdateFramerate(int millis)
+        public static void UpdateFramerate(double millis)
         {
-            framerate = (1000d / millis);
+            framerate = millis;
         }
 
         public static bool OOB(int x, int y, int w, int h, int min_x = 0, int min_y = 0)

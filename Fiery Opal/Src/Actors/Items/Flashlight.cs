@@ -27,8 +27,8 @@ namespace FieryOpal.Src.Actors.Items
             LightSourceInner.LightAngleWidth = 60;
             LightSourceOuter.LightAngleWidth = 60;
 
-            LightSourceInner.LightRadius = 2f;
-            LightSourceOuter.LightRadius = 12f;
+            LightSourceInner.LightRadius = 2;
+            LightSourceOuter.LightRadius = 12;
 
             LightSourceInner.LightIntensity = 24f;
             LightSourceOuter.LightIntensity = 24f;

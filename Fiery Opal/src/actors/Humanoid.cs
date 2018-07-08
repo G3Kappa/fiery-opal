@@ -17,7 +17,7 @@ namespace FieryOpal.Src.Actors
 
             Name = "Dude";
 
-            Inventory = new PersonalInventory(10, this);
+            Inventory = new PersonalInventory(1000, this);
             Equipment = new PersonalEquipment((t) =>
             {
                 switch (t)

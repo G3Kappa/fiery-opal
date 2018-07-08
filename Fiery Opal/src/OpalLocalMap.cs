@@ -21,61 +21,96 @@ namespace FieryOpal.Src
         protected HashSet<Point> Known = new HashSet<Point>();
         protected bool IsDisabled = false;
 
+        private object fogLock = new object();
+
         public void See(Point p)
         {
-            if (!Seen.Contains(p)) Seen.Add(p);
+            lock(fogLock)
+            {
+                if (!Seen.Contains(p)) Seen.Add(p);
+            }
         }
 
         public void Learn(Point p)
         {
-            if (!Known.Contains(p)) Known.Add(p);
+            lock (fogLock)
+            {
+                if (!Known.Contains(p)) Known.Add(p);
+            }
         }
 
         public void Unsee(Point p)
         {
-            if (Seen.Contains(p)) Seen.Remove(p);
+            lock (fogLock)
+            {
+                if (Seen.Contains(p)) Seen.Remove(p);
+            }
         }
 
         public void Forget(Point p)
         {
-            if (Known.Contains(p)) Known.Remove(p);
+            lock (fogLock)
+            {
+                if (Known.Contains(p)) Known.Remove(p);
+            }
         }
 
         public void UnseeEverything()
         {
-            Seen.Clear();
+            lock (fogLock)
+            {
+                Seen.Clear();
+            }
         }
 
         public void ForgetEverything()
         {
-            Known.Clear();
+            lock (fogLock)
+            {
+                Known.Clear();
+            }
         }
 
         public bool CanSee(Point p)
         {
-            if (IsDisabled) return true;
-            return Seen.Contains(p);
+            lock (fogLock)
+            {
+                if (IsDisabled) return true;
+                return Seen.Contains(p);
+            }
         }
 
         public bool KnowsOf(Point p)
         {
-            if (IsDisabled) return true;
-            return Known.Contains(p);
+            lock (fogLock)
+            {
+                if (IsDisabled) return true;
+                return Known.Contains(p);
+            }
         }
 
         public void Disable()
         {
-            IsDisabled = true;
+            lock (fogLock)
+            {
+                IsDisabled = true;
+            }
         }
 
         public void Enable()
         {
-            IsDisabled = false;
+            lock (fogLock)
+            {
+                IsDisabled = false;
+            }
         }
 
         public void Toggle()
         {
-            IsDisabled = !IsDisabled;
+            lock (fogLock)
+            {
+                IsDisabled = !IsDisabled;
+            }
         }
 
         public bool IsEnabled => !IsDisabled;
@@ -108,7 +143,7 @@ namespace FieryOpal.Src
         public delegate void ActorDespawnedEventHandler(OpalLocalMap sender, IOpalGameActor args);
         public event ActorDespawnedEventHandler ActorDespawned;
 
-        public AmbientLightEmitter AmbientLight { get; private set; }
+        public float AmbientLightIntensity { get; set; }
 
         public OpalLocalMap(int width, int height, WorldTile parent, string name)
         {
@@ -121,7 +156,7 @@ namespace FieryOpal.Src
             Name = name;
             CeilingTile = null;
             Lighting = new LightingManager(this);
-            AmbientLight = new AmbientLightEmitter();
+            AmbientLightIntensity = 1f;
         }
 
         public float[,] DistanceTransform(Func<Tuple<OpalTile, Point>, bool> predicate)
@@ -269,7 +304,6 @@ namespace FieryOpal.Src
                 a.ChangeLocalMap(this, a.LocalPosition, !(this is IDecoration));
             }
 
-            AmbientLight.ChangeLocalMap(this, new Point(0, 0), true);
             Lighting.Update();
         }
 
@@ -328,6 +362,22 @@ namespace FieryOpal.Src
                 y = newXY.Y;
             }
             while (true);
+        }
+
+        public Rectangle? FindArea(Point size, Point stride, Predicate<Tuple<OpalTile, Point>> pred)
+        {
+            for(int x = 0; x < Width; x += stride.X)
+            {
+                for (int y = 0; y < Height; y += stride.Y)
+                {
+                    var r = new Rectangle(x, y, size.X, size.Y);
+                    if (TilesWithin(r).All(t => pred(t)))
+                    {
+                        return r;
+                    }
+                }
+            }
+            return null;
         }
 
         public void DrawLine(Point start, Point end, OpalTile newTile, int thickness = 1, bool killDecorations = false)
@@ -529,7 +579,7 @@ namespace FieryOpal.Src
             Point center = new Point(x, y);
             foreach (var t in TilesWithin(new Rectangle(x - r1, y - r1, r1 * 2, r1 * 2)))
             {
-                double dist = t.Item2.Dist(center);
+                int dist = t.Item2.FastDist(center);
                 if (dist <= r1 && dist > r2)
                 {
                     yield return t;
@@ -542,7 +592,7 @@ namespace FieryOpal.Src
             Point center = new Point(x, y);
             foreach (var t in TilesWithin(new Rectangle(x - r1, y - r1, r1 * 2, r1 * 2)))
             {
-                double dist = t.Item2.Dist(new Point(x, y));
+                double dist = t.Item2.FastDist(new Point(x, y));
                 if (dist <= r1 && dist > r2)
                 {
                     var actors = ActorsAt(t.Item2.X, t.Item2.Y).ToList();

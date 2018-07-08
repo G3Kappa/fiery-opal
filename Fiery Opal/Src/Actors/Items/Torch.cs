@@ -20,36 +20,43 @@ namespace FieryOpal.Src.Actors.Items
 
         protected RadialLightEmitter LightSourceInner, LightSourceOuter;
 
-        private static WeaponViewSprite MakeViewSprite()
+        private static WeaponViewSprite MakeViewSprite(Color? c = null)
         {
             WeaponViewSprite wvs = new WeaponViewSprite();
-            wvs.SpritesheetIndex = 161;
-            wvs.Color = Color.Orange;
+            wvs.SpritesheetIndex = 1;
+            wvs.Color = c ?? Color.Orange;
             wvs.Scale = new Vector2(1.25f, 1.25f);
-            wvs.Offset = new Vector2(.75f, .5f);
+            wvs.Offset = new Vector2(.75f, .33f);
             return wvs;
         }
 
-        public Torch() : base("Torch".ToColoredString(Color.Orange), MakeViewSprite())
+        public Torch() : this(Color.Orange) { }
+
+        public Torch(Color color) : base("Torch".ToColoredString(color), MakeViewSprite(color))
         {
             LightSourceOuter = new RadialLightEmitter()
             {
-                LightColor = Color.DarkOrange,
+                LightColor = color,
                 LightIntensity = 30f,
-                LightRadius = 12f,
+                LightRadius = 12,
             };
 
             LightSourceInner = new RadialLightEmitter()
             {
-                LightColor = new Color(255, 255, 200),
-                LightIntensity = 30f,
-                LightRadius = 4f,
+                LightColor = color.BlendAdditive(Color.White, false, .33f),
+                LightIntensity = 5f,
+                LightRadius = 5,
             };
 
-            Graphics = FirstPersonGraphics = new ColoredGlyph(new Cell(Color.Orange, Color.Transparent, 161));
+            Spritesheet = Nexus.Fonts.Spritesheets["Weapons"];
+            FirstPersonGraphics = new ColoredGlyph(new Cell(color, Color.Transparent, 1));
+            Graphics = new ColoredGlyph(new Cell(color, Color.Transparent, 161));
             Name = "Torch";
 
             MapChanged += HandleSpawnOnMapChange;
+
+            FirstPersonScale = new Vector2(2f, 2f);
+            FirstPersonVerticalOffset = 6f;
         }
         
         protected virtual void FollowActor(IOpalGameActor a, Point oldPos, bool mapChanged=false)
@@ -67,10 +74,10 @@ namespace FieryOpal.Src.Actors.Items
         public override void OnUnequip(IEquipmentUser actor)
         {
             base.OnUnequip(actor);
-            actor.Map.Despawn(LightSourceOuter);
-            actor.Map.Despawn(LightSourceInner);
             actor.PositionChanged -= FollowActor;
             actor.MapChanged -= HandleSpawnOnMapChange;
+            actor.Map.Despawn(LightSourceOuter);
+            actor.Map.Despawn(LightSourceInner);
         }
 
         public override void OnEquip(IEquipmentUser actor)

@@ -26,7 +26,7 @@ namespace FieryOpal.Src.Actors.Items.Weapons
 
             LightEmitter = new RadialLightEmitter();
             LightEmitter.LightIntensity = 1f;
-            LightEmitter.LightRadius = .75f;
+            LightEmitter.LightRadius = 1;
             LightEmitter.LightColor = Color.Cyan;
             LightEmitter.ChangeLocalMap(m, spawnPos, false);
 
@@ -52,7 +52,7 @@ namespace FieryOpal.Src.Actors.Items.Weapons
 
         public override int CalcDamage(EquipmentSlotType partHit)
         {
-            return 999;
+            return 7;
         }
 
         public override EquipmentSlotType CalcPartHit(TurnTakingActor a)
@@ -76,7 +76,7 @@ namespace FieryOpal.Src.Actors.Items.Weapons
         private static WeaponViewSprite MakeViewSprite()
         {
             WeaponViewSprite wvs = new WeaponViewSprite();
-            wvs.SpritesheetIndex = 1;
+            wvs.SpritesheetIndex = 0;
             wvs.Color = Color.AliceBlue;
             wvs.Scale = new Vector2(1.25f, 1.25f);
             wvs.Offset = new Vector2(0, 0);
