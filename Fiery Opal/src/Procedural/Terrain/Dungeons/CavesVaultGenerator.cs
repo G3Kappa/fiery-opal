@@ -44,8 +44,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             StairTile stairs = (StairTile)TileFactory.Make(TileSkeleton.Get<DownstairSkeleton>().Make);
             OpalTile wall = OpalTile.GetRefTile<RockWallSkeleton>();
             OpalTile floor = TileFactory.Make(TileSkeleton.Get<RockFloorSkeleton>().Make);
-            floor.Properties.HasRoof = true;
-            stairs.Properties.HasRoof = true;
+            floor.Properties.CeilingGraphics = stairs.Properties.CeilingGraphics = floor.Graphics;
             var shape = GenUtil.MakeRockShape(new Rectangle(p.X - 10, p.Y - 10, 20, 20));
             Workspace.DrawShape(shape, wall);
 

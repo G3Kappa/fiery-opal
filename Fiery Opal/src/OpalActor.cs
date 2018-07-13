@@ -76,7 +76,6 @@ namespace FieryOpal.Src
 
     public interface IDecoration : IOpalGameActor
     {
-        bool BlocksMovement { get; }
     }
 
     public interface IInteractive : INamedObject
@@ -174,7 +173,7 @@ namespace FieryOpal.Src
             if (ret)
             {
                 localPosition = newPos;
-                map.NotifyActorMoved(this, oldPos);
+                map?.NotifyActorMoved(this, oldPos);
                 PositionChanged?.Invoke(this, oldPos);
             }
             else if (!absolute && Util.OOB(newPos.X, newPos.Y, map.Width, map.Height))
@@ -300,10 +299,10 @@ namespace FieryOpal.Src
 
         public bool ChangeLocalMap(OpalLocalMap new_map, Point? spawn=null, bool check_tile = true)
         {
-            Point new_spawn = spawn ?? new Point(Util.Rng.Next(new_map.Width), Util.Rng.Next(new_map.Height));
+            Point new_spawn = new_map == null ? Point.Zero : spawn ?? new Point(Util.Rng.Next(new_map.Width), Util.Rng.Next(new_map.Height));
 
             var oldMap = map;
-            oldMap?.Despawn(this);
+            oldMap?.Despawn(this, false);
 
             if (new_map == null)
             {
@@ -312,18 +311,11 @@ namespace FieryOpal.Src
                 return true;
             }
 
-            var tile = new_map.TileAt(new_spawn.X, new_spawn.Y);
-            bool ret = tile != null && !tile.Properties.IsBlock
-                && !new_map.ActorsAt(new_spawn.X, new_spawn.Y).Any(a =>
+            bool ret = new_map.IsTileAcessible(new_spawn);
+            if (!ret && check_tile)
             {
-                if (this is IDecoration)
-                {
-                    return a is IDecoration;
-                }
-                return a is OpalActorBase;
-            });
-
-            if (!ret && check_tile) new_spawn = new_map.FirstAccessibleTileAround(new_spawn, !(this is IDecoration));
+                new_spawn = new_map.FirstAccessibleTileAround(new_spawn);
+            }
 
             map = new_map;
             localPosition = new_spawn;
@@ -401,13 +393,12 @@ namespace FieryOpal.Src
     }
     public abstract class DecorationBase : OpalActorBase, IDecoration
     {
-        public virtual bool BlocksMovement => false;
         public virtual bool DisplayAsBlock => false;
         public override bool DrawShadow => false;
 
         public override bool OnBump(IOpalGameActor other)
         {
-            return !BlocksMovement;
+            return IgnoresCollision || !typeof(DecorationBase).IsAssignableFrom(other.GetType());
         }
     }
 }

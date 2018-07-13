@@ -16,8 +16,6 @@ namespace FieryOpal.Src.Actors.Items
         public override EquipmentSlotType SlotType => EquipmentSlotType.Hand;
         public override int RequiredSlots => 1;
 
-        bool IDecoration.BlocksMovement => false;
-
         protected RadialLightEmitter LightSourceInner, LightSourceOuter;
 
         private static WeaponViewSprite MakeViewSprite(Color? c = null)

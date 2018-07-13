@@ -6,7 +6,6 @@ namespace FieryOpal.Src.Actors.Decorations
     class Boulders : DecorationBase
     {
         public override Font Spritesheet => Nexus.Fonts.Spritesheets["Terrain"];
-        public override bool BlocksMovement => true;
 
         public Boulders()
         {
@@ -20,13 +19,13 @@ namespace FieryOpal.Src.Actors.Decorations
 
             FirstPersonScale = new Microsoft.Xna.Framework.Vector2(2f, 2f);
             FirstPersonVerticalOffset = 6f;
+            SetCollision(true);
         }
     }
 
     class Fungus : DecorationBase
     {
         public override Font Spritesheet => Nexus.Fonts.Spritesheets["Vegetation"];
-        public override bool BlocksMovement => false;
 
         public Fungus()
         {
@@ -40,6 +39,7 @@ namespace FieryOpal.Src.Actors.Decorations
 
             FirstPersonScale = new Microsoft.Xna.Framework.Vector2(2f, 2f);
             FirstPersonVerticalOffset = 4f;
+            SetCollision(false);
         }
     }
 }

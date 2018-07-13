@@ -77,8 +77,8 @@ namespace FieryOpal.Src.Procedural.Terrain.Dungeons
             GenUtil.MatrixReplacement.CaveSystemRules.SlideAcross(
                 Workspace,
                 new Point(1),
-                new GenUtil.MRRule(t => t == floorTile, () => floorTile),
-                new GenUtil.MRRule(t => t == wallTile, () => wallTile),
+                new GenUtil.MRRule(t => t == floorTile, (_) => floorTile),
+                new GenUtil.MRRule(t => t == wallTile, (_) => wallTile),
                 10,
                 break_early: false,
                 shuffle: true,

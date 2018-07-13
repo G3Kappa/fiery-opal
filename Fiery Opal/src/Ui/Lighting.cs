@@ -119,9 +119,9 @@ namespace FieryOpal.Src.Ui
             Grid[0, 0] = Source.LightIntensity;
         }
 
-        public bool Recalc()
+        public bool Recalc(bool force = false)
         {
-            if (!IsDirty) return false;
+            if (!force && !IsDirty) return false;
             Fill(0);
             LastPos = Source.LocalPosition;
             switch(Source.LightEmitterType)
@@ -183,7 +183,7 @@ namespace FieryOpal.Src.Ui
             bool anyDirty = false;
             Layers.Values.ForEach(l =>
             {
-                bool wasDirty = l.Recalc();
+                bool wasDirty = l.Recalc(force);
                 if (wasDirty) anyDirty = true;
             });
 
@@ -197,8 +197,10 @@ namespace FieryOpal.Src.Ui
 
         public Color ApplyShading(Color c, Point pos)
         {
+            var t = Parent.TileAt(pos);
             var l = ColorGrid[pos.X + pos.Y * Parent.Width];
-            var ambient = new Color(Parent.AmbientLightIntensity, Parent.AmbientLightIntensity, Parent.AmbientLightIntensity);
+            var ai = (t?.Properties.IsBlock ?? true) || t.Properties.HasCeiling ? .5f : Parent.AmbientLightIntensity;
+            var ambient = new Color(ai, ai, ai);
             return !Enabled ? c : c.BlendMultiply(Color.Lerp(ambient, l.BlendAdditive(ambient), l.A / 255f));
         }
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using static FieryOpal.Src.Procedural.GenUtil;
 
 namespace FieryOpal.Src
 {
@@ -260,6 +261,11 @@ namespace FieryOpal.Src
             return Math.Max(Math.Abs(v.X - w.X), Math.Abs(v.Y - w.Y));
         }
 
+        public static double ComponentSum(this Point v)
+        {
+            return v.X + v.Y;
+        }
+
         public static double ChebyshevDistance(this Vector2 v, Vector2 w)
         {
             return Math.Max(Math.Abs(v.X - w.X), Math.Abs(v.Y - w.Y));
@@ -358,6 +364,13 @@ namespace FieryOpal.Src
         public static Point RotateCCW(this Point p)
         {
             return new Point(-p.Y, p.X);
+        }
+
+        public static Rectangle Inflated(this Rectangle r, int x, int y)
+        {
+            Rectangle ret = new Rectangle(r.Location, r.Size);
+            ret.Inflate(x, y);
+            return ret;
         }
     }
 }

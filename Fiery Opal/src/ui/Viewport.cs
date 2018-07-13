@@ -108,6 +108,8 @@ namespace FieryOpal.Src.Ui
                 if (k.Map == Target) actors.Add(k);
                 else LastKnownPos.Remove(k);
             }
+            actors.Sort((a, b) => (a is IDecoration ? 0 : 1) - (b is IDecoration ? 0 : 1));
+
             // Make sure that the player is always drawn last
             actors.Remove(Nexus.Player);
             actors.Add(Nexus.Player);

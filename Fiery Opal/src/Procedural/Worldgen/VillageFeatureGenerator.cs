@@ -56,27 +56,27 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
         protected override void GenerateLocal(OpalLocalMap m, WorldTile parent)
         {
-            int minSz = 10, maxSz = 15;
+            Point cellSz = new Point(3);
 
-            var rooms = Lib.PoissonDiskSampler.SampleRectangle(new Vector2(maxSz, maxSz), new Vector2(m.Width - maxSz * 2, m.Height - maxSz * 2), maxSz + 3);
-            HomePrefabDecorator roomDecorator = new HomePrefabDecorator();
+            var lots = GenUtil.SplitRect(
+                new Rectangle(m.Width / 8, m.Height / 8, m.Width / 2 + m.Width / 4, m.Height / 2 + m.Height / 4),
+                () => new Vector2(1f / (1.5f + (float)Util.Rng.NextDouble().Quantize(8) * 1.5f)),
+                (cellSz.X + 3) * 3,
+                (cellSz.Y + 3) * 3
+            );
 
-            foreach(var r in rooms)
+            foreach(var r in lots)
             {
-                Point sz = new Point(Util.Rng.Next(minSz, maxSz), Util.Rng.Next(minSz, maxSz));
-                Rectangle rect = new Rectangle(r.ToPoint(), sz);
-                if (m.TilesWithin(rect).Count(t => t.Item1.Properties.IsBlock) < maxSz)
-                {
-                    new RoomPrefab(rect.Location, rect.Width, rect.Height, Util.RandomUnitPoint(false, true)).Place(m, roomDecorator);
-                }
+                r.Inflate(-cellSz.X, -cellSz.Y);
+
+                //if (Util.Rng.NextDouble() < .3f) continue;
+
+                var R = r;
+                R.Location += new Point(Util.Rng.Next(-cellSz.X / 2, cellSz.X / 2), Util.Rng.Next(-cellSz.Y / 2, cellSz.Y / 2));
+
+                new RoomComplexPrefab(R.Location, R.Width, R.Height, cellSz).Place(m, null);
             }
 
-            int population = Util.Rng.Next(5, 15);
-            while(population --> 0)
-            {
-                var villager = new Humanoid();
-                villager.ChangeLocalMap(m);
-            }
         }
     }
 }

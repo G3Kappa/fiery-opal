@@ -19,6 +19,17 @@ namespace FieryOpal.Src
             return from.Count == 0 ? default(T) : from[Rng.Next(from.Count)];
         }
 
+        public static T ChooseBias<T>(IList<T> from, Func<T, double> bias)
+        {
+            List<double> probabilities = new List<double>();
+            foreach(T t in from)
+            {
+                probabilities.Add(Rng.NextDouble() * bias(t));
+            }
+
+            return from.ElementAt(probabilities.IndexOf(probabilities.Max()));
+        }
+
         public static IEnumerable<T> ChooseN<T>(IList<T> from, int n)
         {
             if (n >= from.Count) throw new ArgumentException();
@@ -334,6 +345,16 @@ namespace FieryOpal.Src
                     }
                 }
             }
+        }
+
+        public static IEnumerable<Tuple<T, Point>> Neighbours<T>(this T[,] arr, Point p, bool orthogonal = false, bool yield_null = false)
+        {
+            return arr.ElementsWithinRect(new Rectangle(p - new Point(1), new Point(3, 3)), yield_null)
+                .Where(
+                    t =>
+                    t.Item2 != p
+                    && (orthogonal ? p.SquaredEuclidianDistance(t.Item2) < 2 : true)
+                );
         }
 
         public static void ForEach<T>(this IEnumerable<T> en, Action<T> act)

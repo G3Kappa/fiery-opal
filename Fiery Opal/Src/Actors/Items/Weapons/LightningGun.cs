@@ -26,7 +26,7 @@ namespace FieryOpal.Src.Actors.Items.Weapons
 
             LightEmitter = new RadialLightEmitter();
             LightEmitter.LightIntensity = 1f;
-            LightEmitter.LightRadius = 1;
+            LightEmitter.LightRadius = 2;
             LightEmitter.LightColor = Color.Cyan;
             LightEmitter.ChangeLocalMap(m, spawnPos, false);
 

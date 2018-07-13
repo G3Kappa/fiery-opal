@@ -9,9 +9,9 @@ namespace FieryOpal.Src.Procedural.Terrain.Tiles
 
         public DoorTile(int id, TileSkeleton k, string defaultname, OpalTileProperties props, Cell graphics) : base(id, k, defaultname, props, graphics) { }
 
-        public void Toggle()
+        public void Toggle(bool? value = null)
         {
-            isOpen = !isOpen;
+            isOpen = value ?? !isOpen;
             Properties.IsBlock = !isOpen;
         }
 
@@ -24,6 +24,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Tiles
         {
             if (!actor.CanMove) return false;
             Toggle();
+            actor.Map.Lighting.Update(true);
             return true;
         }
     }

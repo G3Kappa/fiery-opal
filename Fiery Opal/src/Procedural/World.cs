@@ -301,7 +301,7 @@ namespace FieryOpal.Src.Procedural
 
         private IEnumerable<WorldFeatureGenerator> GetWFGs()
         {
-            int n_rivers = Util.Rng.Next((int)(Width * Height * .006f));
+            int n_rivers = Util.Rng.Next((int)(Width * Height * .006f)) + Util.Rng.Next(10, 30);
             for (int i = 0; i < n_rivers; ++i)
                 yield return new RiverFeatureGenerator(
                     (b) => b.AverageTemperature >= BiomeHeatType.Cold
@@ -313,7 +313,7 @@ namespace FieryOpal.Src.Procedural
             for (int i = 0; i < n_colonies; ++i)
                 yield return new ColonyFeatureGenerator();
 
-            int n_villages = Util.Rng.Next((int)(Width * Height * .0065f));
+            int n_villages = Util.Rng.Next((int)(Width * Height * .0065f)) + Util.Rng.Next(10, 30);
             for (int i = 0; i < n_villages; ++i)
                 yield return new VillageFeatureGenerator();
 

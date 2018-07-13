@@ -228,7 +228,7 @@ namespace FieryOpal.Src
 
     public class CommandSpawn : CommandDelegate
     {
-        public static Type[] _Signature = new Type[4] { typeof(int), typeof(int), typeof(string), typeof(int) };
+        public static Type[] _Signature = new Type[2] { typeof(string), typeof(int) };
 
         public CommandSpawn(string name = "spawn") : base(name, _Signature)
         {
@@ -237,10 +237,8 @@ namespace FieryOpal.Src
 
         protected override int ExecInternal(object[] args)
         {
-            int x = (int)args[0];
-            int y = (int)args[1];
-            string className = (string)args[2];
-            int qty = (int)args[3];
+            string className = (string)args[0];
+            int qty = (int)args[1];
             for (int i = 0; i < qty; ++i)
             {
                 OpalActorBase h = OpalActorBase.MakeFromClassName(className);
@@ -249,7 +247,7 @@ namespace FieryOpal.Src
                     Util.LogText("Unknown actor class.", true);
                     return 1;
                 }
-                Point pos = Nexus.Player.LocalPosition + new Point(x, y);
+                Point pos = Nexus.Player.LocalPosition;
                 h.ChangeLocalMap(Nexus.Player.Map, pos);
             }
 

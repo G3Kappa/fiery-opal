@@ -61,7 +61,14 @@ namespace FieryOpal.Src
             Dictionary<Guid, Queue<TurnBasedAction>> actions = new Dictionary<Guid, Queue<TurnBasedAction>>();
             foreach (var taker in turnTakers)
             {
-                if (!Accumulator.ContainsKey(taker.Handle)) Accumulator[taker.Handle] = 0.0f;
+                if (!Accumulator.ContainsKey(taker.Handle))
+                {
+                    Accumulator[taker.Handle] = 0.0f;
+                    taker.MapChanged += (e, h) =>
+                    {
+                        Accumulator.Remove(taker.Handle);
+                    };
+                }
                 actions[taker.Handle] = new Queue<TurnBasedAction>();
                 var intentions = (taker as ITurnTaker).ProcessTurn(CurrentTurn, 1 - Accumulator[taker.Handle]);
                 foreach (var intention in intentions)
@@ -70,12 +77,12 @@ namespace FieryOpal.Src
                 }
             }
 
-            var accKeys = Accumulator.Keys.ToList();
             TurnStarted?.Invoke(this, CurrentTurn);
 
             float t = 0;
             for (; t < 1; t += TimeDilation)
             {
+                var accKeys = Accumulator.Keys.ToList();
                 // If the player is dead allow no further processing of turns.
                 // Unless they somehow come back to life, that is.
                 if (Nexus.Player.IsDead)
@@ -95,22 +102,12 @@ namespace FieryOpal.Src
 
                 foreach (var key in accKeys)
                 {
-                    if (!Accumulator.ContainsKey(key))
-                    {
-                        Util.Err("TurnManager.BeginTurn: key dropped from the accumulator.");
-                        continue;
-                    }
                     Accumulator[key] = Math.Max(Accumulator[key] - TimeDilation, 0);
                 }
 
                 foreach (var kvp in actions)
                 {
                     if (kvp.Value.Count == 0) continue;
-                    if (!Accumulator.ContainsKey(kvp.Key))
-                    {
-                        Util.Err("TurnManager.BeginTurn: key dropped from the accumulator.");
-                        continue;
-                    }
                     if (Accumulator[kvp.Key] > 0) continue;
 
                     var cost = kvp.Value.Dequeue().Invoke();
@@ -120,7 +117,10 @@ namespace FieryOpal.Src
                         break;
                     }
 
-                    Accumulator[kvp.Key] += cost + TimeDilation * (cost - 1);
+                    if(Accumulator.ContainsKey(kvp.Key))
+                    {
+                        Accumulator[kvp.Key] += cost + TimeDilation * (cost - 1);
+                    }
                 }
 
                 CurrentTime = (float)Math.Round(CurrentTime + TimeDilation, 3);

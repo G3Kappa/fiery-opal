@@ -7,6 +7,7 @@ using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FieryOpal.Src.Procedural.Terrain.Prefabs;
 
 namespace FieryOpal.Src
 {
@@ -27,6 +28,10 @@ namespace FieryOpal.Src
             yield return new Tuple<string, object>(
                 "Sleep",
                 (Action<int>)System.Threading.Thread.Sleep
+            );
+            yield return new Tuple<string, object>(
+                "RoomComplexPrefab",
+                UserData.Create(typeof(RoomComplexPrefab))
             );
         }
 
@@ -85,6 +90,7 @@ namespace FieryOpal.Src
             UserData.RegisterType<PlayerControlledAI>();
             UserData.RegisterType<Point>();
             UserData.RegisterType<ILocalFeatureGenerator>();
+            UserData.RegisterType<RoomComplexPrefab>();
         }
 
         public static DynValue DoString(string script)

@@ -10,13 +10,15 @@ namespace FieryOpal.Src.Procedural.Terrain.Prefabs
 {
     public abstract class Prefab
     {
-        public int Width { get; }
-        public int Height { get; }
+        public int Width { get; protected set; }
+        public int Height { get; protected set; }
 
         public Point Location { get; }
 
         public Dictionary<string, TileSkeleton> Materials { get; }
         protected OpalLocalMap Workspace;
+
+        protected bool Generated { get; private set; } = false;
 
         public Prefab(Point p, int w = 0, int h = 0)
         {
@@ -28,17 +30,27 @@ namespace FieryOpal.Src.Procedural.Terrain.Prefabs
 
         public virtual void Generate()
         {
-            Workspace = new OpalLocalMap(Width, Height, null, "Prefab");
+            if(!Generated)
+            {
+                Workspace = new OpalLocalMap(Width, Height, null, "Prefab");
+                Generated = true;
+            }
         }
 
         public void Place(OpalLocalMap m, PrefabDecorator decorator)
         {
-            Generate();
-            decorator.Decorate(Workspace);
+            if (!Generated)
+            {
+                Generate();
+            }
+            Workspace.ActorsWithin(new Rectangle(Point.Zero, new Point(Width, Height))).Where(a => a is IDecoration).ForEach(a => m.Despawn(a));
+            decorator?.Decorate(Workspace);
 
             m.ActorsWithin(new Rectangle(Location, new Point(Width, Height))).Where(a => a is IDecoration).ForEach(a => m.Despawn(a));
             Workspace.Iter((w, x, y, t) =>
             {
+                if (t == null) return false;
+
                 m.SetTile(x + Location.X, y + Location.Y, t);
                 Workspace.ActorsAt(x, y).ForEach(a => a.ChangeLocalMap(m, new Point(x, y) + Location, false));
                 return false;

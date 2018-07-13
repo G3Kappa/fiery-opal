@@ -142,7 +142,7 @@ namespace FieryOpal.Src.Procedural
                     p -= new Point(sz.X / 2, sz.Y / 2);
 
                     building_rects[i, j] = new Rectangle(p, sz); // GenUtil.Partition(new Rectangle(p, sz), 1, 1 / 2f, 0.0f).ElementAt(0);
-                    var /*my_*/sides = GenUtil.SplitRect(building_rects[i, j], .5f).ToList();
+                    var /*my_*/sides = GenUtil.SplitRect(building_rects[i, j], ()=>new Vector2(.5f), 3, 3).ToList();
 
                     if (sides[0].X < sides[1].X)
                     // Vertical cut

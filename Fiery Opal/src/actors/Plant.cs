@@ -7,8 +7,7 @@ namespace FieryOpal.Src.Actors
     public class Plant : DecorationBase
     {
         public override Font Spritesheet => Nexus.Fonts.Spritesheets["Vegetation"];
-
-        public override bool BlocksMovement => true;
+        
         protected static Color[] PossibleColors;
         protected static int[] PossibleGlyphs;
 
@@ -36,6 +35,7 @@ namespace FieryOpal.Src.Actors
             FirstPersonScale = new Vector2(.5f, 1 / 3f);
 
             SetGraphics();
+            SetCollision(true);
         }
 
         protected void SetGraphics()
@@ -61,7 +61,6 @@ namespace FieryOpal.Src.Actors
 
     public class Sapling : Plant
     {
-        public override bool BlocksMovement => false;
         public override bool DrawShadow => false;
 
         public Sapling()
@@ -83,6 +82,8 @@ namespace FieryOpal.Src.Actors
             {
                 FirstPersonVerticalOffset += .5f;
             }
+
+            SetCollision(false);
         }
     }
 
@@ -101,8 +102,6 @@ namespace FieryOpal.Src.Actors
 
     public class Mushroom : Plant /* inb4 */
     {
-        public override bool BlocksMovement => false;
-
         public Mushroom()
         {
             PossibleGlyphs = new[] { 130, 129, 28, 29 };
@@ -112,6 +111,7 @@ namespace FieryOpal.Src.Actors
             FirstPersonScale = new Vector2(2.4f, 2.4f);
 
             SetGraphics();
+            SetCollision(false);
         }
     }
 

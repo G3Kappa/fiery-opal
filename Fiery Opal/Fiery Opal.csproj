@@ -48,6 +48,9 @@
     <None Include="cfg\scripts\cstest.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="cfg\scripts\RoomComplex.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="cfg\scripts\Weapons.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -216,14 +219,18 @@
     <Compile Include="Src\Procedural\Terrain\Dungeons\CavesTerrainGenerator.cs" />
     <Compile Include="Src\Procedural\Terrain\Dungeons\CavesVaultGenerator.cs" />
     <Compile Include="Src\Procedural\Terrain\Prefabs\Prefab.cs" />
+    <Compile Include="Src\Procedural\Terrain\Prefabs\RoomComplex.cs" />
     <Compile Include="Src\Procedural\Terrain\Prefabs\Room.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\ConcreteFloorSkeleton.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\ConcreteWallSkeleton.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\WoodenFloor.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\MudFloorSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\RockFloorSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\StairTile.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\DoorTile.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\DoorSkeleton.cs" />
-    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\ConstructedFloorSkeleton.cs" />
-    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\ConstructedWallSkeleton.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\TiledFloorSkeleton.cs" />
+    <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\BrickWallSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\FertileSoilSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\DirtSkeleton.cs" />
     <Compile Include="Src\Procedural\Terrain\Tiles\Skeletons\DryGrassSkeleton.cs" />
@@ -427,25 +434,10 @@
     <None Include="cfg\palettes\ui.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="gfx\16x16.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="cfg\fonts.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="gfx\3x3.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="gfx\4x4.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="gfx\HD.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="gfx\1x1.font">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="gfx\Kein.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="gfx\Taffer.font">
@@ -455,23 +447,8 @@
     <None Include="Philosophy.md" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="gfx\16x16.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="gfx\1x1.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="gfx\3x3.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="gfx\4x4.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="gfx\extra\16x16-reference.png" />
     <Content Include="gfx\HD.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="gfx\kein.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="gfx\shaders\lighting.fx">

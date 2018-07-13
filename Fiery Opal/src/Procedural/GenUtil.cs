@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace FieryOpal.Src.Procedural
@@ -53,21 +54,282 @@ namespace FieryOpal.Src.Procedural
             }
         }
 
-        public static IEnumerable<Rectangle> SplitRect(Rectangle r, float pct)
+        public class OrthogonalConvexHull
+        {
+            private List<Rectangle> Rects = new List<Rectangle>();
+            public ReadOnlyCollection<Rectangle> Rectangles
+            {
+                get => new ReadOnlyCollection<Rectangle>(Rects);
+            }
+
+            private ReadOnlyCollection<Point> _perimeter = null;
+            public ReadOnlyCollection<Point> Perimeter
+            {
+                get => _perimeter ?? new ReadOnlyCollection<Point>(new List<Point>());
+                private set => _perimeter = value;
+            }
+
+            private ReadOnlyCollection<Point> _enclosedArea = null;
+            public ReadOnlyCollection<Point> EnclosedArea
+            {
+                get => _enclosedArea ?? new ReadOnlyCollection<Point>(new List<Point>());
+                private set => _enclosedArea = value;
+            }
+
+            private ReadOnlyCollection<Point> _area = null;
+            public ReadOnlyCollection<Point> TotalArea
+            {
+                get => _area ?? new ReadOnlyCollection<Point>(new List<Point>());
+                private set => _area = value;
+            }
+
+            private Point _location = new Point();
+            public Point Location
+            {
+                get => _location;
+                private set => _location = value;
+            }
+
+            private Point _size = new Point();
+            public Point Size
+            {
+                get => _size;
+                private set => _size = value;
+            }
+
+            public OrthogonalConvexHull()
+            {
+
+            }
+
+            private bool IsRectConnected(Rectangle r)
+            {
+                if (Rects.Count == 0) return true;
+                return Rects.Any(R => R.Inflated(1, 1).Intersection(r.Inflated(1, 1)).Size.ComponentSum() > 4);
+            }
+
+            private bool IsPointConnected(Point p)
+            {
+                if (Rects.Count == 0) return true;
+                return Rects.Any(R => IsPointConnected(R, p));
+            }
+
+            private bool IsPointConnected(Rectangle R, Point p)
+            {
+                Rectangle r = new Rectangle(p, new Point(1));
+                return R.Inflated(1, 1).Intersects(r);
+            }
+
+            public bool AddRectangle(Rectangle r, bool force = false)
+            {
+                if (force || IsRectConnected(r))
+                {
+                    Rects.Add(r);
+                    Invalidate();
+                    return true;
+                }
+                return false;
+            }
+
+            public void Translate(Point p)
+            {
+                for (int i = 0; i < Rects.Count; i++)
+                {
+                    var r = new Rectangle(Rects[i].Location + p, Rects[i].Size);
+                    Rects[i] = r;
+                }
+                Invalidate();
+            }
+
+            protected void Invalidate()
+            {
+                if(Rects.Count == 0)
+                {
+                    Location = new Point(0);
+                    Size = new Point(0);
+                    Perimeter = null;
+                    EnclosedArea = null;
+                    TotalArea = null;
+                    return;
+                }
+
+                var minX = Rects.MinBy(R => R.Location.X).Location.X;
+                var minY = Rects.MinBy(R => R.Location.Y).Location.Y;
+                Location = new Point(minX, minY);
+
+                var maxX = Rects.MaxBy(R => R.Location.X + R.Width);
+                var maxY = Rects.MaxBy(R => R.Location.Y + R.Height);
+                Size = new Point(maxX.Location.X - minX + maxX.Size.X, maxY.Location.Y - minY + maxY.Size.Y);
+
+                Perimeter = new ReadOnlyCollection<Point>(GetPerimeterPoints().ToList());
+                EnclosedArea = new ReadOnlyCollection<Point>(GetEnclosedPoints().ToList());
+
+                List<Point> area = new List<Point>();
+                area.AddRange(Perimeter);
+                area.AddRange(EnclosedArea);
+                TotalArea = new ReadOnlyCollection<Point>(area);
+            }
+
+            public bool Contains(Point p) =>  Rects.Any(r => r.Contains(p));
+            public bool Contains(Rectangle R) =>  Rects.Any(r => r.Contains(R));
+            public bool Contains(Vector2 v) =>  Rects.Any(r => r.Contains(v));
+            public bool Contains(int x, int y) =>  Rects.Any(r => r.Contains(x, y));
+
+            private IEnumerable<Point> GetPerimeterPoints()
+            {
+                HashSet<Point> perimeter = new HashSet<Point>();
+                // Use a scanline approach to yield the perimeter points
+
+                Point? prev = null, cur = null;
+                for (int scanX = 0; scanX <= Size.X; ++scanX)
+                {
+                    for (int scanY = 0; scanY <= Size.Y; ++scanY)
+                    {
+                        Point q = new Point(scanX, scanY) + Location;
+                        if (cur == null && Contains(q))
+                        {
+                            cur = q;
+                            perimeter.Add(cur.Value);
+                        }
+                        else if (cur != null && !Contains(q))
+                        {
+                            cur = null;
+                            perimeter.Add(prev.Value);
+                        }
+
+                        prev = q;
+                    }
+                    cur = null;
+                    prev = null;
+                }
+
+                for (int scanY = 0; scanY <= Size.Y; ++scanY)
+                {
+                    for (int scanX = 0; scanX <= Size.X; ++scanX)
+                    {
+                        Point q = new Point(scanX, scanY) + Location;
+                        if (cur == null && Contains(q))
+                        {
+                            cur = q;
+                            perimeter.Add(cur.Value);
+                        }
+                        else if (cur != null && !Contains(q))
+                        {
+                            cur = null;
+                            perimeter.Add(prev.Value);
+                        }
+
+                        prev = q;
+                    }
+                    cur = null;
+                    prev = null;
+                }
+
+                // Fix concave edges
+                foreach (var r in Rects)
+                {
+                    Point a = r.Location;
+                    Point b = r.Location + new Point(r.Width - 1, 0);
+                    Point c = r.Location + new Point(r.Width - 1, r.Height - 1);
+                    Point d = r.Location + new Point(0, r.Height - 1);
+
+                    new[] { a, b, c, d }.ForEach((x) =>
+                    {
+                        if(
+                            perimeter.Contains(x + new Point(1, 0)) ||
+                            perimeter.Contains(x + new Point(0, 1)) ||
+                            perimeter.Contains(x - new Point(1, 0)) ||
+                            perimeter.Contains(x - new Point(0, 1))
+                        )
+                        {
+                            perimeter.Add(x);
+                        }
+                    });
+                }
+
+                return perimeter.AsEnumerable();
+            }
+
+            private IEnumerable<Point> GetEnclosedPoints()
+            {
+                foreach (var r in Rects)
+                {
+                    // Iterate NON-perimeter points, yield any point contained by any rectangle
+                    for (int x = 0; x < r.Width; x++)
+                    {
+                        for (int y = 0; y < r.Height; y++)
+                        {
+                            Point q = r.Location + new Point(x, y);
+                            if(!Perimeter.Contains(q)) yield return q;
+                        }
+                    }
+                }
+            }
+
+            public bool TryMerge(OrthogonalConvexHull other, out OrthogonalConvexHull result)
+            {
+                result = null;
+                if (other.Rects.Count == 0) return false;
+
+                if (other.Rects.Any(R => IsRectConnected(R)))
+                {
+                    var res = new OrthogonalConvexHull();
+                    Rects.ForEach(r => res.Rects.Add(r));
+                    other.Rects.ForEach(r => res.Rects.Add(r));
+                    result = res;
+                    Invalidate();
+                    return true;
+                }
+                return false;
+            }
+
+            public bool TryMergeInPlace(OrthogonalConvexHull other, bool clear_other)
+            {
+                bool ret = TryMerge(other, out OrthogonalConvexHull res);
+                if(ret)
+                {
+                    Rects.Clear();
+                    Rects.AddRange(res.Rects);
+                    if (clear_other)
+                    {
+                        other.Rects.Clear();
+                        other.Invalidate();
+                    }
+                    Invalidate();
+                }
+                return ret;
+            }
+        }
+
+        public static IEnumerable<Rectangle> SplitRect(Rectangle r, Func<Vector2> getPct, int minSizeX, int minSizeY)
         {
             bool ver = r.Width > r.Height; // Vertical cut?
+            var pct = getPct();
 
-            float r1W = (ver ? r.Width * pct : r.Width);
-            float r1H = (ver ? r.Height : r.Height * pct);
+            int r1W = (int)Math.Ceiling(ver ? r.Width * pct.X : r.Width);
+            int r1H = (int)Math.Ceiling(ver ? r.Height : r.Height * pct.Y);
 
-            float r2W = (ver ? r.Width - r1W : r.Width);
-            float r2H = (ver ? r.Height : r.Height - r1H);
+            int r2W = (ver ? r.Width - r1W : r.Width);
+            int r2H = (ver ? r.Height : r.Height - r1H);
 
-            Rectanglef r1 = new Rectanglef(r.X, r.Y, r1W, r1H);
-            Rectanglef r2 = new Rectanglef(r.X + (ver ? r1W : 0), r.Y + (ver ? 0 : r1H), r2W, r2H);
+            Rectangle r1 = new Rectangle(r.X, r.Y, r1W, r1H);
+            Rectangle r2 = new Rectangle(r.X + (ver ? r1W : 0), r.Y + (ver ? 0 : r1H), r2W, r2H);
 
-            yield return r1;
-            yield return r2;
+            if((r1.Width >= minSizeX && r1.Height >= minSizeY) && (r2.Width >= minSizeX && r2.Height >= minSizeY))
+            {
+                var s1 = SplitRect(r1, getPct, minSizeX, minSizeY).ToList();
+                if (s1.Count > 0)
+                {
+                    foreach (var _ in s1) yield return _;
+                }
+                else yield return r1;
+                var s2 = SplitRect(r2, getPct, minSizeX, minSizeY).ToList();
+                if (s2.Count > 0)
+                {
+                    foreach (var _ in s2) yield return _;
+                }
+                else yield return r2;
+            }
         }
 
         public static IEnumerable<Rectangle> Partition(Rectangle r, float min_size)
@@ -278,9 +540,9 @@ namespace FieryOpal.Src.Procedural
         }
 
 
-        public class MRRule : Tuple<Predicate<OpalTile>, Func<OpalTile>>
+        public class MRRule : Tuple<Predicate<OpalTile>, Func<Point, OpalTile>>
         {
-            public MRRule(Predicate<OpalTile> pred, Func<OpalTile> ret) : base(pred, ret) { }
+            public MRRule(Predicate<OpalTile> pred, Func<Point, OpalTile> ret) : base(pred, ret) { }
         }
 
         public struct MatrixReplacement
@@ -398,7 +660,9 @@ namespace FieryOpal.Src.Procedural
                         {
                             int xx = p.X + x - (MatrixSize / 2);
                             int yy = p.Y + y - (MatrixSize / 2);
-                            OpalTile t = (bit ? one.Item2() : zero.Item2());
+                            Point q = new Point(xx, yy);
+
+                            OpalTile t = (bit ? one.Item2(q) : zero.Item2(q));
                             if(t != null) map.SetTile(xx, yy, t);
                         }
                     }

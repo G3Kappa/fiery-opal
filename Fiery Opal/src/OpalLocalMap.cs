@@ -206,11 +206,16 @@ namespace FieryOpal.Src
             }
         }
 
-        public bool Despawn(IOpalGameActor actor)
+        public bool Despawn(IOpalGameActor actor, bool invokeChangeLocalMap=true)
         {
             lock (actorsLock)
             {
                 if (!Actors.Contains(actor)) return false;
+                if(invokeChangeLocalMap)
+                {
+                    actor.ChangeLocalMap(null, null);
+                    return true;
+                }
                 NotifyActorMoved(actor, new Point(-2, -2));
                 ActorDespawned?.Invoke(this, actor);
             }
@@ -608,15 +613,13 @@ namespace FieryOpal.Src
             }
         }
 
-        public bool IsTileAcessible(Point p, bool ignoreDecorations = true)
+        public bool IsTileAcessible(Point p)
         {
             var t = TileAt(p);
-            return (!t?.Properties.BlocksMovement ?? true)
+            return (!t?.Properties.BlocksMovement ?? false)
                      && !ActorsAt(p.X, p.Y)
                      .Any(
-                        a => ((!ignoreDecorations && a is IDecoration)
-                             || ((a as IDecoration)?.BlocksMovement ?? false)
-                             || (!(a as OpalActorBase)?.IgnoresCollision ?? false))
+                        a => (!(a as OpalActorBase)?.IgnoresCollision ?? false)
                      );
         }
 
@@ -624,14 +627,14 @@ namespace FieryOpal.Src
         {
             foreach(Point p in Util.BresenhamLine(lineStart, lineEnd, 1))
             {
-                if (IsTileAcessible(p, ignoreDecorations)) return p;
+                if (IsTileAcessible(p)) return p;
             }
 
             Util.LogText("No accessible tile between {0} and {1}!".Fmt(lineStart, lineEnd), true);
             return new Point(0, 0);
         }
 
-        public Point FirstAccessibleTileAround(Point xy, bool ignoreDecorations = true)
+        public Point FirstAccessibleTileAround(Point xy)
         {
             int r = 1;
             List<Tuple<OpalTile, Point>> tiles_in_ring;
@@ -641,7 +644,7 @@ namespace FieryOpal.Src
             do
             {
                 tiles_in_ring = TilesWithinRing(xy.X, xy.Y, r, r - 1)
-                    .Where(t => IsTileAcessible(t.Item2, ignoreDecorations)).ToList();
+                    .Where(t => IsTileAcessible(t.Item2)).ToList();
 
                 if (r >= Width / 2)
                 {
@@ -660,7 +663,7 @@ namespace FieryOpal.Src
         {
             Iter((s, x, y, t) =>
             {
-                t.Dispose();
+                t?.Dispose();
                 return false;
             });
         }

@@ -3,17 +3,17 @@ using SadConsole;
 
 namespace FieryOpal.Src.Procedural.Terrain.Tiles.Skeletons
 {
-    public class DoorSkeleton : ConstructedWallSkeleton
+    public class DoorSkeleton : BrickWallSkeleton
     {
+        public override string DefaultName => "Door";
+        public override Cell DefaultGraphics => new Cell(Palette.Terrain["DoorForeground"], Palette.Terrain["DoorBackground"], 197);
         public override OpalTileProperties DefaultProperties =>
             new OpalTileProperties(
                 is_block: true,
                 is_natural: false,
                 movement_penalty: 0f,
-                has_roof: true
+                ceiling_graphics: DefaultGraphics
             );
-        public override string DefaultName => "Door";
-        public override Cell DefaultGraphics => new Cell(Palette.Terrain["DoorForeground"], Palette.Terrain["DoorBackground"], 197);
 
         public override OpalTile Make(int id)
         {

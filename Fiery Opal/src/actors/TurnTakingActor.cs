@@ -52,7 +52,7 @@ namespace FieryOpal.Src.Actors
         {
             base.Update(delta);
 
-            ViewDistance = Nexus.DayNightCycle.GetBaseViewDistance(Map.Indoors);
+            ViewDistance = Nexus.DayNightCycle.GetBaseViewDistance(Map.Indoors || (Map.TileAt(LocalPosition + LookingAt.ToUnit().ToPoint())?.Properties.HasCeiling ?? false));
 
             if (Equipment == null) return;
             foreach(var i in Equipment.GetContents())

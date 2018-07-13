@@ -28,8 +28,6 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
 
     public class ShortDryGrass : Plant
     {
-        public override bool BlocksMovement => false;
-
         public ShortDryGrass()
         {
             PossibleGlyphs = new[] { 19 };
@@ -42,6 +40,7 @@ namespace FieryOpal.Src.Procedural.Terrain.Biomes
             FirstPersonScale = new Vector2(2f, 1.2f);
 
             SetGraphics();
+            SetCollision(false);
         }
     }
 

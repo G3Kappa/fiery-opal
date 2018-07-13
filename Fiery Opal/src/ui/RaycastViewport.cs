@@ -210,7 +210,7 @@ namespace FieryOpal.Src.Ui
                 if (info.SideHit) wallColor = Color.Lerp(wallColor, Color.Black, .25f);
                 SetBackbufferAt(info.Column, y, wallColor);
 
-                bool roofed = Target.TileAt(info.PreviousRayPos)?.Properties.HasRoof ?? false;
+                bool roofed = Target.TileAt(info.PreviousRayPos)?.Properties.HasCeiling ?? false;
                 SetProjectionAt(info.Column, y, info.PreviousRayPos, roofed ? 1 : 0);
             }
         }
@@ -310,11 +310,21 @@ namespace FieryOpal.Src.Ui
                         floorTile.Graphics.Foreground,
                         floorTile.Graphics.Background
                     );
+
+                    if(floorTile.Properties.HasCeiling)
+                    {
+                        ceilingPixels = FontTextureCache.GetRecoloredPixels(
+                            spritesheet,
+                            (byte)floorTile.Properties.CeilingGraphics.Glyph,
+                            floorTile.Properties.CeilingGraphics.Foreground,
+                            floorTile.Properties.CeilingGraphics.Background
+                        );
+                    }
                 }
 
                 // The base color before any post processing
                 Color floorColor = floorPixels[floorTex.X, floorTex.Y];
-                Color ceilingColor = ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? floorColor;
+                Color ceilingColor = Color.Lerp(ceilingPixels?[floorTex.X, spritesheet.Size.Y - 1 - floorTex.Y] ?? Color.Magenta, Color.Black, .25f);
 
                 // If on, draws a grid around each floor tile
                 if (DrawTerrainGrid && (floorTex.X < 1 || floorTex.Y < 1 || floorTex.X > spritesheet.Size.X - 2 || floorTex.Y > spritesheet.Size.Y - 2))
@@ -338,7 +348,7 @@ namespace FieryOpal.Src.Ui
                     SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
                     SetProjectionAt(info.Column, RenderSurface.Height - y, curFloorPos, 0);
                 }
-                else if(floorTile.Properties.HasRoof)
+                else if(floorTile.Properties.HasCeiling)
                 {
                     SetBackbufferAt(info.Column, RenderSurface.Height - y, ceilingColor);
                     SetProjectionAt(info.Column, RenderSurface.Height - y, curFloorPos, 1);
@@ -350,17 +360,17 @@ namespace FieryOpal.Src.Ui
             }
         }
 
-        public void DrawBillboardSprite(Func<Color[,]> getPixels, Vector2 obseverPosition, Point billboardPosition, Vector2 scale, Point textureSize, float vOffset, ref float[] zbuffer, bool ignoreShaders=false)
+        public void DrawBillboardSprite(Func<Color[,]> getPixels, Vector2 observerPosition, Point billboardPosition, Vector2 scale, Point textureSize, float vOffset, ref float[] zbuffer, bool ignoreShaders=false)
         {
             float invDet = 1.0f / (PlaneVector.X * DirectionVector.Y - DirectionVector.X * PlaneVector.Y);
-            Vector2 spritePosition = (billboardPosition.ToVector2() - obseverPosition + new Vector2(.5f));
+            Vector2 spritePosition = (billboardPosition.ToVector2() - observerPosition + new Vector2(.5f));
             Vector2 spriteProjection = new Vector2(
                 invDet * (spritePosition.X * DirectionVector.Y - spritePosition.Y * DirectionVector.X),
                 invDet * (-spritePosition.X * PlaneVector.Y + spritePosition.Y * PlaneVector.X)
             );
             if (spriteProjection.Y <= 0) return;
 
-            float distance_scaled = (float)billboardPosition.FastDist(obseverPosition.ToPoint()) / ViewDistance;
+            float distance_scaled = (float)billboardPosition.FastDist(observerPosition.ToPoint()) / ViewDistance;
 
             int spriteScreenX = (int)((RenderSurface.Width / 2) * (1 + spriteProjection.X / spriteProjection.Y));
             int spriteHeight = (int)(Math.Abs((int)(RenderSurface.Height / spriteProjection.Y)) / scale.Y);
@@ -394,6 +404,8 @@ namespace FieryOpal.Src.Ui
                     // For every pixel of this stripe
                     for (int y = drawStart.Y; y < drawEnd.Y; y++)
                     {
+                        if (spriteProjection.Y >= zbuffer[stripe] && y >= drawStartStripe) break;
+
                         // Wait for as long as possible to load the pixels to save some cache hits
                         if (spritePixels == null)
                         {
@@ -422,9 +434,18 @@ namespace FieryOpal.Src.Ui
                             }
                         }
 
-                        bool roofed = Target.TileAt(billboardPosition).Properties.HasRoof;
+                        bool roofed = Target.TileAt(billboardPosition).Properties.HasCeiling;
                         Color proj = GetProjectionAt(stripe, y);
-                        if (!roofed && proj.B > 0) continue; // Don't render actors outside of indoors areas if there's a roof
+                        Point projXY = new Point((int)(proj.R / 256f * Target.Width), (int)(proj.G / 256f * Target.Height));
+                        Point o = observerPosition.ToPoint();
+                        if (
+                            !roofed 
+                            && proj.B > 0 
+                            && (
+                                (Target.TileAt(observerPosition.ToPoint())?.Properties.HasCeiling ?? false) 
+                                || (o.SquaredEuclidianDistance(billboardPosition) > o.SquaredEuclidianDistance(projXY))
+                                )
+                         ) continue; // Don't render actors outside of indoors areas if there's a roof
 
                         SetBackbufferAt(stripe, y, spriteColor);
                         SetProjectionAt(stripe, y, billboardPosition, roofed ? 1 : 0);
@@ -451,7 +472,7 @@ namespace FieryOpal.Src.Ui
             actor.LocalPosition,
             new Vector2(10f / actor.Name.Length, Nexus.Fonts.MainFont.Size.Y),
             new Point(Nexus.Fonts.MainFont.Size.X * actor.Name.Length, Nexus.Fonts.MainFont.Size.Y),
-            -24f,
+            -8f - actor.FirstPersonScale.Y * actor.Spritesheet.Size.Y,
             ref zbuffer,
             ignoreShaders: true);
         }
@@ -475,7 +496,7 @@ namespace FieryOpal.Src.Ui
             actor.LocalPosition,
             new Vector2(2f, Nexus.Fonts.MainFont.Size.Y),
             new Point(Nexus.Fonts.MainFont.Size.X * 20, Nexus.Fonts.MainFont.Size.Y),
-            -16f,
+            -actor.FirstPersonScale.Y * actor.Spritesheet.Size.Y,
             ref zbuffer,
             ignoreShaders: true);
         }
@@ -496,7 +517,7 @@ namespace FieryOpal.Src.Ui
                 actor.LocalPosition,
                 new Vector2(Nexus.Fonts.MainFont.Size.X, Nexus.Fonts.MainFont.Size.Y),
                 Nexus.Fonts.MainFont.Size,
-                -32f,
+                -16f - actor.FirstPersonScale.Y * actor.Spritesheet.Size.Y,
                 ref zbuffer,
                 ignoreShaders: true);
             }
