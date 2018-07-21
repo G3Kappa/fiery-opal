@@ -15,6 +15,7 @@ namespace FieryOpal.Src.Ui.Windows
         {
             Fill(Color.White, Color.Black, ' ');
             Print(1, 1, "Fiery Opal".ToColoredString(Palette.Ui["RED"]));
+
         }
 
         public override void Draw(TimeSpan delta)
