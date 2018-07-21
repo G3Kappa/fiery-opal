@@ -303,6 +303,7 @@
     <Compile Include="Src\Ui\Windows\MainMenuWindowManager.cs" />
     <Compile Include="Src\Ui\Windows\GameWindowManager.cs" />
     <Compile Include="Src\Ui\Dialogs\OkCancelDialog.cs" />
+    <Compile Include="Src\Ui\Windows\MainMenuWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalConsoleWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalGameWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalLogWindow.cs" />

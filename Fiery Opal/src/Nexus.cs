@@ -123,8 +123,7 @@ namespace FieryOpal
 
             mainMenuWindowManager.NewGameStarted += (info) =>
             {
-                currentWM = gameWindowManager;
-                gameWindowManager.Show();
+                currentWM.Hide();
 
                 World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
                 world.Generate();
@@ -138,6 +137,8 @@ namespace FieryOpal
                 GameInstance.TurnManager.TurnEnded += (_, __) => { Quests.UpdateProgress(); };
 
                 GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
+                currentWM = gameWindowManager;
+                gameWindowManager.Show();
                 Util.LogText(Util.Str("WelcomeMessage"), false);
             };
 
