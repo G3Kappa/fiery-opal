@@ -1,17 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FieryOpal.Src.Actors.Items;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
+using SadConsole.Input;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src.Ui.Dialogs
 {
     public class BookDialog : OpalDialog
     {
-        protected ColoredString Text = "".ToColoredString();
-        public ColoredString Contents => Text;
-
-        protected List<ColoredString> Pages { get; } = new List<ColoredString>();
+        public Book Data { get; private set; }
 
         private int current_page = 0;
         public int CurrentPage
@@ -65,6 +65,28 @@ namespace FieryOpal.Src.Ui.Dialogs
             }
         );
 
+        public BookDialog()
+            : base()
+        {
+            Borderless = true;
+            Dirty = true;
+            CurrentPage = 0;
+            VirtualCursor.DisableWordBreak = true; // Done internally
+            VirtualCursor.PrintAppearance = new Cell(Palette.Ui["BLACK"], DefaultPalette["CurrentPagesBackground"]);
+        }
+
+        public void SetData(Book b)
+        {
+            Data = b;
+            foreach(var p in Data.Pages)
+            {
+                for (int i = 0; i < p.Lines.Count; i++)
+                {
+                    p.Lines[i] = p.Lines[i].Recolor(null, DefaultPalette["CurrentPagesBackground"], true);
+                }
+            }
+        }
+
         private void PrintFrame(int w, int h, bool bookmark = false)
         {
             int cornerGlyph = 4; // ♦
@@ -83,8 +105,8 @@ namespace FieryOpal.Src.Ui.Dialogs
             int doubleUpwardsTGlyph = 202;
 
             int bookmarkGlyph = 222;
-            int bookmarkEndGlyph = 171;
-            int bookmarkStartGlyph = 172;
+            int bookmarkEndGlyph = 172;
+            int bookmarkStartGlyph = 171;
 
             int ridgeGlyph = 222;
 
@@ -182,130 +204,99 @@ namespace FieryOpal.Src.Ui.Dialogs
             Print(w / 2, 1, ((char)bookmarkStartGlyph).ToString(), fg, null);
         }
 
-        SadConsole.Console LeftPage, RightPage;
-
-        public BookDialog()
-            : base()
-        {
-            Borderless = true;
-            CurrentPage = 0;
-
-            PrintFrame(Width, Height);
-
-            LeftPage = new SadConsole.Console((Width - 11) / 2, Height - 8);
-            LeftPage.Position = new Point(5, 5);
-            RightPage = new SadConsole.Console((Width - 11) / 2, Height - 8);
-            RightPage.Position = new Point(8 + (Width - 11) / 2 + (1 - Height % 2), 5);
-        }
-
         public override void Draw(TimeSpan delta)
         {
+            base.Draw(delta);
             if (Dirty)
             {
+                Dirty = false;
+
                 Clear();
                 PrintFrame(Width, Height, BookmarkedPage == CurrentPage);
-                Impaginate();
-                FlipToPage(CurrentPage);
-                Dirty = false;
-            }
 
-            base.Draw(delta);
-            LeftPage.Draw(delta);
-            RightPage.Draw(delta);
+                if (Data == null) return;
+
+                // Draw left page
+                if (Data.Pages.Count <= CurrentPage) return;
+
+                VirtualCursor.Position = new Point(7, 6);
+                foreach (var l in Data.Pages[CurrentPage].Lines)
+                {
+                    VirtualCursor.Print(l);
+                    VirtualCursor.Position = new Point(7, VirtualCursor.Position.Y + 1);
+                }
+
+                var cp = "{0}".Fmt(CurrentPage);
+                VirtualCursor.Position = new Point(3, 3);
+                VirtualCursor.Print(
+                    cp.ToColoredString(
+                        DefaultPalette["CurrentPagesForeground"], 
+                        DefaultPalette["CurrentPagesBackground"]
+                    )
+                );
+
+                // Draw right page
+                if (Data.Pages.Count <= CurrentPage + 1) return;
+
+                VirtualCursor.Position = new Point(Width / 2 + 6, 6);
+                foreach (var l in Data.Pages[CurrentPage + 1].Lines)
+                {
+                    VirtualCursor.Print(l);
+                    VirtualCursor.Position = new Point(Width / 2 + 6, VirtualCursor.Position.Y + 1);
+                }
+
+                var np = "{0}".Fmt(CurrentPage + 1);
+                VirtualCursor.Position = new Point(Width - 3 - np.Length, 3);
+                VirtualCursor.Print(
+                    np.ToColoredString(
+                        DefaultPalette["CurrentPagesForeground"],
+                        DefaultPalette["CurrentPagesBackground"]
+                    )
+                );
+            }
         }
 
         public override void Show(bool modal)
         {
-            LeftPage.Position += Position;
-            RightPage.Position += Position;
-            FlipToPage(0);
             base.Show(modal);
         }
 
-        public void Impaginate()
-        {
-            Pages.Clear();
-
-            var page_size = LeftPage.Width * (LeftPage.Height - 2);
-            var len = 0;
-            while (len < Text.Count)
-            {
-                Pages.Add(Text.SubString(len, Math.Min(page_size, Text.Count - len)));
-                len += page_size;
-            }
-        }
-
-        public void Write(ColoredString str)
-        {
-            Text += str;
-        }
-
-        public void EndPage()
-        {
-            Impaginate();
-            int spaces_needed = LeftPage.Width * (LeftPage.Height - 2) - Pages[Pages.Count - 1].Count;
-
-            // In this case we want to leave a blank page
-            if (spaces_needed == 0) spaces_needed = LeftPage.Width * (LeftPage.Height - 2);
-
-            Write(" ".Repeat(spaces_needed).ToColoredString());
-        }
-
-        public void NewLine()
-        {
-            Impaginate();
-            Write(" ".Repeat(LeftPage.Width - Pages[Pages.Count - 1].Count % LeftPage.Width).ToColoredString());
-        }
-
-        public void FlipToPage(int page)
-        {
-            if (page < 0 || Pages.Count <= page) return;
-            CurrentPage = page;
-
-            string l_pg = String.Format("{0}/{1}", CurrentPage + 1, Pages.Count);
-            string r_pg = String.Format("{0}/{1}", CurrentPage + 2, Pages.Count);
-
-            LeftPage.Fill(DefaultPalette["CurrentPagesForeground"], DefaultPalette["CurrentPagesBackground"], ' ');
-            RightPage.Fill(DefaultPalette["CurrentPagesForeground"], DefaultPalette["CurrentPagesBackground"], ' ');
-
-            //Print(3, LeftPage.Position.Y + LeftPage.Height - 2, l_pg);
-            if (CurrentPage + 2 <= Pages.Count)
-            {
-                //Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, r_pg);
-            }
-            else
-            {
-                //Print(RightPage.Position.X + RightPage.Width - r_pg.Length - 1, RightPage.Position.Y + RightPage.Height - 2, " ".Repeat(r_pg.Length));
-            }
-
-            LeftPage.Print(0, 0, Pages[page]);
-            if (Pages.Count <= page + 1) return;
-            RightPage.Print(0, 0, Pages[page + 1]);
-
-            Dirty = true;
-        }
-
-        protected override void PrintText(string text)
-        {
-            //base.PrintText(text);
-            Write(text.ToColoredString());
-            Dirty = true;
-        }
 
         protected override void BindKeys()
         {
             base.BindKeys();
 
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Left, Keybind.KeypressState.Press, "Book: previous page"), (info) => FlipToPage(CurrentPage - 2));
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Right, Keybind.KeypressState.Press, "Book: next page"), (info) => FlipToPage(CurrentPage + 2));
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.B, Keybind.KeypressState.Press, "Book: bookmark this page", ctrl: true), (info) => BookmarkedPage = CurrentPage);
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.B, Keybind.KeypressState.Press, "Book: jump to bookmark"), (info) => FlipToPage(BookmarkedPage));
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.PageDown, Keybind.KeypressState.Press, "Book: next page"), (info) =>
+            {
+                CurrentPage = CurrentPage + 2 < (Data?.Pages.Count ?? 0) ? CurrentPage + 2 : CurrentPage;
+                Dirty = true;
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.PageUp, Keybind.KeypressState.Press, "Book: previous page"), (info) =>
+            {
+                CurrentPage = CurrentPage - 2 >= 0 ? CurrentPage - 2 : CurrentPage;
+                Dirty = true;
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.B, Keybind.KeypressState.Press, "Book: set bookmark", true), (info) =>
+            {
+                if (BookmarkedPage != CurrentPage) BookmarkedPage = CurrentPage;
+                else BookmarkedPage = -1;
+                Dirty = true;
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.B, Keybind.KeypressState.Press, "Book: flip to bookmark", false, true), (info) =>
+            {
+                if (BookmarkedPage > 0)
+                {
+                    CurrentPage = BookmarkedPage;
+                    Dirty = true;
+                }
+            });
         }
 
         public override void Hide()
         {
-            if (LeftPage != null) LeftPage.Position -= Position;
-            if (RightPage != null) RightPage.Position -= Position;
             base.Hide();
         }
     }

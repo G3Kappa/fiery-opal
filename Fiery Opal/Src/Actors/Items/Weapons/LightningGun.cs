@@ -68,7 +68,7 @@ namespace FieryOpal.Src.Actors.Items.Weapons
             new Cell(Color.Cyan, Color.Transparent)
         );
 
-        public override Font Spritesheet => Nexus.Fonts.Spritesheets["Weapons"];
+        public override Font Spritesheet => Nexus.Fonts.Spritesheets["Items"];
         public override float AttackDelay => 0f;
 
         public int BaseRayLength { get; }

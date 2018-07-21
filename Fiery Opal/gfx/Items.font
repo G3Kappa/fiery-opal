@@ -1,8 +1,8 @@
 {
-  "FilePath": "Weapons.png",
+  "FilePath": "Items.png",
   "GlyphHeight": 32,
   "GlyphPadding": 0,
   "GlyphWidth": 32,
-  "Name": "Weapons",
+  "Name": "Items",
   "SolidGlyphIndex": 219
 }

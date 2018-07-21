@@ -158,7 +158,7 @@ namespace FieryOpal.Src
         {
             // Valid examples: {0}, {1:RED}, {4:WHITE:CYAN}, {5:#FF00FF:BLACK}
             const string R_HEX = "#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}";
-            const string R_NAME = "[a-zA-Z]";
+            const string R_NAME = "[a-zA-Z]+";
 
             const string R_COLOR = "(" + R_NAME + "|" + R_HEX + ")";
             const string R_OPT_ARG = "(?:\\:" + R_COLOR + ")?";
@@ -188,6 +188,57 @@ namespace FieryOpal.Src
         public static string CapitalizeFirst(this string s)
         {
             return Char.ToUpper(s[0]) + s.Substring(1);
+        }
+
+        public static ColoredString Insert(this ColoredString s, ColoredGlyph g, int pos, bool append=true)
+        {
+            var sg = new ColoredString(new[] { g });
+            if (s.Count == 0) return sg;
+
+            if (pos > s.Count) throw new IndexOutOfRangeException();
+            if(pos > 0)
+            {
+                if(append)
+                {
+                    return s.SubString(0, pos) + sg + s.SubString(pos, s.Count - pos);
+                }
+                else if(pos + 1 < s.Count)
+                {
+                    return s.SubString(0, pos) + sg + s.SubString(pos + 1, s.Count - pos - 1);
+                }
+                else return s.SubString(0, pos) + sg;
+            }
+            else
+            {
+                if(append)
+                {
+                    return sg + s;
+                }
+                else if(1 < s.Count)
+                {
+                    return sg + s.SubString(1, s.Count - 1);
+                }
+                else return sg;
+            }
+        }
+
+        public static ColoredString Recolor(this ColoredString s, Color? fg = null, Color? bg = null, bool onlyIfTransparent=false)
+        {
+            List<ColoredGlyph> glyphs = new List<ColoredGlyph>();
+            foreach(var g in s)
+            {
+                if (!onlyIfTransparent || g.Foreground.A == 0 && onlyIfTransparent)
+                {
+                    g.Foreground = fg ?? g.Foreground;
+                }
+
+                if (!onlyIfTransparent || g.Background.A == 0 && onlyIfTransparent)
+                {
+                    g.Background = bg ?? g.Background;
+                }
+                glyphs.Add(g);
+            }
+            return new ColoredString(glyphs.ToArray());
         }
     }
 }

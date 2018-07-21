@@ -78,6 +78,7 @@
     <Compile Include="Src\Actors\Environment\LightEmitters.cs" />
     <Compile Include="Src\Actors\Humanoid.cs" />
     <Compile Include="Src\Actors\Equipment.cs" />
+    <Compile Include="Src\Actors\Items\Journal.cs" />
     <Compile Include="Src\Actors\Items\Flashlight.cs" />
     <Compile Include="Src\Actors\Items\Weapons\LightningGun.cs" />
     <Compile Include="Src\Actors\Items\WorldMap.cs" />
@@ -299,7 +300,8 @@
     <Compile Include="Src\Ui\Dialogs\InventoryDialog.cs" />
     <Compile Include="Src\Ui\ShaderManager.cs" />
     <Compile Include="Src\Ui\WeaponViewSprite.cs" />
-    <Compile Include="Src\Ui\Windows\MainGameWindowManager.cs" />
+    <Compile Include="Src\Ui\Windows\MainMenuWindowManager.cs" />
+    <Compile Include="Src\Ui\Windows\GameWindowManager.cs" />
     <Compile Include="Src\Ui\Dialogs\OkCancelDialog.cs" />
     <Compile Include="Src\Ui\Windows\OpalConsoleWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalGameWindow.cs" />
@@ -314,7 +316,10 @@
     <Compile Include="Src\Util\Util.cs" />
     <Compile Include="Src\Util\Util_Physics.cs" />
     <Compile Include="Src\Util\Util_Messaging.cs" />
-    <None Include="gfx\Weapons.font">
+    <None Include="gfx\Cheepicus.font">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gfx\Items.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Sfx\Effects\Eerie01.ogg">
@@ -447,6 +452,9 @@
     <None Include="Philosophy.md" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="gfx\Cheepicus_12x12.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="gfx\extra\16x16-reference.png" />
     <Content Include="gfx\HD.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -458,11 +466,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Compile Include="Src\Ui\Dialogs\OpalDialogBase.cs" />
-    <Content Include="gfx\Weapons.png">
+    <Content Include="gfx\Items.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="License-LGPL.txt" />
-    <Compile Include="Src\Actors\Items\Journal.cs" />
+    <Compile Include="Src\Actors\Items\Book.cs" />
     <Content Include="todo\AI.txt" />
     <Content Include="todo\Lore.txt" />
     <Content Include="todo\Dungeons.txt" />

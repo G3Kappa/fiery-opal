@@ -35,7 +35,7 @@ namespace FieryOpal.Src.Ui
 
         public WeaponViewSprite()
         {
-            Spritesheet = Nexus.Fonts.Spritesheets["Weapons"];
+            Spritesheet = Nexus.Fonts.Spritesheets["Items"];
         }
 
         private Texture2D _texture;
@@ -43,7 +43,7 @@ namespace FieryOpal.Src.Ui
         {
             if (_texture != null) return _texture;
 
-            var font = Nexus.Fonts.Spritesheets["Weapons"];
+            var font = Nexus.Fonts.Spritesheets["Items"];
 
             Color[,] pixels = FontTextureCache.GetRecoloredPixels(
                                     font,

@@ -37,6 +37,8 @@ namespace FieryOpal.Src.Ui.Windows
         }
 
         public virtual void HandleInput() { }
+        public virtual void Show() { }
+        public virtual void Hide() { }
 
         public WindowManager(int w, int h)
         {

@@ -19,6 +19,7 @@ namespace FieryOpal.Src.Ui.Windows
         public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(width - 2, height - 2)
         {
             TextSurface.Font = f ?? Nexus.Fonts.MainFont;
+            caption = caption ?? "Untitled";
 
             CaptionSurface = new BasicSurface(caption.Length, 1, TextSurface.Font);
             new SurfaceEditor(CaptionSurface).Print(0, 0, caption.ToColoredString(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]));

@@ -10,11 +10,11 @@ using System.Threading;
 
 namespace FieryOpal.Src.Ui.Windows
 {
-    public class MainGameWindowManager : WindowManager
+    public class GameWindowManager : WindowManager
     {
-        protected OpalGameWindow FirstPersonWindow, TopDownWindow;
-        protected OpalInfoWindow InfoWindow;
-        protected OpalLogWindow LogWindow;
+        public OpalGameWindow FirstPersonWindow, TopDownWindow;
+        public OpalInfoWindow InfoWindow;
+        public OpalLogWindow LogWindow;
 
         protected OpalGame Game;
 
@@ -80,7 +80,7 @@ namespace FieryOpal.Src.Ui.Windows
 
         }
 
-        public MainGameWindowManager(int w, int h, OpalGame g) : base(w, h)
+        public GameWindowManager(int w, int h, OpalGame g) : base(w, h)
         {
 
             Game = g;
@@ -102,11 +102,26 @@ namespace FieryOpal.Src.Ui.Windows
                     false
                 );
             });
+        }
+
+        public override void Show()
+        {
+            base.Show();
 
             InfoWindow.Show();
             FirstPersonWindow.Show();
             TopDownWindow.Show();
             LogWindow.Show();
+        }
+
+        public override void Hide()
+        {
+            base.Hide();
+
+            InfoWindow.Hide();
+            FirstPersonWindow.Hide();
+            TopDownWindow.Hide();
+            LogWindow.Hide();
         }
 
         public override void Update(GameTime gameTime)

@@ -1,4 +1,5 @@
-﻿using FieryOpal.Src.Ui;
+﻿using FieryOpal.Src.Actors.Environment;
+using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using SadConsole;
 
@@ -91,6 +92,36 @@ namespace FieryOpal.Src.Actors.Decorations
 
             FirstPersonScale = new Microsoft.Xna.Framework.Vector2(2f, 2f);
             FirstPersonVerticalOffset = 6f;
+        }
+    }
+
+    public class CeilingLamp : Furniture
+    {
+        protected RadialLightEmitter LightSource;
+
+        public CeilingLamp() : base()
+        {
+            Spritesheet = Nexus.Fonts.Spritesheets["Items"];
+            FirstPersonGraphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, 2));
+            Graphics = new ColoredGlyph(new Cell(Color.White, Color.Transparent, 0));
+
+            FirstPersonScale = new Microsoft.Xna.Framework.Vector2(1.5f, 1.5f);
+            FirstPersonVerticalOffset = -5f;
+
+            LightSource = new RadialLightEmitter()
+            {
+                LightColor = Color.LightGoldenrodYellow,
+                LightIntensity = 8f,
+                LightRadius = 6,
+            };
+
+            Name = "Ceiling Lamp";
+            MapChanged += HandleSpawnOnMapChange;
+        }
+
+        private void HandleSpawnOnMapChange(IOpalGameActor a, OpalLocalMap oldMap)
+        {
+            LightSource.ChangeLocalMap(a.Map, a.LocalPosition, false);
         }
     }
 }

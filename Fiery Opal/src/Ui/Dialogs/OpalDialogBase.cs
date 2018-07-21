@@ -34,11 +34,12 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         private static Point _MakeSize = new Point(1, 1);
         private static string _MakeCaption = "Untitled Dialog";
+        private static Font _MakeFont = null;
 
         public static int CurrentDialogCount => activeDialogs.Count;
 
         protected OpalDialog()
-            : this(_MakeSize.X, _MakeSize.Y, _MakeCaption, "")
+            : this(_MakeSize.X, _MakeSize.Y, _MakeCaption, "", _MakeFont)
         {
 
         }
@@ -48,7 +49,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             Print(1, 1, new ColoredString(text, Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]));
         }
 
-        public OpalDialog(int width, int height, string caption, string text) : base(width, height, caption)
+        public OpalDialog(int width, int height, string caption, string text, Font f) : base(width, height, caption, f)
         {
             Hide();  // Starts shown
             Clear();
@@ -105,14 +106,17 @@ namespace FieryOpal.Src.Ui.Dialogs
             return Make<T>(caption, text, new Point(-1, -1));
         }
 
-        public static T Make<T>(string caption, string text, Point size)
+        public static T Make<T>(string caption, string text, Point size, Font f=null)
             where T : OpalDialog, new()
         {
+            Vector2 fontRatio = Nexus.Fonts.MainFont.Size.ToVector2() / (f?.Size ?? Nexus.Fonts.MainFont.Size).ToVector2();
+
             _MakeSize = new Point(size.X >= 0 ? size.X : (int)(Nexus.Width / 1.5f) - 2, size.Y >= 0 ? size.Y : (int)(Nexus.Height / 1.25f) - 2);
             _MakeCaption = caption;
+            _MakeFont = f;
             T dialog = new T()
             {
-                Position = new Point(Nexus.Width / 2 - _MakeSize.X / 2, Nexus.Height / 2 - _MakeSize.Y / 2)
+                Position = new Point((int)(Nexus.Width * fontRatio.X / 2 - _MakeSize.X / 2), (int)(Nexus.Height * fontRatio.Y / 2 - _MakeSize.Y / 2))
             };
             dialog.PrintText(text);
             return dialog;

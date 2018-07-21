@@ -19,7 +19,9 @@ namespace FieryOpal
         public static int Width { get; private set; }
         public static int Height { get; private set; }
 
-        static MainGameWindowManager mainGameWindowManager;
+        static GameWindowManager gameWindowManager;
+        static MainMenuWindowManager mainMenuWindowManager;
+        static WindowManager currentWM;
 
         public static FontConfigInfo Fonts { get; private set; }
         public static LocalizationInfo Locale { get; private set; }
@@ -52,8 +54,6 @@ namespace FieryOpal
             Keybind.PushState();
             Keybind.PushState();
 
-
-
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
         }
@@ -62,13 +62,13 @@ namespace FieryOpal
         {
             OpalDialog.Update(time);
             Keybind.Update();
-            mainGameWindowManager.Update(time);
+            currentWM.Update(time);
         }
 
 
         private static void Draw(GameTime time)
         {
-            mainGameWindowManager.Draw(time);
+            currentWM.Draw(time);
             OpalDialog.Draw(time);
         }
 
@@ -109,19 +109,6 @@ namespace FieryOpal
             DebugCLI = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Width * .4f), 4));
             DebugCLI.Position = new Point(0, 0);
 
-            World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
-            world.Generate();
-            GameInstance = new OpalGame(world);
-            DayNightCycle = new DayNightCycleManager(1200);
-            mainGameWindowManager = new MainGameWindowManager(Width, Height, GameInstance);
-            OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
-            Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
-
-            Quests = new QuestManager(Player);
-            GameInstance.TurnManager.TurnEnded += (_, __) => { Quests.UpdateProgress(); };
-
-            GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
-
             TypeConversionHelper<object>.RegisterDefaultConversions();
             TileSkeleton.PreloadAllSkeletons();
             OpalActorBase.PreloadActorClasses("");
@@ -130,9 +117,32 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("Environment");
             OpalActorBase.PreloadActorClasses("Items");
             OpalActorBase.PreloadActorClasses("Items.Weapons");
-            LuaVM.Init();
 
-            Util.LogText(Util.Str("WelcomeMessage"), false);
+            mainMenuWindowManager = new MainMenuWindowManager(Width, Height);
+            currentWM = mainMenuWindowManager;
+
+            mainMenuWindowManager.NewGameStarted += (info) =>
+            {
+                currentWM = gameWindowManager;
+                gameWindowManager.Show();
+
+                World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
+                world.Generate();
+                GameInstance = new OpalGame(world);
+                DayNightCycle = new DayNightCycleManager(1200);
+                gameWindowManager = new GameWindowManager(Width, Height, GameInstance);
+                OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
+                Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
+                Quests = new QuestManager(Player);
+
+                GameInstance.TurnManager.TurnEnded += (_, __) => { Quests.UpdateProgress(); };
+
+                GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
+                Util.LogText(Util.Str("WelcomeMessage"), false);
+            };
+
+            LuaVM.Init();
+            mainMenuWindowManager.Show();
         }
     }
 }

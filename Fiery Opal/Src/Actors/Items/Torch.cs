@@ -46,7 +46,7 @@ namespace FieryOpal.Src.Actors.Items
                 LightRadius = 5,
             };
 
-            Spritesheet = Nexus.Fonts.Spritesheets["Weapons"];
+            Spritesheet = Nexus.Fonts.Spritesheets["Items"];
             FirstPersonGraphics = new ColoredGlyph(new Cell(color, Color.Transparent, 1));
             Graphics = new ColoredGlyph(new Cell(color, Color.Transparent, 161));
             Name = "Torch";
