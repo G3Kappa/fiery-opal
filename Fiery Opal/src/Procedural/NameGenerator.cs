@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FieryOpal.Src.Procedural
 {
@@ -46,7 +47,7 @@ namespace FieryOpal.Src.Procedural
         private string GetGenderedNoun(DeityNameGeneratorInfo dinfo)
         {
             if (dinfo.IsMale) return "god";
-            if (dinfo.IsFemale) return "goddes";
+            if (dinfo.IsFemale) return "goddess";
             else return "spirit";
         }
 
@@ -54,18 +55,32 @@ namespace FieryOpal.Src.Procedural
         {
             string[] syllables = new[]
             {
-                "al", "sh", "ox", "mo", "pi", "ba", "ku", "ze", "wa", "ru",
-                "trum", "flo", "kro", "xus", "ur", "ist", "ka", "nos", "dio",
-                "ne", "ko", "por", "qin", "-", "'"
+                "ak", "pha", "ra", "sa", "sha",
+                "en", "te", "me", "les", "ve",
+                "ik", "di", "phi", "bi", "zi",
+                "or", "on", "ko", "go", "xo",
+                "ux", "uk", "ku", "gu", "ru",
+                "n", "l", "s", "t", "k",
+                "a", "e", "i", "o", "u",
+                "-", "'"
             };
 
             int length = Util.Rng.Next(2, 5);
-            return String.Join("", Util.ChooseN(syllables, length)).CapitalizeFirst();
+
+            string name;
+            var excludedExtremes = new[] { '-', '\'' };
+            do
+            {
+                name = String.Join("", Util.ChooseN(syllables, length)).CapitalizeFirst();
+            } while (excludedExtremes.Contains(name[0]) || excludedExtremes.Contains(name[name.Length - 1]));
+            return name;
         }
 
         public override string GetName(NameGeneratorInfo<DeityBase> info)
         {
             var dinfo = (info as DeityNameGeneratorInfo);
+            if (dinfo == null) return GetProperNoun(dinfo);
+
             return String.Format(
                 "{0}, {1} of {2}.",
                 GetProperNoun(dinfo),

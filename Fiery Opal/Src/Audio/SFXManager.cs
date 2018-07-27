@@ -17,6 +17,9 @@ namespace FieryOpal.Src.Audio
             None = 0,
             SoundTrack = 1,
             Eerie01 = 2,
+            UiBlip = 3,
+            UiSuccess = 4,
+            UiError = 5,
         }
 
         public enum SoundTrackType

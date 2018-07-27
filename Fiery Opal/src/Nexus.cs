@@ -10,6 +10,7 @@ using FieryOpal.Src.Ui.Windows;
 using Microsoft.Xna.Framework;
 using System;
 using FieryOpal.Src.Actors.Items;
+using FieryOpal.Src.Audio;
 
 namespace FieryOpal
 {
@@ -119,9 +120,10 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("Items.Weapons");
 
             mainMenuWindowManager = new MainMenuWindowManager(Width, Height);
+            mainMenuWindowManager.InGame = false;
             currentWM = mainMenuWindowManager;
 
-            mainMenuWindowManager.NewGameStarted += (info) =>
+            mainMenuWindowManager.MainMenu.NewGameStarted += (info) =>
             {
                 currentWM.Hide();
 
@@ -131,6 +133,7 @@ namespace FieryOpal
                 DayNightCycle = new DayNightCycleManager(1200);
                 gameWindowManager = new GameWindowManager(Width, Height, GameInstance);
                 OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
+                Player.Name = info.PlayerName;
                 Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
                 Quests = new QuestManager(Player);
 
@@ -140,10 +143,25 @@ namespace FieryOpal
                 currentWM = gameWindowManager;
                 gameWindowManager.Show();
                 Util.LogText(Util.Str("WelcomeMessage"), false);
+                Keybind.BindKey(new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Escape, Keybind.KeypressState.Press, "Game Window: Show Menu"), (_) =>
+                {
+                    currentWM.Hide();
+                    currentWM = mainMenuWindowManager;
+                    mainMenuWindowManager.InGame = true;
+                    currentWM.Show();
+                    SFXManager.PlayFX(SFXManager.SoundEffectType.UiSuccess);
+                });
+            };
+
+            mainMenuWindowManager.MainMenu.ResumePressed += () =>
+            {
+                currentWM.Hide();
+                currentWM = gameWindowManager;
+                currentWM.Show();
             };
 
             LuaVM.Init();
-            mainMenuWindowManager.Show();
+            currentWM.Show();
         }
     }
 }

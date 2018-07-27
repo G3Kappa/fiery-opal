@@ -178,5 +178,9 @@ namespace FieryOpal.Src
             IsCKDShown = true;
         }
 
+        internal static void BindKey(KeybindInfo keybindInfo)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

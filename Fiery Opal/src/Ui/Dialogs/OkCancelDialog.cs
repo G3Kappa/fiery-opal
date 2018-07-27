@@ -15,7 +15,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         }
 
         public OpalDialogResult Result { get; protected set; }
-        public Action<OpalDialogResult> OnResult;
+        public event Action<OpalDialogResult> OnResult;
 
         protected Button OkButton, CancelButton;
 
@@ -52,7 +52,7 @@ namespace FieryOpal.Src.Ui.Dialogs
             Closed += (e, f) =>
             {
                 if (Result == OpalDialogResult.STILL_OPEN) Result = OpalDialogResult.CLOSED;
-                if (OnResult != null) OnResult.Invoke(Result);
+                OnResult?.Invoke(Result);
             };
         }
 

@@ -225,8 +225,9 @@ namespace FieryOpal.Src
         public static ColoredString Recolor(this ColoredString s, Color? fg = null, Color? bg = null, bool onlyIfTransparent=false)
         {
             List<ColoredGlyph> glyphs = new List<ColoredGlyph>();
-            foreach(var g in s)
+            foreach(var G in s)
             {
+                var g = G.Clone();
                 if (!onlyIfTransparent || g.Foreground.A == 0 && onlyIfTransparent)
                 {
                     g.Foreground = fg ?? g.Foreground;

@@ -16,24 +16,44 @@ namespace FieryOpal.Src.Ui.Windows
         public string Caption { get; set; }
         public bool Borderless { get; set; }
 
+        public void RedrawBorder(Cell borderStyle, Cell captionStyle)
+        {
+            ColoredString bTitleLeft = "{0}".Fmt((char)180).ToColoredString(borderStyle);
+            ColoredString bTitleRight = "{0}".Fmt((char)195).ToColoredString(borderStyle);
+
+            ColoredString coloredCaption = bTitleLeft + Caption.ToColoredString(captionStyle) + bTitleRight;
+
+            new SurfaceEditor(CaptionSurface).Print(0, 0, coloredCaption);
+
+            var editor = new SurfaceEditor(BorderSurface);
+            Box box = Box.GetDefaultBox();
+
+            box.TopLeftCharacter = 218;
+            box.BottomLeftCharacter = 192;
+            box.TopRightCharacter = 191;
+            box.BottomRightCharacter = 217;
+
+            box.LeftSideCharacter = 179;
+            box.BottomSideCharacter = 196;
+            box.RightSideCharacter = 179;
+            box.TopSideCharacter = 196;
+
+            box.Width = BorderSurface.Width;
+            box.Height = BorderSurface.Height;
+            box.Foreground = borderStyle.Foreground;
+            box.BorderBackground = borderStyle.Background;
+            box.Draw(editor);
+        }
+
         public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(width - 2, height - 2)
         {
             TextSurface.Font = f ?? Nexus.Fonts.MainFont;
-            caption = caption ?? "Untitled";
+            Caption = caption ?? "Untitled";
 
-            CaptionSurface = new BasicSurface(caption.Length, 1, TextSurface.Font);
-            new SurfaceEditor(CaptionSurface).Print(0, 0, caption.ToColoredString(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]));
-
+            CaptionSurface = new BasicSurface(Caption.Length + 2, 1, TextSurface.Font);
             BorderSurface = new BasicSurface(width, height, TextSurface.Font);
-
-            var editor = new SurfaceEditor(BorderSurface);
-
-            Box box = Box.GetDefaultBox();
-            box.Width = BorderSurface.Width;
-            box.Height = BorderSurface.Height;
-            box.Foreground = Palette.Ui["DefaultForeground"];
-            box.BorderBackground = Palette.Ui["DefaultBackground"];
-            box.Draw(editor);
+            Cell defStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]);
+            RedrawBorder(defStyle, defStyle);
 
             // The following line is requierd to avoid a NPE
             ((ControlsConsoleRenderer)Renderer).Controls = new System.Collections.Generic.List<SadConsole.Controls.ControlBase>();
@@ -41,7 +61,6 @@ namespace FieryOpal.Src.Ui.Windows
             // Assign a new handle to this window, used by MessagePipelines as addresses
             Handle = Guid.NewGuid();
             // Set the caption
-            Caption = caption;
             Borderless = false;
 
             Theme = new SadConsole.Themes.WindowTheme()

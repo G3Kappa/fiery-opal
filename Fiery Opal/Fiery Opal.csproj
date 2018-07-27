@@ -290,6 +290,7 @@
     <Compile Include="Src\Turn.cs" />
     <Compile Include="Src\Ui\Dialogs\BookDialog.cs" />
     <Compile Include="Src\Ui\Dialogs\DebugCLI.cs" />
+    <Compile Include="Src\Ui\Dialogs\InputDialog.cs" />
     <Compile Include="Src\Ui\Lighting.cs" />
     <Compile Include="Src\Ui\Palette.cs" />
     <Compile Include="Src\Ui\Dialogs\ContextMenu.cs" />
@@ -324,6 +325,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Sfx\Effects\Eerie01.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Sfx\Effects\UiBlip.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Sfx\Effects\UiError.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Sfx\Effects\UiSuccess.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Sfx\Soundtrack\Caves.ogg">

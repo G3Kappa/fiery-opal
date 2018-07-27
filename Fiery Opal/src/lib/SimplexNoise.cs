@@ -59,17 +59,17 @@ namespace FieryOpal.Src.Lib
             return values;
         }
 
-        public static float CalcPixel1D(int x, float scale)
+        public static float CalcPixel1D(float x, float scale)
         {
             return Generate(x * scale) * 128 + 128;
         }
 
-        public static float CalcPixel2D(int x, int y, float scale)
+        public static float CalcPixel2D(float x, float y, float scale)
         {
             return Generate(x * scale, y * scale) * 128 + 128;
         }
 
-        public static float CalcPixel3D(int x, int y, int z, float scale)
+        public static float CalcPixel3D(float x, float y, float z, float scale)
         {
             return Generate(x * scale, y * scale, z * scale) * 128 + 128;
         }

@@ -12,30 +12,22 @@ namespace FieryOpal.Src.Ui.Windows
 {
     public class MainMenuWindowManager : WindowManager
     {
-        MainMenuWindow MainMenu;
-
-        public struct NewGameInfo
-        {
-
-        }
+        public MainMenuWindow MainMenu { get; }
 
         public MainMenuWindowManager(int w, int h) : base(w, h)
         {
             MainMenu = new MainMenuWindow(80, 50);
             Vector2 fontRatio = Nexus.Fonts.MainFont.Size.ToVector2() / Nexus.Fonts.Spritesheets["Books"].Size.ToVector2();
             MainMenu.Position = new Point((int)((w / 2) * fontRatio.X) - 40, (int)((h / 2) * fontRatio.Y) - 25);
-
-            MainMenu.NewGamePressed += () =>
-            {
-                NewGameInfo i = new NewGameInfo();
-                NewGameStarted?.Invoke(i);
-            };
         }
+
+        public bool InGame = false;
 
         public override void Show()
         {
             base.Show();
 
+            MainMenu.SetLabels(InGame);
             MainMenu.Show();
         }
 
@@ -44,6 +36,12 @@ namespace FieryOpal.Src.Ui.Windows
             base.Hide();
 
             MainMenu.Hide();
+        }
+
+        public override void HandleInput()
+        {
+            base.HandleInput();
+            MainMenu.ProcessKeyboard(Global.KeyboardState);
         }
 
         public override void Update(GameTime time)
@@ -57,7 +55,5 @@ namespace FieryOpal.Src.Ui.Windows
             base.Draw(time);
             MainMenu.Draw(time.ElapsedGameTime);
         }
-
-        public event Action<NewGameInfo> NewGameStarted;
     }
 }
