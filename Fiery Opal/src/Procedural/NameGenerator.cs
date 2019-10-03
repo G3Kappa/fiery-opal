@@ -14,6 +14,31 @@ namespace FieryOpal.Src.Procedural
         public abstract string GetName(NameGeneratorInfo<T> info);
     }
 
+
+    public class WorldNameGenerator : NameGenerator<World>
+    {
+        public class WorldNameGeneratorInfo : NameGeneratorInfo<World>
+        {
+        }
+
+        public override string GetName(NameGeneratorInfo<World> info)
+        {
+            string[] syllables = new[]
+            {
+                "ter", "ra", "ga", "ia", "mar",
+                "te", "gio", "ve", "ne", "re",
+                "mer", "cur", "io", "sol", "lu",
+                "na", "as", "trum", "sa", "tur",
+                "no", "num", "ptun", "ni", "bi",
+                "ru", "co", "me", "ta", "stel",
+                "la", "le", " "
+            };
+            int length = Util.Rng.Next(4, 7);
+
+            return String.Join("", Util.ChooseN(syllables, length)).CapitalizeFirst();
+        }
+    }
+
     public class DeityNameGenerator : NameGenerator<DeityBase>
     {
         public class DeityNameGeneratorInfo : NameGeneratorInfo<DeityBase>

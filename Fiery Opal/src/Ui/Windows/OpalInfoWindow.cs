@@ -18,7 +18,7 @@ namespace FieryOpal.Src.Ui.Windows
 
         protected List<WindowManager> ConnectedWindowManagers = new List<WindowManager>();
 
-        public OpalInfoWindow(int w, int h, Font f = null) : base(w, h, "Info", f)
+        public OpalInfoWindow(int w, int h, Font f = null) : base(w, h, "INFO", f)
         {
         }
 

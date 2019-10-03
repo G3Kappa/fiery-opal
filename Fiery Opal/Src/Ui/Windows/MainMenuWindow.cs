@@ -39,20 +39,20 @@ namespace FieryOpal.Src.Ui.Windows
         private float _timeElapsed = 0f;
         public override void Update(double gameTimeSeconds)
         {
-            _timeElapsed += (float)gameTimeSeconds * 4;
+            _timeElapsed += (float)gameTimeSeconds;
             if (XYZS.X == -1)
             {
-                Coord.X = _timeElapsed;
+                Coord.X = _timeElapsed * 4;
             }
             else Coord.X = XYZS.X;
             if (XYZS.Y == -1)
             {
-                Coord.Y = 1337 + _timeElapsed;
+                Coord.Y = 1337 + _timeElapsed * 8;
             }
-            else Coord.Y = .5f * XYZS.Y + _timeElapsed;
+            else Coord.Y = .5f * XYZS.Y + _timeElapsed * 4;
             if (XYZS.Z == -1)
             {
-                Coord.Z = 1337 * 7 + _timeElapsed / 2;
+                Coord.Z = 1337 * 7 + _timeElapsed * 2;
             }
             else Coord.Z = XYZS.Z;
             if (XYZS.W == -1)
@@ -73,7 +73,18 @@ namespace FieryOpal.Src.Ui.Windows
 
             float n = Lib.Noise.CalcPixel3D(Coord.X, Coord.Y, Coord.Z, Coord.W) / 256f;
             cell.Foreground = Color.Lerp(oldForeground, ForegroundColor, n);
-            if(cell.Glyph != ' ') cell.Background = Color.Lerp(oldBackground, BackgroundColor, n);
+            if (cell.Glyph != ' ')
+            {
+                cell.Background = Color.Lerp(oldBackground, BackgroundColor, n);
+                if (n < .15f)
+                {
+                    cell.Glyph = '.';
+                }
+                else if(n < .25f)
+                {
+                    cell.Glyph = ',';
+                }
+            }
 
             return oldForeground != cell.Foreground || oldBackground != cell.Background;
         }
@@ -130,11 +141,6 @@ namespace FieryOpal.Src.Ui.Windows
                     SetEffect(x + 3, 2 + y, fx);
                 }
             }
-
-
-            Cell borderStyle = new Cell(Palette.Ui["DGRAY"], Palette.Ui["BLACK"]);
-            Cell captionStyle = new Cell(Palette.Ui["LGRAY"], Palette.Ui["BLACK"]);
-            RedrawBorder(borderStyle, captionStyle);
 
             BindEvents();
             Invalidate();

@@ -21,7 +21,7 @@ namespace FieryOpal.Src.Actors.Items
 
         private void Read(IInventoryHolder holder)
         {
-            var scroll = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "");
+            var scroll = OpalDialog.Make<WorldMapScrollDialog>("Scroll", "", new Point(-1, -1), Nexus.Fonts.MainFont, true);
             World world = holder.Map.ParentRegion.ParentWorld;
 
             WorldMapViewport vwp = new WorldMapViewport(world, new Rectangle(0, 0, world.Width, world.Height));

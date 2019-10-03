@@ -21,7 +21,7 @@ namespace FieryOpal.Src.Ui.Dialogs
         public ScrollDialog() : base()
         {
             Borderless = true;
-            WriteableArea = new SadConsole.Console(Width - 10, Height - 6);
+            WriteableArea = new SadConsole.Console(Width - 10, Height - 6, Nexus.Fonts.MainFont);
 
             textSurface.DefaultBackground =
                 Theme.FillStyle.Background = Color.Transparent;
@@ -35,7 +35,7 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         public override void Draw(TimeSpan delta)
         {
-            WriteableArea.Position = Position + new Point(6, 4);
+            WriteableArea.Position = Position + new Point(5, 3);
             base.Draw(delta);
             PrintRoll(0, 0);
             PrintRoll(Width - 5, 0);

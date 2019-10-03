@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
+using SadConsole.Effects;
 using SadConsole.Input;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,16 @@ namespace FieryOpal.Src.Ui.Dialogs
     {
         public Book Data { get; private set; }
 
+        public bool WriteMode { get; set; }
+
         private int current_page = 0;
         public int CurrentPage
         {
             get => current_page;
             set
             {
+                if (current_page != value) Dirty = true;
                 current_page = value;
-                Dirty = true;
             }
         }
 
@@ -75,9 +78,44 @@ namespace FieryOpal.Src.Ui.Dialogs
             VirtualCursor.PrintAppearance = new Cell(Palette.Ui["BLACK"], DefaultPalette["CurrentPagesBackground"]);
         }
 
+        public override bool ProcessKeyboard(SadConsole.Input.Keyboard info)
+        {
+            if (!WriteMode) return false;
+            // Check each key pressed.
+            int oldPages = Data.Pages.Count;
+            foreach (var key in info.KeysPressed)
+            {
+                // If the character associated with the key pressed is a printable character, print it
+                if (key.Character != '\0')
+                {
+                    Data.Write("{0:BLACK}".FmtC(Color.Transparent, Color.Transparent, key.Character), -1, null, false);
+                    Dirty = true;
+                }
+                else if (key.Key == Keys.Back)
+                {
+                    Data.Write("{0}".FmtC(Color.Transparent, Color.Transparent, '\b'));
+                    Dirty = true;
+                }
+                else if (key.Key == Keys.Enter)
+                {
+                    Data.Write("{0}".FmtC(Color.Transparent, Color.Transparent, "\r\n"));
+                    Dirty = true;
+                }
+                else if (key.Key == Keys.Tab)
+                {
+                    Data.Write("{0}".FmtC(Color.Transparent, Color.Transparent, "\t"));
+                    Dirty = true;
+                }
+            }
+            if(Data.Pages.Count % 2 == 1) CurrentPage += 2 * (Data.Pages.Count - oldPages);
+            return false;
+        }
+
         public void SetData(Book b)
         {
             Data = b;
+            if (Data.Pages.Count == 0) Data.Write(" \b".ToColoredString());
+
             foreach(var p in Data.Pages)
             {
                 for (int i = 0; i < p.Lines.Count; i++)
@@ -204,6 +242,19 @@ namespace FieryOpal.Src.Ui.Dialogs
             Print(w / 2, 1, ((char)bookmarkStartGlyph).ToString(), fg, null);
         }
 
+        private static ICellEffect CursorEffect = new Fade()
+        {
+            FadeForeground = true,
+            FadeBackground = true,
+            DestinationForeground = Palette.Ui["LGRAY"],
+            DestinationBackground = Palette.Ui["BLACK"],
+            FadeDuration = 1,
+            AutoReverse = false,
+            Repeat = true,
+            RemoveOnFinished = true
+        };
+
+        private Point prevDataCursorPos;
         public override void Draw(TimeSpan delta)
         {
             base.Draw(delta);
@@ -212,6 +263,7 @@ namespace FieryOpal.Src.Ui.Dialogs
                 Dirty = false;
 
                 Clear();
+                if(WriteMode && prevDataCursorPos != null) SetEffect(prevDataCursorPos.X, prevDataCursorPos.Y, null);
                 PrintFrame(Width, Height, BookmarkedPage == CurrentPage);
 
                 if (Data == null) return;
@@ -222,7 +274,7 @@ namespace FieryOpal.Src.Ui.Dialogs
                 VirtualCursor.Position = new Point(7, 6);
                 foreach (var l in Data.Pages[CurrentPage].Lines)
                 {
-                    VirtualCursor.Print(l);
+                    VirtualCursor.Print(l.Recolor(DefaultPalette["CurrentPagesBackground"], DefaultPalette["CurrentPagesBackground"], true));
                     VirtualCursor.Position = new Point(7, VirtualCursor.Position.Y + 1);
                 }
 
@@ -235,13 +287,19 @@ namespace FieryOpal.Src.Ui.Dialogs
                     )
                 );
 
+                if(WriteMode)
+                {
+                    SetEffect(Data.VirtualCursor.X + 7, Data.VirtualCursor.Y + 6, CursorEffect);
+                    prevDataCursorPos = new Point(Data.VirtualCursor.X + 7, Data.VirtualCursor.Y + 6);
+                }
+
                 // Draw right page
                 if (Data.Pages.Count <= CurrentPage + 1) return;
 
                 VirtualCursor.Position = new Point(Width / 2 + 6, 6);
                 foreach (var l in Data.Pages[CurrentPage + 1].Lines)
                 {
-                    VirtualCursor.Print(l);
+                    VirtualCursor.Print(l.Recolor(DefaultPalette["CurrentPagesBackground"], DefaultPalette["CurrentPagesBackground"], true));
                     VirtualCursor.Position = new Point(Width / 2 + 6, VirtualCursor.Position.Y + 1);
                 }
 
@@ -253,6 +311,13 @@ namespace FieryOpal.Src.Ui.Dialogs
                         DefaultPalette["CurrentPagesBackground"]
                     )
                 );
+
+
+                if (WriteMode)
+                {
+                    SetEffect(Data.VirtualCursor.X + Width / 2 + 6, Data.VirtualCursor.Y + 6, CursorEffect);
+                    prevDataCursorPos = new Point(Data.VirtualCursor.X + Width / 2 + 6, Data.VirtualCursor.Y + 6);
+                }
             }
         }
 

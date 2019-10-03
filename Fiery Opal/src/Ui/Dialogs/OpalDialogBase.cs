@@ -23,10 +23,10 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         protected static Palette DefaultPalette = new Palette(
             new[] {
-                new Tuple<string, Color>("Light", new Color(255, 255, 255)),
-                new Tuple<string, Color>("ShadeLight", new Color(191, 191, 191)),
-                new Tuple<string, Color>("ShadeDark", new Color(77, 77, 77)),
-                new Tuple<string, Color>("Dark", new Color(51, 51, 51)),
+                new Tuple<string, Color>("Light", Palette.Ui["WHITE"]),
+                new Tuple<string, Color>("ShadeLight", Palette.Ui["LGRAY"]),
+                new Tuple<string, Color>("ShadeDark", Palette.Ui["DGRAY"]),
+                new Tuple<string, Color>("Dark", Palette.Ui["BLACK"]),
             }
         );
 
@@ -37,6 +37,8 @@ namespace FieryOpal.Src.Ui.Dialogs
         private static Font _MakeFont = null;
 
         public static int CurrentDialogCount => activeDialogs.Count;
+
+        public static OpalDialog ActiveDialog => activeDialogs.Count > 0 ? activeDialogs.Last() : null;
 
         protected OpalDialog()
             : this(_MakeSize.X, _MakeSize.Y, _MakeCaption, "", _MakeFont)
@@ -54,7 +56,6 @@ namespace FieryOpal.Src.Ui.Dialogs
             Hide();  // Starts shown
             Clear();
             PrintText(text);
-
             CloseOnESC = false;
         }
 
@@ -106,18 +107,27 @@ namespace FieryOpal.Src.Ui.Dialogs
             return Make<T>(caption, text, new Point(-1, -1));
         }
 
-        public static T Make<T>(string caption, string text, Point size, Font f=null)
+        public static T Make<T>(string caption, string text, Point size, Font f=null, bool borderless=false)
             where T : OpalDialog, new()
         {
-            Vector2 fontRatio = Nexus.Fonts.MainFont.Size.ToVector2() / (f?.Size ?? Nexus.Fonts.MainFont.Size).ToVector2();
+            f = f ?? Nexus.Fonts.Spritesheets["Books"];
 
-            _MakeSize = new Point(size.X >= 0 ? size.X : (int)(Nexus.Width / 1.5f) - 2, size.Y >= 0 ? size.Y : (int)(Nexus.Height / 1.25f) - 2);
+            Point dfSz = new Point(Nexus.InitInfo.DefaultFontWidth, Nexus.InitInfo.DefaultFontHeight);
+            Point fSz = f.Size;
+            Vector2 fontRatio = dfSz.ToVector2() / (fSz).ToVector2();
+
+            _MakeSize = (new Point(size.X > 0 ? size.X : Nexus.DialogRect.Width, size.Y > 0 ? size.Y : Nexus.DialogRect.Height).ToVector2() * fontRatio).ToPoint();
             _MakeCaption = caption;
             _MakeFont = f;
+            if(!borderless && Nexus.DialogRect.Width != Nexus.Width && Nexus.DialogRect.Height != Nexus.Height)
+            {
+                _MakeSize -= new Point(2);
+            }
             T dialog = new T()
             {
-                Position = new Point((int)(Nexus.Width * fontRatio.X / 2 - _MakeSize.X / 2), (int)(Nexus.Height * fontRatio.Y / 2 - _MakeSize.Y / 2))
+                Position = Nexus.DialogRect.Location
             };
+
             dialog.PrintText(text);
             return dialog;
         }

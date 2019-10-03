@@ -88,6 +88,14 @@ namespace FieryOpal.Src.Ui.Dialogs
             }
         }
 
+        public class MultilineQuestion : Question
+        {
+            public MultilineQuestion(ColoredString text, int ansCols, int ansRows, Func<Question, string, bool> validate, bool freeInput = true, IEnumerable<string> presetAnswers = null, Point? tbMargin = null) : base(text, ansCols * ansRows, validate, freeInput, presetAnswers, tbMargin)
+            {
+
+            }
+        }
+
         public class RandomAnswerQuestion : Question
         {
             public Func<string> PresetGenerator { get; } = null;
@@ -132,11 +140,6 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         public FormDialog() : base()
         {
-            Cell borderStyle = new Cell(Palette.Ui["DGRAY"], Palette.Ui["BLACK"]);
-            Cell captionStyle = new Cell(Palette.Ui["LGRAY"], Palette.Ui["BLACK"]);
-
-            RedrawBorder(borderStyle, captionStyle);
-
             Clear();
         }
 
@@ -308,8 +311,6 @@ namespace FieryOpal.Src.Ui.Dialogs
             // Check each key pressed.
             foreach (var key in info.KeysPressed)
             {
-                float randPitch = (float)Util.Rng.NextDouble() / 2f - .25f;
-
                 // If the character associated with the key pressed is a printable character, print it
                 if (key.Character != '\0')
                 {

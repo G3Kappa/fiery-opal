@@ -98,7 +98,7 @@ namespace FieryOpal.Src.Procedural.Worldgen
 
             // Find the local minima of the distance transform of the world (sea/inland) from the starting point
             // and yield each traversed tile. Stop early if we reach the sea.
-            var dt = w.SeaDT;
+            var dt = w.SeaDistanceTransform;
             do
             {
                 var regions = dt.ElementsWithinRect(new Rectangle(p.X - 1, p.Y - 1, 3, 3)).Where(r => r.Item2.SquaredEuclidianDistance(p) < 2)

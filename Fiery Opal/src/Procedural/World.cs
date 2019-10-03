@@ -9,6 +9,7 @@ using SadConsole;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace FieryOpal.Src.Procedural
 {
@@ -66,6 +67,7 @@ namespace FieryOpal.Src.Procedural
         Top
     }
 
+    [Serializable()]
     public class BiomeInfo
     {
         public BiomeHeatType AverageTemperature;
@@ -139,6 +141,7 @@ namespace FieryOpal.Src.Procedural
         }
     }
 
+    [Serializable()]
     public struct WorldGenInfo
     {
         public float Elevation { get; }
@@ -153,6 +156,7 @@ namespace FieryOpal.Src.Procedural
         }
     }
 
+    [Serializable]
     public class WorldTile
     {
         private static char GetGlyph(BiomeType biome)
@@ -193,13 +197,14 @@ namespace FieryOpal.Src.Procedural
             }
         }
 
-        private OpalLocalMap localMap = null;
+        [NonSerialized()] // TODO: Serialize me
+        private OpalLocalMap _localMap = null;
         public OpalLocalMap LocalMap
         {
             get
             {
-                bool first = localMap == null;
-                var ret = (localMap = localMap ?? GenerateLocalMap());
+                bool first = _localMap == null;
+                var ret = (_localMap = _localMap ?? GenerateLocalMap());
                 if (first) ret.GenerateWorldFeatures();
                 return ret;
             }
@@ -228,24 +233,35 @@ namespace FieryOpal.Src.Procedural
             );
         }
 
-        private Cell _graphics = null;
+        private SerializableCell _graphics = null;
         public Cell Graphics
         {
             get { return _graphics ?? DefaultGraphics; }
             set { _graphics = value; }
         }
-        public BiomeInfo Biome { get; set; }
-        public World ParentWorld { get; }
-        public Point WorldPosition { get; }
-        public WorldGenInfo GenInfo { get; set; }
 
-        public List<WorldFeatureGenerator> FeatureGenerators;
+
+        private BiomeInfo _biome;
+        public BiomeInfo Biome { get => _biome; set => _biome = value; }
+
+        private World _parent;
+        public World ParentWorld => _parent;
+
+        private SerializablePoint _wPos;
+        public Point WorldPosition => _wPos;
+
+        private WorldGenInfo _genInfo;
+        public WorldGenInfo GenInfo { get => _genInfo; set => _genInfo = value; }
+
+
+        [NonSerialized()] // TODO: Serialize me
+        private List<WorldFeatureGenerator> _fGens = new List<WorldFeatureGenerator>();
+        public List<WorldFeatureGenerator> FeatureGenerators => _fGens ?? (_fGens = new List<WorldFeatureGenerator>());
 
         public WorldTile(World parent, Point position)
         {
-            ParentWorld = parent;
-            WorldPosition = position;
-            FeatureGenerators = new List<WorldFeatureGenerator>();
+            _parent = parent;
+            _wPos = position;
         }
 
         public override string ToString()
@@ -254,17 +270,19 @@ namespace FieryOpal.Src.Procedural
         }
     }
 
-    public class World
+    [Serializable()]
+    public class World : INamedObject
     {
-        protected WorldTile[,] Regions;
+        protected WorldTile[,] _regions;
         public WorldTile RegionAt(int x, int y)
         {
             if (x < 0 || y < 0 || x >= Width || y >= Height) return null;
-            return Regions[x, y];
+            return _regions[x, y];
         }
 
+        [NonSerialized()]
         private float[,] m_SeaDT;
-        public float[,] SeaDT
+        public float[,] SeaDistanceTransform
         {
             get => m_SeaDT ?? (m_SeaDT = DistanceTransform(t => !new[] { BiomeType.Sea, BiomeType.Ocean }.Contains(t.Biome.Type)).Pow(.25f));
         }
@@ -277,7 +295,7 @@ namespace FieryOpal.Src.Procedural
             {
                 for (int y = 0; y < Height; ++y)
                 {
-                    mask[x, y] = predicate(Regions[x, y]);
+                    mask[x, y] = predicate(_regions[x, y]);
                 }
             }
 
@@ -286,17 +304,22 @@ namespace FieryOpal.Src.Procedural
 
         public IEnumerable<WorldTile> RegionsWithinRect(Rectangle? R, bool yield_null = false)
         {
-            return Regions.ElementsWithinRect(R, yield_null).Select(t => t.Item1);
+            return _regions.ElementsWithinRect(R, yield_null).Select(t => t.Item1);
         }
 
-        public int Width { get; }
-        public int Height { get; }
+        private int _w, _h;
+        public int Width => _w;
+        public int Height => _h;
+
+        private string _name;
+        public string Name { get => _name; private set => _name = value; }
 
         public World(int w, int h)
         {
-            Regions = new WorldTile[w, h];
-            Width = w;
-            Height = h;
+            _regions = new WorldTile[w, h];
+            _w = w;
+            _h = h;
+            Name = new WorldNameGenerator().GetName(null);
         }
 
         private IEnumerable<WorldFeatureGenerator> GetWFGs()
@@ -359,7 +382,7 @@ namespace FieryOpal.Src.Procedural
             {
                 for (int y = 0; y < Height; ++y)
                 {
-                    var tile = Regions[x, y] = new WorldTile(this, new Point(x, y));
+                    var tile = _regions[x, y] = new WorldTile(this, new Point(x, y));
                     tile.Biome = new BiomeInfo(tempMap[x, y], rainMap[x, y], elevMap[x, y]);
                     tile.GenInfo = new WorldGenInfo(fTempMap[x, y], fRainMap[x, y], fElevMap[x, y]);
                 }
@@ -388,6 +411,45 @@ namespace FieryOpal.Src.Procedural
                 }
             }
 
+        }
+
+        public void CreateSaveDataFolderStructure()
+        {
+            var path = $"./save/{Name}";
+
+            int i = 2; string basePath = path;
+            while(System.IO.Directory.Exists(path))
+            {
+                path = $"{basePath} ({i})";
+            }
+            DataFolder_Root = path;
+            DataFolder_Regions = path + "/regions";
+            DataFolder_Actors = path + "/actors";
+
+            System.IO.Directory.CreateDirectory(DataFolder_Root);
+            System.IO.Directory.CreateDirectory(DataFolder_Regions);
+            System.IO.Directory.CreateDirectory(DataFolder_Actors);
+        }
+
+        public string DataFolder_Root { get; private set; }
+        public string DataFolder_Regions { get; private set; }
+        public string DataFolder_Actors { get; private set; }
+
+
+        public void SaveToDisk(string fileName)
+        {
+            string fn = $"{DataFolder_Root}/{fileName}";
+            Nexus.Serializer.SaveState(this, fn);
+        }
+
+        public void LoadFromDisk(string fileName)
+        {
+            string fn = $"{DataFolder_Root}/{fileName}";
+            World state = (World)Nexus.Serializer.LoadState(fn);
+            _regions = state._regions;
+            _w = state._w;
+            _h = state._h;
+            _name = state._name;
         }
 
         private float[,] GenerateTemperatureMap()

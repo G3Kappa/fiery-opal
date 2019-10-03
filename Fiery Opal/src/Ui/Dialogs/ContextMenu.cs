@@ -14,12 +14,11 @@ namespace FieryOpal.Src.Ui.Dialogs
 
         public ContextMenu() : base()
         {
-            Borderless = true;
             Actions = new List<Tuple<string, Action<T>, Keybind.KeybindInfo>>();
 
             textSurface.DefaultBackground =
                 Theme.FillStyle.Background =
-                DefaultPalette["ShadeDark"];
+                DefaultPalette["Dark"];
             Clear();
         }
 
@@ -37,56 +36,26 @@ namespace FieryOpal.Src.Ui.Dialogs
             }
         }
 
-        private void PrintSideBorders()
-        {
-            Cell railStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["ShadeDark"]);
-
-            int leftRailGlyph = 221;
-            int rightRailGlyph = 222;
-
-            VPrint(0, 0, ((char)leftRailGlyph).Repeat(Height).ToColoredString(railStyle));
-            VPrint(Width - 1, 0, ((char)rightRailGlyph).Repeat(Height).ToColoredString(railStyle));
-        }
-
-        private void PrintTopBottomBorders()
-        {
-            Cell borderStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["ShadeDark"]);
-
-            int fullBlockGlyph = 219;
-            int leftTGlyph = 195;
-            int rightTGlyph = 180;
-            int hLineGlyph = 196;
-
-            string top_border = "" + ((char)fullBlockGlyph) + ((char)leftTGlyph) + ((char)hLineGlyph).Repeat(Width - 4) + ((char)rightTGlyph) + ((char)fullBlockGlyph);
-            string bottom_border = "" + ((char)fullBlockGlyph) + ((char)hLineGlyph).Repeat(Width - 2) + ((char)fullBlockGlyph);
-
-            Print(0, Height - 1, bottom_border.ToColoredString(borderStyle));
-            Print(0, 0, top_border.ToColoredString(borderStyle));
-
-            Print(Width / 2 - Caption.Length / 2, 0, Caption.ToColoredString(borderStyle));
-        }
-
         private void PrintActions()
         {
-            string fmt = "{0} -> {1}";
-            Cell textStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["ShadeDark"]);
+            Cell keyStyle = new Cell(DefaultPalette["Light"], DefaultPalette["Dark"]);
+            Cell textStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
 
             int longest_key = Actions.Max(a => a.Item3.ToString().Length);
 
             for (int i = 0; i < Actions.Count; ++i)
             {
                 string letter = Actions[i].Item3.ToString();
-                var str = String.Format(fmt, letter.PadRight(longest_key, ' '), Actions[i].Item1);
+                var key = letter.PadRight(longest_key, ' ').ToColoredString(keyStyle);
+                var txt = (" -> " + Actions[i].Item1).ToColoredString(textStyle);
 
-                Print(2, i + 2, str.ToColoredString(textStyle));
+                Print(2, i + 2, key + txt);
             }
         }
 
         public override void Draw(TimeSpan delta)
         {
             base.Draw(delta);
-            PrintSideBorders();
-            PrintTopBottomBorders();
             PrintActions();
         }
 

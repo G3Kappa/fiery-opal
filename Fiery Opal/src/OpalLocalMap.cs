@@ -9,112 +9,15 @@ using FieryOpal.Src.Ui;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FieryOpal.Src
 {
     public delegate bool OpalLocalMapIterator(OpalLocalMap self, int x, int y, OpalTile t);
 
-    public class TileMemory
-    {
-        protected HashSet<Point> Seen = new HashSet<Point>();
-        protected HashSet<Point> Known = new HashSet<Point>();
-        protected bool IsDisabled = false;
-
-        private object fogLock = new object();
-
-        public void See(Point p)
-        {
-            lock(fogLock)
-            {
-                if (!Seen.Contains(p)) Seen.Add(p);
-            }
-        }
-
-        public void Learn(Point p)
-        {
-            lock (fogLock)
-            {
-                if (!Known.Contains(p)) Known.Add(p);
-            }
-        }
-
-        public void Unsee(Point p)
-        {
-            lock (fogLock)
-            {
-                if (Seen.Contains(p)) Seen.Remove(p);
-            }
-        }
-
-        public void Forget(Point p)
-        {
-            lock (fogLock)
-            {
-                if (Known.Contains(p)) Known.Remove(p);
-            }
-        }
-
-        public void UnseeEverything()
-        {
-            lock (fogLock)
-            {
-                Seen.Clear();
-            }
-        }
-
-        public void ForgetEverything()
-        {
-            lock (fogLock)
-            {
-                Known.Clear();
-            }
-        }
-
-        public bool CanSee(Point p)
-        {
-            lock (fogLock)
-            {
-                if (IsDisabled) return true;
-                return Seen.Contains(p);
-            }
-        }
-
-        public bool KnowsOf(Point p)
-        {
-            lock (fogLock)
-            {
-                if (IsDisabled) return true;
-                return Known.Contains(p);
-            }
-        }
-
-        public void Disable()
-        {
-            lock (fogLock)
-            {
-                IsDisabled = true;
-            }
-        }
-
-        public void Enable()
-        {
-            lock (fogLock)
-            {
-                IsDisabled = false;
-            }
-        }
-
-        public void Toggle()
-        {
-            lock (fogLock)
-            {
-                IsDisabled = !IsDisabled;
-            }
-        }
-
-        public bool IsEnabled => !IsDisabled;
-    }
 
     [Serializable]
     public class OpalLocalMap : IDisposable
@@ -125,6 +28,7 @@ namespace FieryOpal.Src
         public int Width { get; }
         public int Height { get; }
         public string Name { get; set; }
+        public string DataFolder { get; set; }
         public bool Indoors { get; set; } = false;
 
         public Color FogColor { get; set; }

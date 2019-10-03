@@ -264,6 +264,9 @@ namespace FieryOpal.Src
         public int FPSCap { get; set; } = 60;
 
         public string DefaultFontPath { get; set; } = "gfx/Taffer.font";
+        public int DefaultFontWidth { get; set; } = 10;
+        public int DefaultFontHeight { get; set; } = 10;
+
         public string Locale { get; set; } = "cfg/locale/en_US.cfg";
 
         public Dictionary<string, string> Suppress { get; set; } = new Dictionary<string, string>();

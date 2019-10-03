@@ -45,22 +45,23 @@ namespace FieryOpal.Src.Ui.Windows
             box.Draw(editor);
         }
 
-        public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(width - 2, height - 2)
+        public OpalConsoleWindow(int width, int height, string caption = "Untitled", Font f = null) : base(Math.Max(1, width - 2), Math.Max(1, height - 2))
         {
             TextSurface.Font = f ?? Nexus.Fonts.MainFont;
             Caption = caption ?? "Untitled";
 
             CaptionSurface = new BasicSurface(Caption.Length + 2, 1, TextSurface.Font);
             BorderSurface = new BasicSurface(width, height, TextSurface.Font);
-            Cell defStyle = new Cell(Palette.Ui["DefaultForeground"], Palette.Ui["DefaultBackground"]);
-            RedrawBorder(defStyle, defStyle);
+
+            Cell borderStyle = new Cell(Palette.Ui["LGRAY"], Palette.Ui["BLACK"]);
+            Cell captionStyle = new Cell(Palette.Ui["LCYAN"], Palette.Ui["LGRAY"]);
+            RedrawBorder(borderStyle, captionStyle);
 
             // The following line is requierd to avoid a NPE
             ((ControlsConsoleRenderer)Renderer).Controls = new System.Collections.Generic.List<SadConsole.Controls.ControlBase>();
 
             // Assign a new handle to this window, used by MessagePipelines as addresses
             Handle = Guid.NewGuid();
-            // Set the caption
             Borderless = false;
 
             Theme = new SadConsole.Themes.WindowTheme()
@@ -75,17 +76,17 @@ namespace FieryOpal.Src.Ui.Windows
 
         public override void Draw(TimeSpan delta)
         {
+            // Store current position
+            Point oldPos = Position;
             if (!Borderless)
             {
                 base.Renderer.Render(BorderSurface);
                 base.Renderer.Render(CaptionSurface);
                 Global.DrawCalls.Add(new DrawCallSurface(BorderSurface, Position, UsePixelPositioning));
                 Global.DrawCalls.Add(new DrawCallSurface(CaptionSurface, Position + new Point(1, 0), UsePixelPositioning));
+                Position += new Point(1);
             }
 
-            // Store current position
-            Point oldPos = Position;
-            Position += new Point(1);
             base.Draw(delta);
             // Restore the position to its intended value
             Position = oldPos;

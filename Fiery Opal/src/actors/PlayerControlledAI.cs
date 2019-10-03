@@ -153,6 +153,18 @@ namespace FieryOpal.Src.Actors
                 InputHandled("ToggleLighting", false);
             });
 
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.T, Keybind.KeypressState.Press, "Debug: Serialize"), (info) =>
+            {
+                Body.Map.ParentRegion.ParentWorld.SaveToDisk("world.sav");
+                Util.LogText("World saved!", true);
+            });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.T, Keybind.KeypressState.Press, "Debug: Deserialize", true), (info) =>
+            {
+                Body.Map.ParentRegion.ParentWorld.LoadFromDisk("world.sav");
+                Util.LogText("World restored!", true);
+            });
+
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.F9, Keybind.KeypressState.Press, "Debug: Show CLI"), (info) =>
             {
                 Keybind.PushState();
@@ -254,7 +266,7 @@ namespace FieryOpal.Src.Actors
         {
             if (isHandlingDialog) return;
 
-            var inventory_window = OpalDialog.Make<InventoryDialog>("Inventory", "");
+            var inventory_window = OpalDialog.Make<InventoryDialog>("Inventory", "", new Point(-1), null, true);
             inventory_window.Inventory = Body.Inventory;
             OpalDialog.LendKeyboardFocus(inventory_window);
             inventory_window.Show();

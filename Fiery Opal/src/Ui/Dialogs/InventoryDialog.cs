@@ -19,19 +19,28 @@ namespace FieryOpal.Src.Ui.Dialogs
             Category
         }
 
-        public SortMode SortingMode { get; set; } = SortMode.Quantity;
+        public enum SortDirection
+        {
+            Ascending,
+            Descending,
+        }
+
+        public SortMode SortingMode { get; set; } = SortMode.Category;
+        public SortDirection SortingDirection { get; set; } = SortDirection.Ascending;
         public PersonalInventory Inventory { get; set; }
 
         protected string GroupByItem(OpalItem i) => i.ItemInfo.Name.ToString() + i.ItemInfo.Category.ToString();
         protected int SelectedIndex = 0;
         protected bool Dirty = false;
 
+        private string BaseCaption;
+
         public InventoryDialog() : base()
         {
             Borderless = true;
 
             textSurface.DefaultBackground = Theme.FillStyle.Background = DefaultPalette["Dark"];
-
+            BaseCaption = Caption;
             Dirty = true;
         }
 
@@ -63,13 +72,22 @@ namespace FieryOpal.Src.Ui.Dialogs
             switch (SortingMode)
             {
                 case SortMode.Quantity:
-                    grouped_items = grouped_items.OrderBy(x => -x.Count()).ToList();
+                    if(SortingDirection == SortDirection.Ascending)
+                        grouped_items = grouped_items.OrderBy(x => x.Count()).ToList();
+                    else
+                        grouped_items = grouped_items.OrderByDescending(x => x.Count()).ToList();
                     break;
                 case SortMode.Name:
-                    grouped_items = grouped_items.OrderBy(x => x.First().ItemInfo.Name.ToString()).ToList();
+                    if (SortingDirection == SortDirection.Ascending)
+                        grouped_items = grouped_items.OrderBy(x => x.First().ItemInfo.Name.ToString()).ToList();
+                    else
+                        grouped_items = grouped_items.OrderByDescending(x => x.First().ItemInfo.Name.ToString()).ToList();
                     break;
                 case SortMode.Category:
-                    grouped_items = grouped_items.OrderBy(x => x.First().ItemInfo.Category.ToString()).ToList();
+                    if (SortingDirection == SortDirection.Ascending)
+                        grouped_items = grouped_items.OrderBy(x => x.First().ItemInfo.Category.ToString()).ToList();
+                    else
+                        grouped_items = grouped_items.OrderByDescending(x => x.First().ItemInfo.Category.ToString()).ToList();
                     break;
             }
 
@@ -97,11 +115,18 @@ namespace FieryOpal.Src.Ui.Dialogs
                 SelectedIndex = Math.Min(Inventory.GetContents().GroupBy(GroupByItem).Count() - 1, ++SelectedIndex);
                 Dirty = true;
             });
-            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Tab, Keybind.KeypressState.Press, "Inventory: change sorting mode"), (info) =>
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Tab, Keybind.KeypressState.Press, "Inventory: cycle sorting mode"), (info) =>
             {
                 SortingMode = (SortMode)(((int)SortingMode + 1) % Enum.GetValues(typeof(SortMode)).Length);
                 Dirty = true;
             });
+
+            Keybind.BindKey(new Keybind.KeybindInfo(Keys.Multiply, Keybind.KeypressState.Press, "Inventory: cycle sorting direction"), (info) =>
+            {
+                SortingDirection = (SortDirection)(((int)SortingDirection + 1) % Enum.GetValues(typeof(SortDirection)).Length);
+                Dirty = true;
+            });
+
             Keybind.BindKey(new Keybind.KeybindInfo(Keys.Enter, Keybind.KeypressState.Press, "Inventory: open context menu for group"), (info) =>
             {
                 if (Inventory.Count <= 0) return;
@@ -128,36 +153,16 @@ namespace FieryOpal.Src.Ui.Dialogs
         // ---
         const int HEADER_HEIGHT = 2;
 
-        const float COL1_WIDTH = .2f;
-        const float COL2_WIDTH = .5f;
-        const float COL3_WIDTH = .3f;
-
-        private int Col1Width => (int)((Width - 2) * COL1_WIDTH);
-        private int Col2Width => (int)((Width - 2) * COL2_WIDTH);
-        private int Col3Width => (int)((Width - 2) * COL3_WIDTH);
-
         private int ElementsPerPage => ((Height - HEADER_HEIGHT - 3) / 2);
         // ---
 
         private void PrintHeader()
         {
-            int tlCornerGlyph = 218;
-            int trCornerGlyph = 191;
-            int blCornerGlyph = 192;
-            int brCornerGlyph = 217;
-
             int lineGlyph = 196;
+            Cell headerStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
 
-            Cell headerStyle = new Cell(DefaultPalette["Light"], DefaultPalette["Dark"]);
-
-            // Print corners
-            Print(0, HEADER_HEIGHT, tlCornerGlyph.ToColoredString(headerStyle));
-            Print(0, HEADER_HEIGHT + 1, blCornerGlyph.ToColoredString(headerStyle));
-            Print(Width - 1, HEADER_HEIGHT, trCornerGlyph.ToColoredString(headerStyle));
-            Print(Width - 1, HEADER_HEIGHT + 1, brCornerGlyph.ToColoredString(headerStyle));
             // Print lines
-            Print(1, HEADER_HEIGHT, ((char)lineGlyph).Repeat(Width - 2).ToColoredString(headerStyle));
-            Print(1, HEADER_HEIGHT + 1, ((char)lineGlyph).Repeat(Width - 2).ToColoredString(headerStyle));
+            Print(0, HEADER_HEIGHT, ((char)lineGlyph).Repeat(Width).ToColoredString(headerStyle));
         }
         private void PrintScrollbar(int group_count)
         {
@@ -165,39 +170,47 @@ namespace FieryOpal.Src.Ui.Dialogs
             int rightRailGlyph = 222;
             int cursorGlyph = 221;
 
-            Cell railStyle = new Cell(DefaultPalette["ShadeDark"], DefaultPalette["Dark"]);
+            Cell railStyle = new Cell(DefaultPalette["ShadeDark"], DefaultPalette["ShadeLight"]);
             Cell cursorStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Light"]);
 
-            VPrint(0, HEADER_HEIGHT + 2, ((char)leftRailGlyph).Repeat(Height - HEADER_HEIGHT - 3).ToColoredString(railStyle));
-            VPrint(Width - 1, HEADER_HEIGHT + 2, ((char)rightRailGlyph).Repeat(Height - HEADER_HEIGHT - 3).ToColoredString(railStyle));
+            VPrint(0, HEADER_HEIGHT + 1, ((char)leftRailGlyph).Repeat(Height - HEADER_HEIGHT - 2).ToColoredString(railStyle));
+            VPrint(Width - 1, HEADER_HEIGHT + 1, ((char)rightRailGlyph).Repeat(Height - HEADER_HEIGHT - 2).ToColoredString(railStyle));
 
             if (group_count == 0) return;
 
             int items_per_page = (Height - 5) / 2; // 5 Cells used for layout, items are printed every other row
             int page_count = (int)(group_count / (float)items_per_page) + 1;
 
-            int scrollbarHeight = (int)((1f / page_count) * (Height - HEADER_HEIGHT - 3));
+            int scrollbarHeight = (int)((1f / page_count) * (Height - HEADER_HEIGHT - 2));
             float nibPos = SelectedIndex / (float)group_count * ((Height - HEADER_HEIGHT - 2) - scrollbarHeight);
 
-            VPrint(Width - 1, HEADER_HEIGHT + 2 + (int)nibPos, ((char)cursorGlyph).Repeat(scrollbarHeight).ToColoredString(cursorStyle));
+            VPrint(Width - 1, HEADER_HEIGHT + 1 + (int)nibPos, ((char)cursorGlyph).Repeat(scrollbarHeight).ToColoredString(cursorStyle));
         }
         private void PrintFooter()
         {
-            Cell footerStyle = new Cell(DefaultPalette["Light"], DefaultPalette["Dark"]);
+            Cell footerStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
 
             int footerGlyph = 205;
             Print(0, Height - 1, ((char)footerGlyph).Repeat(Width).ToColoredString(footerStyle));
         }
-        private void PrintSingleTab(int x, int y, int width, string text, bool make_it_double)
+        private void PrintSingleTab(int x, int y, int width, string text, bool selected)
         {
-            Cell tabStyle = new Cell(DefaultPalette["Light"], DefaultPalette["Dark"]);
+            Cell tabStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
+            Cell labelStyle = new Cell(Palette.Ui["LCYAN"], DefaultPalette["Dark"]);
 
-            int tlCornerGlyph = make_it_double ? 201 : 218;
-            int trCornerGlyph = make_it_double ? 187 : 191;
-            int vLineGlyph = make_it_double ? 186 : 179;
-            int upwardsTGlyph = make_it_double ? 208 : 193;
-            int hLineGlyph = make_it_double ? 205 : 196;
-            int downarrowGlyph = 31;
+            int tlCornerGlyph = 218;
+            int trCornerGlyph = 191;
+            int vLineGlyph = 179;
+            int blCornerGlyph = selected ? 217 : 193;
+            int brCornerGlyph = selected ? 192 : 193;
+            int hLineGlyph = 196;
+
+            //text = text.PadLeft(width / 2 + text.Length / 2).PadRight(width - 2);
+
+            if(selected)
+            {
+                text = text.Substring(0, text.Length - 1) + (SortingDirection == SortDirection.Ascending ? (char)30 : (char)31);
+            }
 
             // Start with corners
             Print(x, y, tlCornerGlyph.ToColoredString(tabStyle));
@@ -205,45 +218,34 @@ namespace FieryOpal.Src.Ui.Dialogs
             // Join them to the header
             Print(x, y + 1, vLineGlyph.ToColoredString(tabStyle));
             Print(x + width - 1, y + 1, vLineGlyph.ToColoredString(tabStyle));
-            Print(x, y + 2, upwardsTGlyph.ToColoredString(tabStyle));
-            Print(x + width - 1, y + 2, upwardsTGlyph.ToColoredString(tabStyle));
+            Print(x, y + 2, blCornerGlyph.ToColoredString(tabStyle));
+            Print(x + width - 1, y + 2, brCornerGlyph.ToColoredString(tabStyle));
             // Join them horizontally
             Print(x + 1, y, ((char)hLineGlyph).Repeat(width - 2).ToColoredString(tabStyle));
+            Print(x + 1, y + 2, (selected ? ' ' : (char)196).Repeat(width - 2).ToColoredString(tabStyle));
             // Print text
-            Print(x + (width / 2 - text.Length / 2), y + 1, text.ToColoredString(tabStyle));
+            Print(x + 1, y + 1, text.ToColoredString(selected ? labelStyle : tabStyle));
 
-            if (make_it_double)
+            if (selected)
             {
-                Print(x + width - 2, y + 1, downarrowGlyph.ToColoredString(tabStyle));
+                //Print(x + width - 2, y + 1, downarrowGlyph.ToColoredString(labelStyle));
             }
         }
+
+        private static string h1 = "#  ", h2 = "Name".PadRight(16), h3 = "Category".PadRight(12);
         private void PrintTabs()
         {
-            PrintSingleTab(1, 0, Col1Width, "QTY#", SortingMode == SortMode.Quantity);
-            PrintSingleTab(1 + Col1Width, 0, Col2Width, "Item Name", SortingMode == SortMode.Name);
-            PrintSingleTab(1 + Col1Width + Col2Width, 0, Col3Width, "Category", SortingMode == SortMode.Category);
+            PrintSingleTab(1, 0, h1.Length + 2, h1, SortingMode == SortMode.Quantity);
+            PrintSingleTab(2 + h1.Length + 2, 0, h2.Length + 2, h2, SortingMode == SortMode.Name);
+            PrintSingleTab(3 + h1.Length + h2.Length + 4, 0, h3.Length + 2, h3, SortingMode == SortMode.Category);
         }
-        private void PrintSlots()
-        {
-            Cell slotStyle = new Cell(DefaultPalette["ShadeDark"], DefaultPalette["Dark"]);
 
-            int hLineGlyph = 196;
-            var line = ((char)hLineGlyph).Repeat(Width - 4);
-            line = line.Remove(Col1Width - 3, 4);
-            line = line.Insert(Col1Width - 3, "    ");
-            line = line.Remove(Col2Width + Col1Width - 3, 4);
-            line = line.Insert(Col2Width + Col1Width - 3, "    ");
-            line = " " + line.Remove(0, 1);
-            line = line.Remove(line.Length - 1, 1) + " ";
-
-            for (int i = 0; i < Height - 5; i += 2)
-            {
-                Print(2, 4 + i, line.ToColoredString(slotStyle));
-            }
-        }
         private void PrintItemsAndScrollbar()
         {
-            Cell textStyle = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
+            Cell textStyleNormal = new Cell(DefaultPalette["Light"], DefaultPalette["Dark"]);
+            Cell textStyleHighlighted = new Cell(DefaultPalette["Light"], Palette.Ui["CYAN"]);
+            Cell tabStyle = new Cell(DefaultPalette["ShadeDark"], DefaultPalette["Dark"]);
+            Cell sepStyleHighlighted = new Cell(DefaultPalette["ShadeLight"], DefaultPalette["Dark"]);
             IEnumerable<IGrouping<string, OpalItem>> grouped_items = GroupAndSortInventory();
 
             var sel_idx = SelectedIndex;
@@ -256,6 +258,7 @@ namespace FieryOpal.Src.Ui.Dialogs
                 sel_idx = grouped_items.Count() - ElementsPerPage / 2 - 1;
             }
 
+            int selected_j = 0;
             for (int j = 0; j < ElementsPerPage; ++j)
             {
                 var index = sel_idx + (j - ElementsPerPage / 2);
@@ -271,19 +274,31 @@ namespace FieryOpal.Src.Ui.Dialogs
                         break;
                 }
 
+                if (SelectedIndex == index) selected_j = j;
+
+                var textStyle = SelectedIndex != index ? textStyleNormal : textStyleHighlighted;
+                Print(1, 4 + j, " ".Repeat(Width - 2).ToColoredString(textStyle));
+
                 var name = group.Key;
                 var items = group.ToArray();
 
-                Print(Col1Width / 2 - items.Length.ToString().Length / 2, 5 + 2 * j, items.Length.ToString().ToColoredString(textStyle));
-                SetCell(Col1Width + 3, 5 + 2 * j, items.First().Graphics);
-                Print(Col1Width + 5, 5 + 2 * j, items.First().ItemInfo.Name);
-                Print(Col1Width + Col2Width + 3, 5 + 2 * j, items.First().ItemInfo.Category.ToString().ToColoredString(textStyle));
+                //Print(2, 4 + j, " ".Repeat(Width - 2).ToColoredString(textStyle));
+                Print(2 + h1.Length / 2 - items.Length.ToString().Length / 2, 4 + j, items.Length.ToString().ToColoredString(textStyle));
+                SetCell(2 + h1.Length + 3, 4 + j, items.First().Graphics);
+                Print(2 + h1.Length + 5, 4 + j, items.First().ItemInfo.Name.Recolor(null, textStyle.Background));
+                Print(2 + h1.Length + h2.Length + 6, 4 + j, items.First().ItemInfo.Category.ToString().ToColoredString(textStyle));
 
-                if (SelectedIndex == index)
-                {
-                    Print(1, 5 + 2 * j, ((char)26).ToString().ToColoredString());
-                }
             }
+
+            var sep = "|".Repeat(Height - 4).ToColoredString(tabStyle);
+            var sepHighlighted = "|".Repeat(Height - 4).ToColoredString(sepStyleHighlighted);
+            VPrint(3 + h1.Length, 3, new[] { SortMode.Quantity, SortMode.Name }.Contains(SortingMode) ? sepHighlighted : sep);
+            VPrint(6 + h1.Length + h2.Length, 3, new[] { SortMode.Name, SortMode.Category }.Contains(SortingMode) ? sepHighlighted : sep);
+            VPrint(9 + h1.Length + h2.Length + h3.Length, 3, new[] { SortMode.Category }.Contains(SortingMode) ? sepHighlighted : sep);
+
+            SetBackground(3 + h1.Length, 4 + selected_j, textStyleHighlighted.Background);
+            SetBackground(6 + h1.Length + h2.Length, 4 + selected_j, textStyleHighlighted.Background);
+            SetBackground(9 + h1.Length + h2.Length + h3.Length, 4 + selected_j, textStyleHighlighted.Background);
 
             PrintScrollbar(grouped_items.Count());
         }
@@ -294,11 +309,10 @@ namespace FieryOpal.Src.Ui.Dialogs
             base.Draw(delta);
             if (!Dirty) return;
 
-            Clear();
+            Fill(Color.White, DefaultPalette["Dark"], ' ');
             PrintHeader();
             PrintTabs();
             PrintFooter();
-            PrintSlots();
 
             if (Inventory != null) PrintItemsAndScrollbar();
 

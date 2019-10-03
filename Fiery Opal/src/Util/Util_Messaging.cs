@@ -132,7 +132,7 @@ namespace FieryOpal.Src
             return new ColoredString(glyph.ToString(), c);
         }
 
-        private static Color ParseColor(string c)
+        private static Color? ParseColor(string c)
         {
             if (c.StartsWith("#"))
             {
@@ -150,7 +150,7 @@ namespace FieryOpal.Src
 
                 return new Color(r, g, b);
             }
-            else if (c.Length == 0) return Color.Transparent;
+            else if (c.Length == 0) return null;
             else return Palette.Ui[c];
         }
 
@@ -175,8 +175,8 @@ namespace FieryOpal.Src
                 ret += fmt.Substring(0, idx).ToColoredString(fg ?? Color.Transparent, bg ?? Color.Transparent);
                 fmt = fmt.Substring(idx + match.Length);
 
-                Color cFg = match.Groups.Count > 2 ? ParseColor(match.Groups[2].Value) : fg ?? Color.Transparent;
-                Color cBg = match.Groups.Count > 3 ? ParseColor(match.Groups[3].Value) : bg ?? Color.Transparent;
+                Color cFg = (match.Groups.Count > 2 ? ParseColor(match.Groups[2].Value) ?? fg : fg) ?? Color.Transparent;
+                Color cBg = (match.Groups.Count > 3 ? ParseColor(match.Groups[3].Value)  ?? bg : bg) ?? Color.Transparent;
 
                 ret += args[argIdx].ToString().ToColoredString(cFg, cBg);
             }

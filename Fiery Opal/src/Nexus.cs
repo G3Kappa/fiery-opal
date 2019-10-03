@@ -33,12 +33,23 @@ namespace FieryOpal
         public static DebugCLI DebugCLI { get; private set; }
         public static QuestManager Quests { get; private set; }
 
+        public static SerializationManager Serializer { get; private set; }
+
         public static InitConfigInfo InitInfo { get; set; }
 
         public static OpalServer GameServer { get; set; }
         public static OpalClient GameClient { get; set; }
 
         public static DayNightCycleManager DayNightCycle { get; private set; }
+
+        private static Rectangle _DialogRect;
+        public static Rectangle DialogRect {
+            get => currentWM == gameWindowManager ? _DialogRect : new Rectangle(0, 0, Width, Height);
+            set
+            {
+                _DialogRect = value;
+            }
+        }
 
         static void Main(string[] args)
         {
@@ -53,8 +64,6 @@ namespace FieryOpal
             SadConsole.Game.OnDraw = Draw;
 
             Keybind.PushState();
-            Keybind.PushState();
-
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
         }
@@ -93,7 +102,10 @@ namespace FieryOpal
         private static void Init()
         {
             var fpsCounter = new SadConsole.Game.FPSCounterComponent(SadConsole.Game.Instance);
-            SadConsole.Game.Instance.Components.Add(fpsCounter);
+            // SadConsole.Game.Instance.Components.Add(fpsCounter);
+
+            SadConsole.Game.Instance.Window.IsBorderless = true;
+            SadConsole.Game.Instance.Window.AllowUserResizing = false;
 
             Fonts = Util.LoadDefaultFontConfig();
             Keys = Util.LoadDefaultKeyConfig();
@@ -107,7 +119,7 @@ namespace FieryOpal
             InitInfo.RngSeed = InitInfo.RngSeed ?? Util.Rng.Next();
             Util.SeedRng(InitInfo.RngSeed.Value);
 
-            DebugCLI = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Width * .4f), 4));
+            DebugCLI = OpalDialog.Make<DebugCLI>("CLI", "", new Point((int)(Width * .4f), 4), null, true);
             DebugCLI.Position = new Point(0, 0);
 
             TypeConversionHelper<object>.RegisterDefaultConversions();
@@ -119,30 +131,48 @@ namespace FieryOpal
             OpalActorBase.PreloadActorClasses("Items");
             OpalActorBase.PreloadActorClasses("Items.Weapons");
 
+            Serializer = new SerializationManager();
+
             mainMenuWindowManager = new MainMenuWindowManager(Width, Height);
             mainMenuWindowManager.InGame = false;
             currentWM = mainMenuWindowManager;
-
+            
             mainMenuWindowManager.MainMenu.NewGameStarted += (info) =>
             {
                 currentWM.Hide();
+                Keybind.PushState();
 
+                // Generate a new world
                 World world = new World(InitInfo.WorldWidth, InitInfo.WorldHeight);
                 world.Generate();
+                world.CreateSaveDataFolderStructure();
+
+                // Create the OpalGame instance (note: Nexus.Player => GameInstance.Player)
                 GameInstance = new OpalGame(world);
-                DayNightCycle = new DayNightCycleManager(1200);
-                gameWindowManager = new GameWindowManager(Width, Height, GameInstance);
-                OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
                 Player.Name = info.PlayerName;
+
+                // Set up the Day/Night cycle manager TODO: Move into OpalGame!!
+                DayNightCycle = new DayNightCycleManager(1200);
+                
+                // Generate the starting map and plop the player there
+                OpalLocalMap startingMap = GameInstance.World.RegionAt(Util.Rng.Next(GameInstance.World.Width), Util.Rng.Next(GameInstance.World.Height)).LocalMap;
                 Player.ChangeLocalMap(startingMap, new Point(startingMap.Width / 2, startingMap.Height / 2));
+
+                // Set up the Quest manager TODO: Move into OpalGame!!
                 Quests = new QuestManager(Player);
-
                 GameInstance.TurnManager.TurnEnded += (_, __) => { Quests.UpdateProgress(); };
-
-                GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
+                
+                // Create the Game WM, responsible for drawing game-related windows
+                gameWindowManager = new GameWindowManager(Width, Height, GameInstance);
+                // Switch to it
                 currentWM = gameWindowManager;
                 gameWindowManager.Show();
+
+                // Start the first turn (update lighting and stuff)
+                GameInstance.TurnManager.BeginTurn(GameInstance.CurrentMap);
                 Util.LogText(Util.Str("WelcomeMessage"), false);
+
+                // Bind esc to the In-Game menu, which is the main menu but with a few different options
                 Keybind.BindKey(new Keybind.KeybindInfo(Microsoft.Xna.Framework.Input.Keys.Escape, Keybind.KeypressState.Press, "Game Window: Show Menu"), (_) =>
                 {
                     currentWM.Hide();

@@ -1,5 +1,6 @@
 ﻿using FieryOpal.Src.Actors;
 using FieryOpal.Src.Actors.Items.Weapons;
+using FieryOpal.Src.Ui.Dialogs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -16,6 +17,8 @@ namespace FieryOpal.Src.Ui.Windows
         public OpalInfoWindow InfoWindow;
         public OpalLogWindow LogWindow;
 
+        private FakeTitleBar TitleBar;
+
         protected OpalGame Game;
 
         private void CreateLayout(int w, int h, OpalGame g)
@@ -24,21 +27,27 @@ namespace FieryOpal.Src.Ui.Windows
             // the size of the raycast window by the correct amount as to fill
             // all the available space.
             // EDIT: FPVFont no longer exists, so this is no longer a ratio a the division is no longer required.
-            Vector2 font_ratio = Nexus.Fonts.MainFont.Size.ToVector2();
+            // EDIT2: Now I done fucked up again and since the font on which size is based is the "Books" font (12x12),
+            // the main font ends up being smaller (10x10). So we need a ratio again in order to fill up the missing space.
+            Vector2 dfSz = new Vector2(Nexus.InitInfo.DefaultFontWidth, Nexus.InitInfo.DefaultFontHeight);
+            Vector2 font_ratio = dfSz / Nexus.Fonts.MainFont.Size.ToVector2();
+
+            float aspect_ratio = w / (float)h;
 
             // The layout is defined in the [0, 1] range.
             Vector2 tdPos = new Vector2(0, 0f);
-            Vector2 tdSize = new Vector2(.4f, .7f);
+            Vector2 tdSize = new Vector2(.5f, .5f * aspect_ratio) * font_ratio;
 
-            Vector2 fpPos = new Vector2(.4f, 0) * font_ratio;
-            Vector2 fpSize = new Vector2(.4f, .7f) * font_ratio;
+            Vector2 fpPos = new Vector2(.5f, 0) * dfSz;
+            Vector2 fpSize = new Vector2(.5f, .5f * aspect_ratio) * dfSz;
 
-            Vector2 infoPos = new Vector2(.8f, 0);
-            Vector2 infoSize = new Vector2(.2f, .7f);
+            Vector2 infoPos = new Vector2(.75f, .5f * aspect_ratio) * font_ratio;
+            Vector2 infoSize = new Vector2(.25f, 1 - .5f * aspect_ratio) * font_ratio;
 
-            Vector2 logPos = new Vector2(0f, .7f);
-            Vector2 logSize = new Vector2(1f, .3f);
+            Vector2 logPos = new Vector2(0f, .5f * aspect_ratio) * font_ratio;
+            Vector2 logSize = new Vector2(.75f, 1 - .5f * aspect_ratio) * font_ratio;
 
+            h = h - 1;
             var raycastViewport = new RaycastViewport(
                 g.CurrentMap,
                 new Rectangle(0, 0, (int)(fpSize.X * w), (int)(fpSize.Y * h)),
@@ -50,39 +59,47 @@ namespace FieryOpal.Src.Ui.Windows
                 new Rectangle(0, 0, (int)(tdSize.X * w), (int)(tdSize.Y * h))
             );
 
+            int parity = (int)(tdSize.X * w + 1) % 2;
+
             FirstPersonWindow = new OpalGameWindow(
-                (int)(fpSize.X * w), (int)(fpSize.Y * h),
+                (int)(fpSize.X * w) + (int)(parity * dfSz.X), (int)(fpSize.Y * (h)),
                 g,
-                raycastViewport,
-                null
+                raycastViewport
             );
-            FirstPersonWindow.Position = new Point((int)(fpPos.X * w), (int)(fpPos.Y * h));
+            FirstPersonWindow.Position = new Point((int)(fpPos.X * w) - (int)(parity * dfSz.X), 2 * (int)dfSz.Y + (int)(fpPos.Y * h));
             RegisterWindow(FirstPersonWindow);
 
             TopDownWindow = new OpalGameWindow(
-                (int)(tdSize.X * w), (int)(tdSize.Y * h),
+                (int)(tdSize.X * w) - parity, (int)(tdSize.Y * h),
                 g,
                 topdownViewport
             );
-            TopDownWindow.Position = new Point((int)(tdPos.X * w), (int)(tdPos.Y * h));
+            TopDownWindow.Position = new Point((int)(tdPos.X * w), 2 + (int)(tdPos.Y * h));
             RegisterWindow(TopDownWindow);
 
             InfoWindow = new OpalInfoWindow((int)(infoSize.X * w), (int)(infoSize.Y * h));
-            InfoWindow.Position = new Point((int)(infoPos.X * w), (int)(infoPos.Y * h));
+            InfoWindow.Position = new Point((int)(infoPos.X * w), 2 + (int)(infoPos.Y * h));
             RegisterWindow(InfoWindow);
 
             LogWindow = new OpalLogWindow((int)(logSize.X * w), (int)(logSize.Y * h));
-            LogWindow.Position = new Point((int)(logPos.X * w), (int)(logPos.Y * h));
+            LogWindow.Position = new Point((int)(logPos.X * w), 2 + (int)(logPos.Y * h));
             LogWindow.LoadSuppressionRules(Nexus.InitInfo);
             RegisterWindow(LogWindow);
+
+            TitleBar = new FakeTitleBar(w, "./FieryOpal", Nexus.Fonts.Spritesheets["Books"]);
+            RegisterWindow(TitleBar);
             // So that this window can receive logs from anywhere
             Util.GlobalLogPipeline.Subscribe(LogWindow);
 
+            Nexus.DialogRect = new Rectangle(
+                0, 1,
+                Width + 2, 
+                (int)((tdSize.Y * h) / font_ratio.Y + 3)
+            );
         }
 
         public GameWindowManager(int w, int h, OpalGame g) : base(w, h)
         {
-
             Game = g;
             CreateLayout(w, h, g);
 
@@ -112,6 +129,7 @@ namespace FieryOpal.Src.Ui.Windows
             FirstPersonWindow.Show();
             TopDownWindow.Show();
             LogWindow.Show();
+            TitleBar.Show();
         }
 
         public override void Hide()
@@ -122,11 +140,20 @@ namespace FieryOpal.Src.Ui.Windows
             FirstPersonWindow.Hide();
             TopDownWindow.Hide();
             LogWindow.Hide();
+            TitleBar.Hide();
         }
 
+        private string lastDialogTitle = "./FieryOpal";
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+            string capt = (OpalDialog.ActiveDialog?.Caption ?? "");
+            if (capt.Length > 0) capt = "/" + capt;
+
+            if (capt != lastDialogTitle)
+            {
+                TitleBar.UpdateCaption("./FieryOpal{0}".Fmt(capt));
+            }
         }
 
 
@@ -152,7 +179,6 @@ namespace FieryOpal.Src.Ui.Windows
             }
 
             var rc = FirstPersonWindow.Viewport as RaycastViewport;
-            
             Global.DrawCalls.Add(new DrawCallCustom(() =>
             {
                 Global.SpriteBatch.End();
@@ -165,7 +191,7 @@ namespace FieryOpal.Src.Ui.Windows
                 Global.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap, null, RasterizerState.CullNone, ShaderManager.LightingShader);
                 Global.SpriteBatch.Draw(
                     rc.RenderSurface,
-                    new Rectangle(FirstPersonWindow.Position, new Point(FirstPersonWindow.Width, FirstPersonWindow.Height)),
+                    new Rectangle(FirstPersonWindow.Position, new Point(FirstPersonWindow.Width - 2, FirstPersonWindow.Height)),
                     null,
                     Color.White
                 );

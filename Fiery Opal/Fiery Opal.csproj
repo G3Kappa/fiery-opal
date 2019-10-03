@@ -287,6 +287,8 @@
     <Compile Include="Src\Procedural\World.cs" />
     <Compile Include="Src\Quests\GatheringQuest.cs" />
     <Compile Include="Src\Quests\Quest.cs" />
+    <Compile Include="Src\SerializationManager.cs" />
+    <Compile Include="Src\TileMemory.cs" />
     <Compile Include="Src\Turn.cs" />
     <Compile Include="Src\Ui\Dialogs\BookDialog.cs" />
     <Compile Include="Src\Ui\Dialogs\DebugCLI.cs" />
@@ -306,6 +308,7 @@
     <Compile Include="Src\Ui\Dialogs\OkCancelDialog.cs" />
     <Compile Include="Src\Ui\Windows\MainMenuWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalConsoleWindow.cs" />
+    <Compile Include="Src\Ui\Windows\FakeTitleBar.cs" />
     <Compile Include="Src\Ui\Windows\OpalGameWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalLogWindow.cs" />
     <Compile Include="Src\Ui\Windows\OpalInfoWindow.cs" />

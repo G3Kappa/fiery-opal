@@ -69,6 +69,10 @@ namespace FieryOpal.Src
             // raycast viewport drawing with localmap viewport drawing
         }
 
+        public void SaveLocalMap()
+        {
+        }
+
         public void ReceiveMessage(Guid pipeline_handle, Guid sender_handle, Func<OpalGame, string> msg, bool is_broadcast)
         {
             string performed_action = msg(this);

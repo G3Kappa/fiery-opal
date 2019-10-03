@@ -16,9 +16,9 @@ namespace FieryOpal.Src.Ui.Windows
 
         public MainMenuWindowManager(int w, int h) : base(w, h)
         {
-            MainMenu = new MainMenuWindow(80, 50);
             Vector2 fontRatio = Nexus.Fonts.MainFont.Size.ToVector2() / Nexus.Fonts.Spritesheets["Books"].Size.ToVector2();
-            MainMenu.Position = new Point((int)((w / 2) * fontRatio.X) - 40, (int)((h / 2) * fontRatio.Y) - 25);
+            MainMenu = new MainMenuWindow(82, 52);
+            //MainMenu.Position = new Point((int)((w / 2) * fontRatio.X) - 40, (int)((h / 2) * fontRatio.Y) - 25);
         }
 
         public bool InGame = false;

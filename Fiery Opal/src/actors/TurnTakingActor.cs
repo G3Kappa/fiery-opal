@@ -20,6 +20,10 @@ namespace FieryOpal.Src.Actors
         {
             MapChanged += (me, old_map) =>
             {
+                if(IsPlayer)
+                {
+                    //Brain?.TileMemory.SaveToDisk("");
+                }
                 Brain?.TileMemory.ForgetEverything();
                 Brain?.TileMemory.UnseeEverything();
             };

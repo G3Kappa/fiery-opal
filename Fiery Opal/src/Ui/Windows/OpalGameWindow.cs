@@ -11,7 +11,7 @@ namespace FieryOpal.Src.Ui.Windows
         public OpalGame Game { get; protected set; }
         public Viewport Viewport { get; set; }
 
-        public OpalGameWindow(int w, int h, OpalGame g, Viewport v, Font f = null) : base(w, h, "Fiery Opal", f)
+        public OpalGameWindow(int w, int h, OpalGame g, Viewport v, Font f = null) : base(w, h, "MAP", f)
         {
             Game = g;
             InternalMessagePipeline = new MessagePipeline<OpalGame>();
@@ -108,7 +108,10 @@ namespace FieryOpal.Src.Ui.Windows
 
         public override void Draw(TimeSpan delta)
         {
-            if(!(Viewport is RaycastViewport)) base.Draw(delta);
+            base.Draw(delta);
+            if (!(Viewport is RaycastViewport))
+            {
+            }
         }
     }
 
